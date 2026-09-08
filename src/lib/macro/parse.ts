@@ -8,6 +8,15 @@ export function extractCommandToken(raw: string): string | null {
   return match ? match[1] : null
 }
 
+// カーソル位置を含む行の本文中の開始・終了オフセット（改行文字は含まない）。
+// 補完系の各関数が同じ行境界の定義を共有するための共通ヘルパー。
+export function lineRangeAt(body: string, cursor: number): { start: number; end: number } {
+  const start = body.lastIndexOf('\n', cursor - 1) + 1
+  const endIndex = body.indexOf('\n', start)
+  const end = endIndex === -1 ? body.length : endIndex
+  return { start, end }
+}
+
 export function parseLines(body: string): MacroLine[] {
   return body.split('\n').map((raw, index) => {
     const commandToken = extractCommandToken(raw)

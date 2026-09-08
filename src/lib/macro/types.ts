@@ -50,8 +50,14 @@ export type Diagnostic = {
 }
 
 export type LogEntryKind =
+  | 'say'
+  | 'yell'
   | 'shout'
+  | 'tell'
   | 'party'
+  | 'alliance'
+  | 'freecompany'
+  | 'linkshell'
   | 'echo'
   | 'action'
   | 'system'
@@ -62,6 +68,8 @@ export type LogEntry = {
   line: number
   kind: LogEntryKind
   text: string
+  // /wait の累積から算出する疑似経過時間（HH:MM:SS）。実時間の記録ではなくプレビュー専用。
+  timestamp: string
   isPreview: true
 }
 
@@ -78,3 +86,54 @@ export type MacroAnalysis = {
   lines: MacroLine[]
   diagnostics: Diagnostic[]
 }
+
+// 構文ハイライト用。raw を分割したセグメントを連結すると元の行に戻る。
+export type HighlightSegmentKind =
+  | 'command-known'
+  | 'command-unknown'
+  | 'arg-placeholder'
+  | 'arg-placeholder-wait'
+  | 'arg-placeholder-invalid'
+  | 'arg-string'
+  | 'arg-number'
+  | 'fullwidth-space'
+  | 'text'
+
+export type HighlightSegment = {
+  text: string
+  kind: HighlightSegmentKind
+}
+
+export type HighlightLine = {
+  line: number
+  segments: HighlightSegment[]
+}
+
+// カーソルが行頭のコマンド範囲にある時だけ存在する補完状態（SPEC.md 補完とチップヘルプ）。
+// isExactMatch は「入力済みの文字列がそのまま辞書の正式名・短縮名と一致している」状態で、
+// 一覧を出す必要はないが Tab で区切りの半角スペースだけは補いたい場合に使う。
+export type CompletionState = {
+  line: number
+  rangeStart: number
+  rangeEnd: number
+  token: string
+  candidates: CommandDefinition[]
+  isExactMatch: boolean
+} | null
+
+// 確定すると insertText で置き換え、rangeStart からこのオフセット分だけ進めた位置へカーソルを戻す。
+export type PlaceholderCandidate = {
+  insertText: string
+  caretOffset: number
+  label: string
+  description: string
+}
+
+// <t> <wait.s> のような山括弧プレースホルダの入力補助（引数側の補完）。
+// コマンド名補完とは別の入力位置・確定方法を持つため型を分けている。
+export type PlaceholderCompletionState = {
+  line: number
+  rangeStart: number
+  rangeEnd: number
+  candidates: PlaceholderCandidate[]
+} | null

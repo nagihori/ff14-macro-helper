@@ -1,7 +1,8 @@
 import type { CommandDefinition, Diagnostic, MacroLine } from './types'
 import { findCommand } from '../commands/dictionary'
+import { halfWidthLength } from './text-width'
 
-// SPEC.md バリデーション表。文字数は暫定でコードユニット数を使い「推定」として扱う。
+// SPEC.md バリデーション表。文字数は暫定で全角を2・半角を1とした半角換算を使い「推定」として扱う。
 export const MAX_LINES = 15
 export const MAX_LINE_LENGTH = 180
 
@@ -19,12 +20,13 @@ export function lintLineCount(lines: MacroLine[]): Diagnostic[] {
 
 export function lintLineLength(lines: MacroLine[]): Diagnostic[] {
   return lines
-    .filter((line) => line.raw.length > MAX_LINE_LENGTH)
-    .map((line) => ({
-      severity: 'error',
+    .map((line) => ({ line, length: halfWidthLength(line.raw) }))
+    .filter(({ length }) => length > MAX_LINE_LENGTH)
+    .map(({ line, length }) => ({
+      severity: 'error' as const,
       line: line.line,
       code: 'line-length-exceeded',
-      message: `1 行 ${MAX_LINE_LENGTH} 文字までです（現在 ${line.raw.length} 文字、推定値）。`,
+      message: `1 行 ${MAX_LINE_LENGTH} 文字までです（現在 ${length} 文字、推定値）。`,
     }))
 }
 
