@@ -49,18 +49,20 @@ function formatChatText(prefix: string | null, text: string): string {
 }
 
 // 実機ログは秒までは表示しないため分単位（HH:mm）で揃える。
-function formatTimestamp(totalSeconds: number): string {
-  const clamped = Math.max(0, Math.floor(totalSeconds))
-  const hours = Math.floor(clamped / 3600)
-  const minutes = Math.floor((clamped % 3600) / 60)
-  return [hours, minutes].map((part) => String(part).padStart(2, '0')).join(':')
+// 現在時刻を起点に /wait の累積秒数だけ進めることで、実行中のマクロっぽい表示にする。
+function formatTimestamp(now: Date, elapsedSeconds: number): string {
+  const shifted = new Date(now.getTime() + Math.max(0, elapsedSeconds) * 1000)
+  return [shifted.getHours(), shifted.getMinutes()]
+    .map((part) => String(part).padStart(2, '0'))
+    .join(':')
 }
 
-// /wait の累積秒数から、行ごとの疑似経過時間を導く。実時間の記録ではなく、
-// 「順に実行した場合こう見える」という並び順のプレビュー専用の値（docs/architecture.md）。
-function toLogEntry(line: MacroLine, elapsedSeconds: number): LogEntry {
+// 現在時刻 + /wait の累積秒数から、行ごとの疑似実行時刻を導く。実際にその時刻へ
+// 送信したログの記録ではなく、「いま実行したらこう見える」というプレビュー専用の値
+// （docs/architecture.md）。
+function toLogEntry(line: MacroLine, now: Date, elapsedSeconds: number): LogEntry {
   const token = line.commandToken?.toLowerCase() ?? null
-  const timestamp = formatTimestamp(elapsedSeconds)
+  const timestamp = formatTimestamp(now, elapsedSeconds)
 
   if (token === '/echo') {
     return { line: line.line, kind: 'echo', text: line.argsText, timestamp, isPreview: true }
@@ -109,10 +111,10 @@ function toLogEntry(line: MacroLine, elapsedSeconds: number): LogEntry {
   }
 }
 
-export function toLogPreview(lines: MacroLine[]): LogEntry[] {
+export function toLogPreview(lines: MacroLine[], now: Date = new Date()): LogEntry[] {
   let elapsedSeconds = 0
   return lines.map((line) => {
-    const entry = toLogEntry(line, elapsedSeconds)
+    const entry = toLogEntry(line, now, elapsedSeconds)
     if (line.commandToken?.toLowerCase() === '/wait') {
       const waitSeconds = Number(line.argsText)
       if (Number.isFinite(waitSeconds) && waitSeconds > 0) {
