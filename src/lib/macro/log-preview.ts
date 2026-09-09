@@ -91,7 +91,7 @@ function toLogEntry(
   if (token === '/echo') {
     const { segments, extraWaitSeconds } = resolveLogText(line.argsText)
     return {
-      entry: { line: line.line, kind: 'echo', segments, timestamp, isPreview: true },
+      entry: { line: line.line, kind: 'echo', segments, timestamp, delaySeconds: elapsedSeconds, isPreview: true },
       extraWaitSeconds,
     }
   }
@@ -102,6 +102,7 @@ function toLogEntry(
         kind: 'action',
         segments: textSegments(`スキル：${line.argsText.replace(/^"|"$/g, '')}を発動`),
         timestamp,
+        delaySeconds: elapsedSeconds,
         isPreview: true,
       },
       extraWaitSeconds: 0,
@@ -114,6 +115,7 @@ function toLogEntry(
         kind: 'system',
         segments: textSegments(`待機（${line.argsText || '?'} 秒）`),
         timestamp,
+        delaySeconds: elapsedSeconds,
         isPreview: true,
       },
       extraWaitSeconds: 0,
@@ -124,14 +126,28 @@ function toLogEntry(
     if (channel) {
       const { segments, extraWaitSeconds } = buildChatSegments(channel.prefix, line.argsText)
       return {
-        entry: { line: line.line, kind: channel.kind, segments, timestamp, isPreview: true },
+        entry: {
+          line: line.line,
+          kind: channel.kind,
+          segments,
+          timestamp,
+          delaySeconds: elapsedSeconds,
+          isPreview: true,
+        },
         extraWaitSeconds,
       }
     }
   }
   if (token === null) {
     return {
-      entry: { line: line.line, kind: 'unknown', segments: textSegments(line.raw), timestamp, isPreview: true },
+      entry: {
+        line: line.line,
+        kind: 'unknown',
+        segments: textSegments(line.raw),
+        timestamp,
+        delaySeconds: elapsedSeconds,
+        isPreview: true,
+      },
       extraWaitSeconds: 0,
     }
   }
@@ -143,6 +159,7 @@ function toLogEntry(
       kind: 'unknown',
       segments: textSegments(`${line.raw}（このプレビューでは再現できません）`),
       timestamp,
+      delaySeconds: elapsedSeconds,
       isPreview: true,
     },
     extraWaitSeconds: 0,

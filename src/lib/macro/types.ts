@@ -77,6 +77,8 @@ export type LogEntry = {
   segments: LogTextSegment[]
   // /wait の累積から算出する疑似経過時間（HH:MM）。実時間の記録ではなくプレビュー専用。
   timestamp: string
+  // マクロ開始からこの行が実行されるまでの累積秒数（/wait 由来）。再生アニメーションの遅延に使う。
+  delaySeconds: number
   isPreview: true
 }
 

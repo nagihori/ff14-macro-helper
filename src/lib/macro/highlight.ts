@@ -1,5 +1,6 @@
 import type { CommandDefinition, HighlightLine, HighlightSegment, MacroLine } from './types'
 import { findCommand } from '../commands/dictionary'
+import { isCommandTokenSettled } from './parse'
 import { SE_BASE, TARGET_SHORTHANDS, WAIT_BASE } from './placeholder-tokens'
 
 // 引数部分の見た目上の区切り。ゲーム側の実際の引数仕様を検証するものではない。
@@ -88,6 +89,13 @@ export function buildHighlight(
     const leadingSpaces = line.raw.length - line.raw.trimStart().length
     const tokenEnd = leadingSpaces + line.commandToken.length
     const known = Boolean(findCommand(line.commandToken, dictionary))
+    // 未確定（"/" 単体や、まだ空白が続いていない打ちかけの名前）は地の文と同じ色にして、
+    // 打鍵のたびに command-unknown の警告色・波線がちらつかないようにする。
+    const tokenKind = known
+      ? ('command-known' as const)
+      : isCommandTokenSettled(line)
+        ? ('command-unknown' as const)
+        : ('text' as const)
     const rest = line.raw.slice(tokenEnd)
 
     const segments: HighlightSegment[] = [
@@ -96,7 +104,7 @@ export function buildHighlight(
         : []),
       {
         text: line.raw.slice(leadingSpaces, tokenEnd),
-        kind: known ? ('command-known' as const) : ('command-unknown' as const),
+        kind: tokenKind,
       },
       ...tokenizeArgs(rest),
     ]

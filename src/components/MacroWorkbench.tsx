@@ -18,7 +18,9 @@ import { getDictionary } from '@/lib/commands/dictionary'
 import { buildShareUrl, decodeDocument, readShareParam } from '@/lib/share/url'
 import type {
   CommandDefinition,
+  DiagnosticSeverity,
   HighlightSegmentKind,
+  LogEntry,
   LogEntryKind,
   PlaceholderCandidate,
 } from '@/lib/macro/types'
@@ -48,7 +50,7 @@ function measureCaretOffset(
 
 const HIGHLIGHT_CLASS: Record<HighlightSegmentKind, string> = {
   'command-known': 'text-blue-600 dark:text-blue-400',
-  'command-unknown': 'text-amber-600 dark:text-amber-400',
+  'command-unknown': 'text-amber-600 dark:text-amber-400 underline decoration-wavy decoration-amber-500',
   'arg-placeholder': 'text-purple-600 dark:text-purple-400',
   'arg-placeholder-wait': 'text-pink-600 dark:text-pink-400',
   'arg-placeholder-invalid': 'text-red-600 dark:text-red-400 underline decoration-wavy',
@@ -76,9 +78,27 @@ const LOG_KIND_CLASS: Record<LogEntryKind, string> = {
   unknown: 'text-zinc-700 dark:text-zinc-300',
 }
 
+// コマンド単位ではなく行全体が対象の診断（行長・行数超過）は、行全体を波線で囲む。
+// command-unknown 等トークン単位の診断は HIGHLIGHT_CLASS 側で個別に処理済み。
+const WHOLE_LINE_DIAGNOSTIC_CODES = new Set(['line-length-exceeded', 'line-count-exceeded'])
+
+const DIAGNOSTIC_UNDERLINE_CLASS: Record<DiagnosticSeverity, string> = {
+  error: 'underline decoration-wavy decoration-red-500',
+  warning: 'underline decoration-wavy decoration-amber-500',
+  info: 'underline decoration-wavy decoration-zinc-400',
+}
+
+const DIAGNOSTIC_TEXT_CLASS: Record<DiagnosticSeverity, string> = {
+  error: 'text-red-600 dark:text-red-400',
+  warning: 'text-amber-600 dark:text-amber-400',
+  info: 'text-zinc-500 dark:text-zinc-400',
+}
+
 // UI はここでモデルを表示するだけ。文字数・構文・コマンドの意味は lib/macro が判断する（AGENTS.md）。
 export function MacroWorkbench() {
-  const [body, setBody] = useState('')
+  // 最初から "/" を入れておくと、コマンド一覧のサジェストが最初から見える状態になる
+  // （見出しや案内文を省いて、サジェストエリア自体を初期ヘルプとして使う）。
+  const [body, setBody] = useState('/')
   const [cursor, setCursor] = useState(0)
   const [selection, setSelection] = useState<{ key: string | null; index: number }>({
     key: null,
@@ -94,6 +114,14 @@ export function MacroWorkbench() {
   const [restoreError, setRestoreError] = useState<string | null>(null)
 
   const [ghostPosition, setGhostPosition] = useState<{ left: number; top: number } | null>(null)
+
+  // ログプレビューは常時追従ではなく「マクロ実行」を押した時点のスナップショットを
+  // /wait 秒数ぶん遅延させながら1行ずつ出す（ROADMAP.md 申し送り）。
+  const [logPlayback, setLogPlayback] = useState<{
+    entries: LogEntry[]
+    revealedCount: number
+  } | null>(null)
+  const logTimeoutsRef = useRef<number[]>([])
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
@@ -120,7 +148,6 @@ export function MacroWorkbench() {
   }, [])
 
   const analysis = useMemo(() => analyze(body, dictionary), [body])
-  const logEntries = useMemo(() => toLogPreview(analysis.lines), [analysis.lines])
   const highlightLines = useMemo(
     () => buildHighlight(analysis.lines, dictionary),
     [analysis.lines],
@@ -144,6 +171,12 @@ export function MacroWorkbench() {
       length: halfWidthLength(body.slice(start, end)),
     }
   }, [body, cursor])
+
+  // カーソル行の診断だけを抜き出して1行で見せる。行全体の一覧はエディタ側の波線に譲る。
+  const currentLineDiagnostics = useMemo(
+    () => analysis.diagnostics.filter((diagnostic) => diagnostic.line === currentLineStats.number),
+    [analysis.diagnostics, currentLineStats.number],
+  )
 
   const completionKey = completion
     ? `${completion.rangeStart}:${completion.rangeEnd}:${completion.token}`
@@ -378,27 +411,105 @@ export function MacroWorkbench() {
     }
   }
 
+  // クリック時点のスナップショットを、行ごとの delaySeconds（/wait の累積）だけ
+  // 遅らせながら1行ずつ出す。実行中に再クリックされたら前回分のタイマーは破棄する。
+  function handlePlayLog() {
+    logTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
+    logTimeoutsRef.current = []
+
+    const entries = toLogPreview(analysis.lines)
+    setLogPlayback({ entries, revealedCount: entries.length > 0 ? 1 : 0 })
+
+    entries.forEach((entry, index) => {
+      if (index === 0) return
+      const id = window.setTimeout(() => {
+        setLogPlayback((prev) =>
+          prev ? { ...prev, revealedCount: Math.max(prev.revealedCount, index + 1) } : prev,
+        )
+      }, entry.delaySeconds * 1000)
+      logTimeoutsRef.current.push(id)
+    })
+  }
+
+  useEffect(() => {
+    return () => {
+      logTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
+    }
+  }, [])
+
+  // 本文が変わる、またはエディタへフォーカスが戻ったら、右カラムをログ再生から
+  // サジェストへ戻す（実行中のタイマーも破棄）。カーソルを合わせただけでは本文は
+  // 変わらないため、フォーカス側のトリガーも別途必要（「戻り方が分かりづらい」対策）。
+  function stopLogPlayback() {
+    setLogPlayback((prev) => {
+      if (!prev) return prev
+      logTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
+      logTimeoutsRef.current = []
+      return null
+    })
+  }
+
+  useEffect(() => {
+    stopLogPlayback()
+  }, [body])
+
+  const isLogPlaying = !!logPlayback && logPlayback.revealedCount < logPlayback.entries.length
+
   return (
-    <div className="grid w-full max-w-5xl grid-cols-1 gap-6 p-8 md:grid-cols-2">
-      <section className="flex flex-col gap-2">
-        <div className="flex items-baseline justify-between">
+    <div className="w-full max-w-5xl px-8 pb-8">
+      <div className="flex gap-2 pb-6">
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="rounded bg-black px-3 py-1.5 text-sm text-white dark:bg-white dark:text-black"
+        >
+          コピー
+        </button>
+        <button
+          type="button"
+          onClick={handleShare}
+          className="rounded border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700"
+        >
+          共有 URL をコピー
+        </button>
+        {shareStatus && <p className="self-center text-sm text-zinc-500">{shareStatus}</p>}
+      </div>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <section className="flex flex-col gap-2">
+        <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-sm font-semibold text-zinc-500">エディタ</h2>
-          <p className="font-mono text-xs text-zinc-500">
-            L{currentLineStats.number}・
-            <span
-              className={
-                currentLineStats.length > MAX_LINE_LENGTH
-                  ? 'text-red-600 dark:text-red-400'
-                  : currentLineStats.length >= LINE_LENGTH_WARNING
-                    ? 'text-orange-600 dark:text-orange-400'
-                    : ''
-              }
+          <div className="flex items-baseline gap-3">
+            <p className="font-mono text-xs text-zinc-500">
+              L{currentLineStats.number}・
+              <span
+                className={
+                  currentLineStats.length > MAX_LINE_LENGTH
+                    ? 'text-red-600 dark:text-red-400'
+                    : currentLineStats.length >= LINE_LENGTH_WARNING
+                      ? 'text-orange-600 dark:text-orange-400'
+                      : ''
+                }
+              >
+                {currentLineStats.length}
+              </span>
+              {' / '}
+              {MAX_LINE_LENGTH} 文字（推定・半角換算）
+            </p>
+            <button
+              type="button"
+              onClick={handlePlayLog}
+              disabled={isLogPlaying}
+              className="flex items-center gap-1.5 rounded bg-black px-3 py-1 text-xs text-white disabled:opacity-50 dark:bg-white dark:text-black"
             >
-              {currentLineStats.length}
-            </span>
-            {' / '}
-            {MAX_LINE_LENGTH} 文字（推定・半角換算）
-          </p>
+              {isLogPlaying && (
+                <span
+                  aria-hidden
+                  className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"
+                />
+              )}
+              {isLogPlaying ? '実行中…' : 'プレビュー'}
+            </button>
+          </div>
         </div>
         {restoreError && (
           <p className="rounded bg-red-100 px-3 py-2 text-sm text-red-800" role="alert">
@@ -420,6 +531,7 @@ export function MacroWorkbench() {
               ref={textareaRef}
               value={body}
               onChange={handleChange}
+              onFocus={stopLogPlayback}
               onSelect={(event) => syncCursor(event.currentTarget)}
               onClick={(event) => syncCursor(event.currentTarget)}
               onKeyUp={(event) => syncCursor(event.currentTarget)}
@@ -435,19 +547,33 @@ export function MacroWorkbench() {
               aria-hidden
               className="pointer-events-none absolute inset-0 overflow-hidden p-3 font-mono text-sm leading-6 whitespace-pre-wrap"
             >
-              {highlightLines.map((highlightLine, lineIndex) => (
-                <span key={highlightLine.line}>
-                  {highlightLine.segments.map((segment, segmentIndex) => (
-                    <span
-                      key={segmentIndex}
-                      className={HIGHLIGHT_CLASS[segment.kind]}
-                    >
-                      {segment.text}
-                    </span>
-                  ))}
-                  {lineIndex < highlightLines.length - 1 ? '\n' : null}
-                </span>
-              ))}
+              {highlightLines.map((highlightLine, lineIndex) => {
+                const wholeLineDiagnostic = analysis.diagnostics.find(
+                  (diagnostic) =>
+                    diagnostic.line === highlightLine.line &&
+                    WHOLE_LINE_DIAGNOSTIC_CODES.has(diagnostic.code),
+                )
+                return (
+                  <span
+                    key={highlightLine.line}
+                    className={
+                      wholeLineDiagnostic
+                        ? DIAGNOSTIC_UNDERLINE_CLASS[wholeLineDiagnostic.severity]
+                        : undefined
+                    }
+                  >
+                    {highlightLine.segments.map((segment, segmentIndex) => (
+                      <span
+                        key={segmentIndex}
+                        className={HIGHLIGHT_CLASS[segment.kind]}
+                      >
+                        {segment.text}
+                      </span>
+                    ))}
+                    {lineIndex < highlightLines.length - 1 ? '\n' : null}
+                  </span>
+                )
+              })}
             </div>
             <div
               ref={mirrorRef}
@@ -468,50 +594,89 @@ export function MacroWorkbench() {
                 </span>
               )}
             </div>
-            {visibleCompletion && (
-            <ul className="absolute top-full left-0 z-10 mt-1 max-h-64 w-full overflow-y-auto rounded border border-zinc-300 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-              {visibleCompletion.candidates.map((command, index) => (
-                <li key={command.id}>
-                  <button
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => applyCompletion(command)}
-                    className={`w-full px-3 py-1.5 text-left text-sm ${
-                      index === selectedIndex
-                        ? 'bg-zinc-100 dark:bg-zinc-800'
-                        : ''
-                    }`}
-                  >
-                    <span className="font-mono font-semibold">{command.names.join(' / ')}</span>
-                    <span className="ml-2 text-xs text-zinc-500">{command.signature}</span>
-                    <p className="text-xs text-zinc-500">{command.description}</p>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          {visiblePlaceholderCompletion && (
-            <ul className="absolute top-full left-0 z-10 mt-1 w-full overflow-hidden rounded border border-zinc-300 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-              {visiblePlaceholderCompletion.candidates.map((candidate, index) => (
-                <li key={candidate.insertText}>
-                  <button
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => applyPlaceholderCompletion(candidate)}
-                    className={`w-full px-3 py-1.5 text-left text-sm ${
-                      index === placeholderSelectedIndex ? 'bg-zinc-100 dark:bg-zinc-800' : ''
-                    }`}
-                  >
-                    <span className="font-mono font-semibold">{candidate.label}</span>
-                    <span className="ml-2 text-xs text-zinc-500">{candidate.description}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            )}
           </div>
         </div>
-        {activeCommand && (
+        <p
+          className={`h-5 truncate px-1 text-sm ${
+            currentLineDiagnostics.length > 0
+              ? DIAGNOSTIC_TEXT_CLASS[currentLineDiagnostics[0].severity]
+              : 'text-transparent'
+          }`}
+        >
+          {currentLineDiagnostics.length > 0
+            ? currentLineDiagnostics.map((diagnostic) => diagnostic.message).join('　')
+            : ' '}
+        </p>
+      </section>
+
+      <section className="flex flex-col gap-4">
+        {logPlayback ? (
+          <ul className="flex flex-col gap-1 font-mono text-sm">
+            {logPlayback.entries.slice(0, logPlayback.revealedCount).map((entry) => (
+              <li key={entry.line} className={LOG_KIND_CLASS[entry.kind]}>
+                <span className="text-zinc-400">[{entry.timestamp}]</span>{' '}
+                {entry.segments.map((segment, index) =>
+                  segment.kind === 'placeholder' ? (
+                    <span
+                      key={index}
+                      className="rounded bg-purple-100 px-1 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300"
+                    >
+                      {segment.text}
+                    </span>
+                  ) : (
+                    <span key={index}>{segment.text}</span>
+                  ),
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <>
+            {/* 最終的にはコマンド逆引き検索になる予定の枠。まだ検索は未配線。 */}
+            <input
+              type="text"
+              disabled
+              placeholder="コマンドを検索（準備中）"
+              className="w-full rounded border border-zinc-300 bg-transparent px-3 py-1.5 text-sm text-zinc-400 placeholder:text-zinc-400 dark:border-zinc-700"
+            />
+            {visibleCompletion ? (
+          <ul className="max-h-64 overflow-y-auto rounded border border-zinc-300 dark:border-zinc-700">
+            {visibleCompletion.candidates.map((command, index) => (
+              <li key={command.id}>
+                <button
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => applyCompletion(command)}
+                  className={`w-full px-3 py-1.5 text-left text-sm ${
+                    index === selectedIndex ? 'bg-zinc-100 dark:bg-zinc-800' : ''
+                  }`}
+                >
+                  <span className="font-mono font-semibold">{command.names.join(' / ')}</span>
+                  <span className="ml-2 text-xs text-zinc-500">{command.signature}</span>
+                  <p className="text-xs text-zinc-500">{command.description}</p>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : visiblePlaceholderCompletion ? (
+          <ul className="overflow-hidden rounded border border-zinc-300 dark:border-zinc-700">
+            {visiblePlaceholderCompletion.candidates.map((candidate, index) => (
+              <li key={candidate.insertText}>
+                <button
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => applyPlaceholderCompletion(candidate)}
+                  className={`w-full px-3 py-1.5 text-left text-sm ${
+                    index === placeholderSelectedIndex ? 'bg-zinc-100 dark:bg-zinc-800' : ''
+                  }`}
+                >
+                  <span className="font-mono font-semibold">{candidate.label}</span>
+                  <span className="ml-2 text-xs text-zinc-500">{candidate.description}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : activeCommand ? (
           <div className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">
             <p className="font-mono font-semibold">{activeCommand.names.join(' / ')}</p>
             <p className="text-zinc-500">{activeCommand.signature}</p>
@@ -534,71 +699,11 @@ export function MacroWorkbench() {
               )}
             </p>
           </div>
+            ) : null}
+          </>
         )}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="rounded bg-black px-3 py-1.5 text-sm text-white dark:bg-white dark:text-black"
-          >
-            コピー
-          </button>
-          <button
-            type="button"
-            onClick={handleShare}
-            className="rounded border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700"
-          >
-            共有 URL をコピー
-          </button>
-          {shareStatus && <p className="self-center text-sm text-zinc-500">{shareStatus}</p>}
-        </div>
       </section>
-
-      <section className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-sm font-semibold text-zinc-500">診断</h2>
-          {analysis.diagnostics.length === 0 ? (
-            <p className="text-sm text-zinc-400">問題は見つかりませんでした。</p>
-          ) : (
-            <ul className="flex flex-col gap-1">
-              {analysis.diagnostics.map((diagnostic, index) => (
-                <li
-                  key={`${diagnostic.code}-${diagnostic.line}-${index}`}
-                  className="rounded border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700"
-                >
-                  <span className="font-mono text-xs text-zinc-500">
-                    L{diagnostic.line} · {diagnostic.severity}
-                  </span>
-                  <p>{diagnostic.message}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div>
-          <h2 className="text-sm font-semibold text-zinc-500">ログプレビュー</h2>
-          <ul className="flex flex-col gap-1 font-mono text-sm">
-            {logEntries.map((entry) => (
-              <li key={entry.line} className={LOG_KIND_CLASS[entry.kind]}>
-                <span className="text-zinc-400">[{entry.timestamp}]</span>{' '}
-                {entry.segments.map((segment, index) =>
-                  segment.kind === 'placeholder' ? (
-                    <span
-                      key={index}
-                      className="rounded bg-purple-100 px-1 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300"
-                    >
-                      {segment.text}
-                    </span>
-                  ) : (
-                    <span key={index}>{segment.text}</span>
-                  ),
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+      </div>
     </div>
   )
 }

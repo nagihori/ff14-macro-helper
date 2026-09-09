@@ -1,6 +1,7 @@
 import type { CommandDefinition, Diagnostic, MacroLine } from './types'
 import { findCommand } from '../commands/dictionary'
 import { halfWidthLength } from './text-width'
+import { isCommandTokenSettled } from './parse'
 
 // SPEC.md バリデーション表。文字数は暫定で全角を2・半角を1とした半角換算を使い「推定」として扱う。
 export const MAX_LINES = 15
@@ -36,6 +37,7 @@ export function lintUnknownCommands(
 ): Diagnostic[] {
   return lines
     .filter((line) => line.commandToken !== null)
+    .filter((line) => isCommandTokenSettled(line))
     .filter((line) => !findCommand(line.commandToken as string, dictionary))
     .map((line) => ({
       severity: 'warning',
