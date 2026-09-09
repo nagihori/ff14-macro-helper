@@ -7,7 +7,9 @@ const PLACEHOLDER_NAME = '<YourName>'
 // 実機の送信先チャンネルの表示形式。`prefix: null` は "名前 : 文章"、
 // prefix ありは "[prefix]<名前>文章" という実機ログの2パターンに対応する。
 // FC([FC]<Name>text)・say/party(Name : text) はスクリーンショットで確認済み。
-// それ以外の prefix（LS/CWLS/ALC/PT/BG の番号・略称）は未検証の一般的な見た目の推測。
+// alliance/pvpteam は「[ALC]という表記は見た記憶がない」との指摘を受け、確認が
+// 取れるまで prefix なし（say/party と同じ表示）に戻した。LS/CWLS/BG の番号・略称は
+// 未検証の一般的な見た目の推測のまま（要確認）。
 const CHANNEL_META: Array<{ tokens: string[]; kind: LogEntryKind; prefix: string | null }> = [
   { tokens: ['/say', '/s'], kind: 'say', prefix: null },
   { tokens: ['/yell', '/y'], kind: 'yell', prefix: null },
@@ -15,8 +17,8 @@ const CHANNEL_META: Array<{ tokens: string[]; kind: LogEntryKind; prefix: string
   { tokens: ['/tell', '/t'], kind: 'tell', prefix: null },
   { tokens: ['/reply', '/r'], kind: 'tell', prefix: null },
   { tokens: ['/party', '/p'], kind: 'party', prefix: null },
-  { tokens: ['/alliance', '/a'], kind: 'alliance', prefix: 'ALC' },
-  { tokens: ['/pvpteam', '/pt'], kind: 'alliance', prefix: 'PT' },
+  { tokens: ['/alliance', '/a'], kind: 'alliance', prefix: null },
+  { tokens: ['/pvpteam', '/pt'], kind: 'alliance', prefix: null },
   { tokens: ['/freecompany', '/fc'], kind: 'freecompany', prefix: 'FC' },
   { tokens: ['/linkshell', '/l'], kind: 'linkshell', prefix: 'LS' },
   { tokens: ['/linkshell1', '/l1'], kind: 'linkshell', prefix: 'LS1' },
