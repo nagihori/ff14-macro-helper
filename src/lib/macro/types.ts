@@ -64,11 +64,18 @@ export type LogEntryKind =
   | 'error'
   | 'unknown'
 
+// ログプレビューの1行を構成するテキスト片。'placeholder' は <t> 等から解決した
+// 表示（バッジ表示用）、'text' はそれ以外の地の文。
+export type LogTextSegment = {
+  text: string
+  kind: 'text' | 'placeholder'
+}
+
 export type LogEntry = {
   line: number
   kind: LogEntryKind
-  text: string
-  // /wait の累積から算出する疑似経過時間（HH:MM:SS）。実時間の記録ではなくプレビュー専用。
+  segments: LogTextSegment[]
+  // /wait の累積から算出する疑似経過時間（HH:MM）。実時間の記録ではなくプレビュー専用。
   timestamp: string
   isPreview: true
 }

@@ -581,7 +581,19 @@ export function MacroWorkbench() {
           <ul className="flex flex-col gap-1 font-mono text-sm">
             {logEntries.map((entry) => (
               <li key={entry.line} className={LOG_KIND_CLASS[entry.kind]}>
-                <span className="text-zinc-400">[{entry.timestamp}]</span> {entry.text}
+                <span className="text-zinc-400">[{entry.timestamp}]</span>{' '}
+                {entry.segments.map((segment, index) =>
+                  segment.kind === 'placeholder' ? (
+                    <span
+                      key={index}
+                      className="rounded bg-purple-100 px-1 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300"
+                    >
+                      {segment.text}
+                    </span>
+                  ) : (
+                    <span key={index}>{segment.text}</span>
+                  ),
+                )}
               </li>
             ))}
           </ul>
