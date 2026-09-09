@@ -6,10 +6,10 @@ const PLACEHOLDER_NAME = '<YourName>'
 
 // 実機の送信先チャンネルの表示形式。`prefix: null` は "名前 : 文章"、
 // prefix ありは "[prefix]<名前>文章" という実機ログの2パターンに対応する。
-// FC([FC]<Name>text)・say/party(Name : text) はスクリーンショットで確認済み。
-// alliance/pvpteam は「[ALC]という表記は見た記憶がない」との指摘を受け、確認が
-// 取れるまで prefix なし（say/party と同じ表示）に戻した。LS/CWLS/BG の番号・略称は
-// 未検証の一般的な見た目の推測のまま（要確認）。
+// FC([FC]<Name>text)・say/party(Name : text)・alliance(prefixなし)・
+// pvpteam([PT])・linkshell([1]〜[8]、番号省略時は[1])・
+// cwlinkshell([CWLS1]〜[CWLS8]、番号省略時は[CWLS1]) は実機確認済み。
+// beginner の prefix（'BG'）のみ未検証の推測のまま（要確認）。
 const CHANNEL_META: Array<{ tokens: string[]; kind: LogEntryKind; prefix: string | null }> = [
   { tokens: ['/say', '/s'], kind: 'say', prefix: null },
   { tokens: ['/yell', '/y'], kind: 'yell', prefix: null },
@@ -18,18 +18,18 @@ const CHANNEL_META: Array<{ tokens: string[]; kind: LogEntryKind; prefix: string
   { tokens: ['/reply', '/r'], kind: 'tell', prefix: null },
   { tokens: ['/party', '/p'], kind: 'party', prefix: null },
   { tokens: ['/alliance', '/a'], kind: 'alliance', prefix: null },
-  { tokens: ['/pvpteam', '/pt'], kind: 'alliance', prefix: null },
+  { tokens: ['/pvpteam', '/pt'], kind: 'alliance', prefix: 'PT' },
   { tokens: ['/freecompany', '/fc'], kind: 'freecompany', prefix: 'FC' },
-  { tokens: ['/linkshell', '/l'], kind: 'linkshell', prefix: 'LS' },
-  { tokens: ['/linkshell1', '/l1'], kind: 'linkshell', prefix: 'LS1' },
-  { tokens: ['/linkshell2', '/l2'], kind: 'linkshell', prefix: 'LS2' },
-  { tokens: ['/linkshell3', '/l3'], kind: 'linkshell', prefix: 'LS3' },
-  { tokens: ['/linkshell4', '/l4'], kind: 'linkshell', prefix: 'LS4' },
-  { tokens: ['/linkshell5', '/l5'], kind: 'linkshell', prefix: 'LS5' },
-  { tokens: ['/linkshell6', '/l6'], kind: 'linkshell', prefix: 'LS6' },
-  { tokens: ['/linkshell7', '/l7'], kind: 'linkshell', prefix: 'LS7' },
-  { tokens: ['/linkshell8', '/l8'], kind: 'linkshell', prefix: 'LS8' },
-  { tokens: ['/cwlinkshell', '/cwl'], kind: 'linkshell', prefix: 'CWLS' },
+  { tokens: ['/linkshell', '/l'], kind: 'linkshell', prefix: '1' },
+  { tokens: ['/linkshell1', '/l1'], kind: 'linkshell', prefix: '1' },
+  { tokens: ['/linkshell2', '/l2'], kind: 'linkshell', prefix: '2' },
+  { tokens: ['/linkshell3', '/l3'], kind: 'linkshell', prefix: '3' },
+  { tokens: ['/linkshell4', '/l4'], kind: 'linkshell', prefix: '4' },
+  { tokens: ['/linkshell5', '/l5'], kind: 'linkshell', prefix: '5' },
+  { tokens: ['/linkshell6', '/l6'], kind: 'linkshell', prefix: '6' },
+  { tokens: ['/linkshell7', '/l7'], kind: 'linkshell', prefix: '7' },
+  { tokens: ['/linkshell8', '/l8'], kind: 'linkshell', prefix: '8' },
+  { tokens: ['/cwlinkshell', '/cwl'], kind: 'linkshell', prefix: 'CWLS1' },
   { tokens: ['/cwlinkshell1', '/cwl1'], kind: 'linkshell', prefix: 'CWLS1' },
   { tokens: ['/cwlinkshell2', '/cwl2'], kind: 'linkshell', prefix: 'CWLS2' },
   { tokens: ['/cwlinkshell3', '/cwl3'], kind: 'linkshell', prefix: 'CWLS3' },
@@ -38,7 +38,7 @@ const CHANNEL_META: Array<{ tokens: string[]; kind: LogEntryKind; prefix: string
   { tokens: ['/cwlinkshell6', '/cwl6'], kind: 'linkshell', prefix: 'CWLS6' },
   { tokens: ['/cwlinkshell7', '/cwl7'], kind: 'linkshell', prefix: 'CWLS7' },
   { tokens: ['/cwlinkshell8', '/cwl8'], kind: 'linkshell', prefix: 'CWLS8' },
-  { tokens: ['/beginner', '/b'], kind: 'linkshell', prefix: 'BG' },
+  { tokens: ['/beginner', '/b'], kind: 'linkshell', prefix: 'BG' }, // 未検証（要確認）
 ]
 
 function findChannel(token: string): { kind: LogEntryKind; prefix: string | null } | null {
