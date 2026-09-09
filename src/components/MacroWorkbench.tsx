@@ -17,6 +17,7 @@ import { MAX_LINE_LENGTH, MAX_LINES } from '@/lib/macro/lint'
 import { getDictionary } from '@/lib/commands/dictionary'
 import { buildShareUrl, decodeDocument, readShareParam } from '@/lib/share/url'
 import type {
+  CommandCategory,
   CommandDefinition,
   DiagnosticSeverity,
   HighlightSegmentKind,
@@ -46,6 +47,34 @@ function measureCaretOffset(
   const mirrorRect = mirror.getBoundingClientRect()
   const markerRect = marker.getBoundingClientRect()
   return { left: markerRect.left - mirrorRect.left, top: markerRect.top - mirrorRect.top }
+}
+
+// 辞書の description は「。」区切りの文を連結した1本の文字列（AGENTS.md により
+// UI 側でコマンド知識を持たないための表現）。一覧では最初の1文だけを要約として見せ、
+// 展開時は文ごとに改行して読みやすくする（表示上の整形のみで、内容は増減させない）。
+function splitSentences(description: string): string[] {
+  return description
+    .split('。')
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 0)
+    .map((sentence) => `${sentence}。`)
+}
+
+// カテゴリ名の日本語表示。サジェスト一覧の右肩バッジ用（AGENTS.md 的には
+// UI に個別コマンド知識を持たせない方針だが、これはコマンド辞書の category
+// 列挙に対する表示用ラベルなので、辞書側の知識を増やすものではない）。
+const CATEGORY_LABEL: Record<CommandCategory, string> = {
+  chat: 'チャット',
+  party_social: 'パーティ/ソーシャル',
+  target: '対象',
+  action_hotbar: 'アクション/ホットバー',
+  battle: 'バトル',
+  system: 'システム',
+  macro: 'マクロ専用',
+  config: 'コンフィグ',
+  emote: 'エモート',
+  menu: 'メニュー',
+  pronoun: '代名詞',
 }
 
 const HIGHLIGHT_CLASS: Record<HighlightSegmentKind, string> = {
@@ -105,6 +134,14 @@ export function MacroWorkbench() {
     index: 0,
   })
   const [dismissedKey, setDismissedKey] = useState<string | null>(null)
+  // サジェストをクリックした時に、即挿入ではなくその場でヘルプ（説明・引数形式）を
+  // 展開する。挿入はダブルクリックまたはキーボードの Tab/Enter に譲る。
+  // key は候補リストの文脈（completionKey）で、文脈が変わったら展開状態は自然に無効化される
+  // （selection と同じパターン。effect で明示的にリセットしない）。
+  const [expandedSuggestion, setExpandedSuggestion] = useState<{
+    key: string | null
+    id: string | null
+  }>({ key: null, id: null })
   const [dismissedPlaceholderKey, setDismissedPlaceholderKey] = useState<string | null>(null)
   const [placeholderSelection, setPlaceholderSelection] = useState<{
     key: string | null
@@ -184,6 +221,8 @@ export function MacroWorkbench() {
   const visibleCompletion =
     completion && !completion.isExactMatch && completionKey !== dismissedKey ? completion : null
   const selectedIndex = selection.key === completionKey ? selection.index : 0
+  const expandedSuggestionId =
+    expandedSuggestion.key === completionKey ? expandedSuggestion.id : null
 
   // ドロップダウンで選択中の候補を、入力の続きとして薄字でカーソル直後に表示する。
   // カーソルがトークン末尾にある時だけ「続きを打っている」体験として意味を持つ。
@@ -641,22 +680,77 @@ export function MacroWorkbench() {
             />
             {visibleCompletion ? (
           <ul className="max-h-64 overflow-y-auto rounded border border-zinc-300 dark:border-zinc-700">
-            {visibleCompletion.candidates.map((command, index) => (
-              <li key={command.id}>
-                <button
-                  type="button"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => applyCompletion(command)}
-                  className={`w-full px-3 py-1.5 text-left text-sm ${
-                    index === selectedIndex ? 'bg-zinc-100 dark:bg-zinc-800' : ''
-                  }`}
-                >
-                  <span className="font-mono font-semibold">{command.names.join(' / ')}</span>
-                  <span className="ml-2 text-xs text-zinc-500">{command.signature}</span>
-                  <p className="text-xs text-zinc-500">{command.description}</p>
-                </button>
-              </li>
-            ))}
+            {visibleCompletion.candidates.map((command, index) => {
+              const isExpanded = expandedSuggestionId === command.id
+              const sentences = splitSentences(command.description)
+              return (
+                <li key={command.id}>
+                  <button
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() =>
+                      setExpandedSuggestion((prev) =>
+                        prev.key === completionKey && prev.id === command.id
+                          ? { key: completionKey, id: null }
+                          : { key: completionKey, id: command.id },
+                      )
+                    }
+                    onDoubleClick={() => applyCompletion(command)}
+                    className={`w-full px-3 py-1.5 text-left text-sm ${
+                      index === selectedIndex ? 'bg-zinc-100 dark:bg-zinc-800' : ''
+                    }`}
+                  >
+                    <span className="flex items-baseline justify-between gap-2">
+                      <span>
+                        <span className="font-mono font-semibold">{command.names.join(' / ')}</span>
+                        <span className="ml-2 text-xs text-zinc-500">{command.signature}</span>
+                      </span>
+                      <span className="shrink-0 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                        {CATEGORY_LABEL[command.category]}
+                      </span>
+                    </span>
+                    <p className="text-xs text-zinc-500">{sentences[0]}</p>
+                  </button>
+                  {isExpanded && (
+                    <div className="border-t border-zinc-200 bg-zinc-50 px-3 py-2 text-xs dark:border-zinc-800 dark:bg-zinc-900">
+                      {sentences.length > 1 && (
+                        <div className="mb-1.5 flex flex-col gap-0.5 text-zinc-700 dark:text-zinc-300">
+                          {sentences.map((sentence, sentenceIndex) => (
+                            <p key={sentenceIndex}>{sentence}</p>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-zinc-500">
+                        対応範囲：{command.support}
+                        {command.sourceUrl && (
+                          <>
+                            {' '}
+                            ・{' '}
+                            <a
+                              href={command.sourceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="underline"
+                              onMouseDown={(event) => event.stopPropagation()}
+                            >
+                              公式情報
+                            </a>
+                          </>
+                        )}
+                      </p>
+                      <button
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => applyCompletion(command)}
+                        className="mt-1.5 rounded bg-black px-2 py-1 text-white dark:bg-white dark:text-black"
+                      >
+                        この候補を挿入
+                      </button>
+                    </div>
+                  )}
+                </li>
+              )
+            })}
           </ul>
         ) : visiblePlaceholderCompletion ? (
           <ul className="overflow-hidden rounded border border-zinc-300 dark:border-zinc-700">
@@ -678,9 +772,18 @@ export function MacroWorkbench() {
           </ul>
         ) : activeCommand ? (
           <div className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">
-            <p className="font-mono font-semibold">{activeCommand.names.join(' / ')}</p>
+            <p className="flex items-baseline justify-between gap-2">
+              <span className="font-mono font-semibold">{activeCommand.names.join(' / ')}</span>
+              <span className="shrink-0 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                {CATEGORY_LABEL[activeCommand.category]}
+              </span>
+            </p>
             <p className="text-zinc-500">{activeCommand.signature}</p>
-            <p>{activeCommand.description}</p>
+            <div className="flex flex-col gap-0.5">
+              {splitSentences(activeCommand.description).map((sentence, index) => (
+                <p key={index}>{sentence}</p>
+              ))}
+            </div>
             <p className="text-xs text-zinc-500">
               対応範囲：{activeCommand.support}
               {activeCommand.sourceUrl && (
