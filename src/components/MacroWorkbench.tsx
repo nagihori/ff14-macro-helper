@@ -742,7 +742,7 @@ export function MacroWorkbench() {
                         type="button"
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => applyCompletion(command)}
-                        className="mt-1.5 rounded bg-black px-2 py-1 text-white dark:bg-white dark:text-black"
+                        className="mt-1.5 rounded border border-zinc-300 px-2 py-1 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                       >
                         この候補を挿入
                       </button>
