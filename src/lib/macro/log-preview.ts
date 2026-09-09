@@ -10,9 +10,8 @@ const PLACEHOLDER_NAME = '<YourName>'
 // FC([FC]<Name>text)・say/party(Name : text)・alliance(prefixなし)・
 // linkshell([1]〜[8]、番号省略時は[1])・
 // cwlinkshell([CWLS1]〜[CWLS8]、番号省略時は[CWLS1]) は実機確認済み。
-// pvpteam の [PT] は一度確認情報が出たが撤回されたため、未検証の推測として
-// prefix なしに戻している（渚さんPvP不慣れにつき要検索確認）。
-// beginner の prefix（'BG'）も同様に未検証の推測のまま（要確認）。
+// pvpteam・beginner の prefix は未検証のため prefix なし（say/party と同じ表示）
+// に倒している（要確認）。
 const CHANNEL_META: Array<{ tokens: string[]; kind: LogEntryKind; prefix: string | null }> = [
   { tokens: ['/say', '/s'], kind: 'say', prefix: null },
   { tokens: ['/yell', '/y'], kind: 'yell', prefix: null },
@@ -41,7 +40,7 @@ const CHANNEL_META: Array<{ tokens: string[]; kind: LogEntryKind; prefix: string
   { tokens: ['/cwlinkshell6', '/cwl6'], kind: 'linkshell', prefix: 'CWLS6' },
   { tokens: ['/cwlinkshell7', '/cwl7'], kind: 'linkshell', prefix: 'CWLS7' },
   { tokens: ['/cwlinkshell8', '/cwl8'], kind: 'linkshell', prefix: 'CWLS8' },
-  { tokens: ['/beginner', '/b'], kind: 'linkshell', prefix: 'BG' }, // 未検証（要確認）
+  { tokens: ['/beginner', '/b'], kind: 'linkshell', prefix: null }, // 未検証（要確認）
 ]
 
 function findChannel(token: string): { kind: LogEntryKind; prefix: string | null } | null {
