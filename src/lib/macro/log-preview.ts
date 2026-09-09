@@ -7,9 +7,11 @@ const PLACEHOLDER_NAME = '<YourName>'
 // 実機の送信先チャンネルの表示形式。`prefix: null` は "名前 : 文章"、
 // prefix ありは "[prefix]<名前>文章" という実機ログの2パターンに対応する。
 // FC([FC]<Name>text)・say/party(Name : text)・alliance(prefixなし)・
-// pvpteam([PT])・linkshell([1]〜[8]、番号省略時は[1])・
+// linkshell([1]〜[8]、番号省略時は[1])・
 // cwlinkshell([CWLS1]〜[CWLS8]、番号省略時は[CWLS1]) は実機確認済み。
-// beginner の prefix（'BG'）のみ未検証の推測のまま（要確認）。
+// pvpteam の [PT] は一度確認情報が出たが撤回されたため、未検証の推測として
+// prefix なしに戻している（渚さんPvP不慣れにつき要検索確認）。
+// beginner の prefix（'BG'）も同様に未検証の推測のまま（要確認）。
 const CHANNEL_META: Array<{ tokens: string[]; kind: LogEntryKind; prefix: string | null }> = [
   { tokens: ['/say', '/s'], kind: 'say', prefix: null },
   { tokens: ['/yell', '/y'], kind: 'yell', prefix: null },
@@ -18,7 +20,7 @@ const CHANNEL_META: Array<{ tokens: string[]; kind: LogEntryKind; prefix: string
   { tokens: ['/reply', '/r'], kind: 'tell', prefix: null },
   { tokens: ['/party', '/p'], kind: 'party', prefix: null },
   { tokens: ['/alliance', '/a'], kind: 'alliance', prefix: null },
-  { tokens: ['/pvpteam', '/pt'], kind: 'alliance', prefix: 'PT' },
+  { tokens: ['/pvpteam', '/pt'], kind: 'alliance', prefix: null }, // 未検証（要確認）
   { tokens: ['/freecompany', '/fc'], kind: 'freecompany', prefix: 'FC' },
   { tokens: ['/linkshell', '/l'], kind: 'linkshell', prefix: '1' },
   { tokens: ['/linkshell1', '/l1'], kind: 'linkshell', prefix: '1' },
