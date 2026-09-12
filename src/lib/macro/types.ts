@@ -99,6 +99,7 @@ export type MacroAnalysis = {
 // 構文ハイライト用。raw を分割したセグメントを連結すると元の行に戻る。
 export type HighlightSegmentKind =
   | 'command-known'
+  | 'command-known-emote'
   | 'command-unknown'
   | 'arg-placeholder'
   | 'arg-placeholder-wait'
@@ -145,4 +146,15 @@ export type PlaceholderCompletionState = {
   rangeStart: number
   rangeEnd: number
   candidates: PlaceholderCandidate[]
+} | null
+
+// エモートコマンド直後の motion 引数を、コマンド名補完と同じ「薄字の続き」として
+// 提示するための状態。候補が1つしかなく一覧を出す意味がないため、
+// PlaceholderCompletionState とは別の軽量な形にしている。
+// rangeStart 〜 rangeEnd は入力済み部分（0文字のこともある）、remainder が薄字で足す残り。
+export type EmoteMotionGhostState = {
+  line: number
+  rangeStart: number
+  rangeEnd: number
+  remainder: string
 } | null

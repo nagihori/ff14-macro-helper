@@ -1,7 +1,8 @@
-import type { CommandDefinition, PlaceholderCompletionState } from './types'
+import type { CommandDefinition, EmoteMotionGhostState, PlaceholderCompletionState } from './types'
 import { extractCommandToken, lineRangeAt } from './parse'
 import { findCommand } from '../commands/dictionary'
 import {
+  EMOTE_MOTION_ARG,
   SE_BASE,
   TARGET_SHORTHAND_DESCRIPTIONS,
   TARGET_SHORTHANDS,
@@ -25,6 +26,15 @@ function commandHasTargetArgument(
   if (!token) return false
   const command = findCommand(token, dictionary)
   return Boolean(command?.signature.toLowerCase().includes('target'))
+}
+
+// motion はエモートコマンドの直後（第一引数の位置）でだけ出す。辞書の category を見て
+// 判定するため、対象コマンドを個別にハードコードしない。
+function commandIsEmote(raw: string, dictionary: CommandDefinition[]): boolean {
+  const token = extractCommandToken(raw)
+  if (!token) return false
+  const command = findCommand(token, dictionary)
+  return command?.category === 'emote'
 }
 
 // 山括弧の中や文字列リテラルの中で <t> <wait.s> 等を打つ手間を減らす入力補助。
@@ -116,5 +126,43 @@ export function getPlaceholderCompletion(
         description: TARGET_SHORTHAND_DESCRIPTIONS[shorthand],
       }
     }),
+  }
+}
+
+// エモートコマンド直後の motion 引数を、コマンド名補完のゴースト（薄字の続き）と同じ
+// 見た目で提案する。半角スペースを打った直後（何も入力していない状態）から見せたいので、
+// getPlaceholderCompletion のように1文字以上の入力を前提にしない。
+// カーソルより後ろに何か書きかけの場合は「続きを打っている」体験にならないため対象外にする。
+export function getEmoteMotionGhost(
+  body: string,
+  cursor: number,
+  dictionary: CommandDefinition[],
+): EmoteMotionGhostState {
+  const { start: lineStart, end: lineEnd } = lineRangeAt(body, cursor)
+  const raw = body.slice(lineStart, lineEnd)
+
+  if (!commandIsEmote(raw, dictionary)) return null
+
+  const commandToken = extractCommandToken(raw)
+  if (!commandToken) return null
+  const leadingSpaces = raw.length - raw.trimStart().length
+  const tokenEnd = lineStart + leadingSpaces + commandToken.length
+
+  let wordStart = cursor
+  while (wordStart > tokenEnd && WORD_CHAR.test(body[wordStart - 1])) wordStart--
+
+  // コマンド名との間が半角スペースだけ（他の引数を挟んでいない）ことを確認する。
+  if (!/^ +$/.test(body.slice(tokenEnd, wordStart))) return null
+  // カーソルの後ろに何か残っている（書きかけの続きを打っているだけ）場合は対象外。
+  if (body.slice(cursor, lineEnd).trim().length > 0) return null
+
+  const typed = body.slice(wordStart, cursor).toLowerCase()
+  if (!EMOTE_MOTION_ARG.startsWith(typed) || typed.length >= EMOTE_MOTION_ARG.length) return null
+
+  return {
+    line: body.slice(0, lineStart).split('\n').length,
+    rangeStart: wordStart,
+    rangeEnd: cursor,
+    remainder: EMOTE_MOTION_ARG.slice(typed.length),
   }
 }

@@ -9,7 +9,7 @@ import {
   getCompletionState,
   resolveCompletionName,
 } from '@/lib/macro/completion'
-import { getPlaceholderCompletion } from '@/lib/macro/placeholder-completion'
+import { getEmoteMotionGhost, getPlaceholderCompletion } from '@/lib/macro/placeholder-completion'
 import { getActiveCommand } from '@/lib/macro/active-command'
 import { lineRangeAt } from '@/lib/macro/parse'
 import { halfWidthLength } from '@/lib/macro/text-width'
@@ -77,8 +77,24 @@ const CATEGORY_LABEL: Record<CommandCategory, string> = {
   pronoun: '代名詞',
 }
 
+// カテゴリバッジの色。エモートだけ青緑系にして他カテゴリと見分けやすくする。
+const CATEGORY_BADGE_CLASS: Record<CommandCategory, string> = {
+  chat: 'text-blue-600 dark:text-blue-400',
+  party_social: 'text-blue-600 dark:text-blue-400',
+  target: 'text-blue-600 dark:text-blue-400',
+  action_hotbar: 'text-blue-600 dark:text-blue-400',
+  battle: 'text-blue-600 dark:text-blue-400',
+  system: 'text-blue-600 dark:text-blue-400',
+  macro: 'text-blue-600 dark:text-blue-400',
+  config: 'text-blue-600 dark:text-blue-400',
+  emote: 'text-teal-600 dark:text-teal-400',
+  menu: 'text-blue-600 dark:text-blue-400',
+  pronoun: 'text-blue-600 dark:text-blue-400',
+}
+
 const HIGHLIGHT_CLASS: Record<HighlightSegmentKind, string> = {
   'command-known': 'text-blue-600 dark:text-blue-400',
+  'command-known-emote': 'text-teal-600 dark:text-teal-400',
   'command-unknown': 'text-amber-600 dark:text-amber-400 underline decoration-wavy decoration-amber-500',
   'arg-placeholder': 'text-purple-600 dark:text-purple-400',
   'arg-placeholder-wait': 'text-pink-600 dark:text-pink-400',
@@ -201,6 +217,10 @@ export function MacroWorkbench() {
     () => getPlaceholderCompletion(body, cursor, dictionary),
     [body, cursor],
   )
+  const emoteMotionGhost = useMemo(
+    () => getEmoteMotionGhost(body, cursor, dictionary),
+    [body, cursor],
+  )
   const currentLineStats = useMemo(() => {
     const { start, end } = lineRangeAt(body, cursor)
     return {
@@ -226,13 +246,15 @@ export function MacroWorkbench() {
 
   // ドロップダウンで選択中の候補を、入力の続きとして薄字でカーソル直後に表示する。
   // カーソルがトークン末尾にある時だけ「続きを打っている」体験として意味を持つ。
+  // エモートの motion 引数も候補が1つしかないため、同じゴースト表示に相乗りさせる
+  // （両者は入力位置が異なるので同時に発生しない）。
   const ghostText =
     visibleCompletion && cursor === visibleCompletion.rangeEnd
       ? resolveCompletionName(
           visibleCompletion.candidates[selectedIndex],
           visibleCompletion.token,
         ).slice(visibleCompletion.token.length)
-      : ''
+      : (emoteMotionGhost?.remainder ?? '')
 
   const placeholderKey = placeholderCompletion
     ? `${placeholderCompletion.rangeStart}:${placeholderCompletion.rangeEnd}`
@@ -362,6 +384,19 @@ export function MacroWorkbench() {
     // Tab を押したら候補確定と同じ区切りスペースだけ補う（サジェスト採用時と挙動を揃える）。
     if (completion?.isExactMatch && event.key === 'Tab') {
       applyCompletion(completion.candidates[0])
+      return
+    }
+
+    // motion はゴースト表示のみで一覧を出さないため、確定は Tab 限定。
+    // Enter はここで奪わず素通りさせ、末尾に改行できるようにする。
+    if (emoteMotionGhost && event.key === 'Tab') {
+      event.preventDefault()
+      const { rangeEnd, remainder } = emoteMotionGhost
+      const newBody = body.slice(0, rangeEnd) + remainder + body.slice(rangeEnd)
+      const nextCursor = rangeEnd + remainder.length
+      setBody(newBody)
+      setCursor(nextCursor)
+      requestAnimationFrame(() => textareaRef.current?.setSelectionRange(nextCursor, nextCursor))
       return
     }
 
@@ -705,7 +740,9 @@ export function MacroWorkbench() {
                         <span className="font-mono font-semibold">{command.names.join(' / ')}</span>
                         <span className="ml-2 text-xs text-zinc-500">{command.signature}</span>
                       </span>
-                      <span className="shrink-0 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                      <span
+                        className={`shrink-0 text-xs font-semibold ${CATEGORY_BADGE_CLASS[command.category]}`}
+                      >
                         {CATEGORY_LABEL[command.category]}
                       </span>
                     </span>
@@ -774,7 +811,9 @@ export function MacroWorkbench() {
           <div className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">
             <p className="flex items-baseline justify-between gap-2">
               <span className="font-mono font-semibold">{activeCommand.names.join(' / ')}</span>
-              <span className="shrink-0 text-xs font-semibold text-blue-600 dark:text-blue-400">
+              <span
+                className={`shrink-0 text-xs font-semibold ${CATEGORY_BADGE_CLASS[activeCommand.category]}`}
+              >
                 {CATEGORY_LABEL[activeCommand.category]}
               </span>
             </p>

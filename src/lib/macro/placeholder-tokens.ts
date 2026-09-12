@@ -16,6 +16,9 @@ export const TARGET_SHORTHAND_DESCRIPTIONS: Record<string, string> = {
   '7': 'パーティ7番目',
 }
 
+// エモートコマンドの引数 motion（山括弧を使わない素の単語。発言せずモーションだけ再生する）。
+export const EMOTE_MOTION_ARG = 'motion'
+
 // <wait.s> はスキル使用可能待ちを表す特殊プレースホルダ。末尾の条件は利用者が入力する。
 export const WAIT_BASE = 'wait'
 

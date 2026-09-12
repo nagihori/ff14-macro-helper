@@ -88,11 +88,14 @@ export function buildHighlight(
 
     const leadingSpaces = line.raw.length - line.raw.trimStart().length
     const tokenEnd = leadingSpaces + line.commandToken.length
-    const known = Boolean(findCommand(line.commandToken, dictionary))
+    const command = findCommand(line.commandToken, dictionary)
     // 未確定（"/" 単体や、まだ空白が続いていない打ちかけの名前）は地の文と同じ色にして、
     // 打鍵のたびに command-unknown の警告色・波線がちらつかないようにする。
-    const tokenKind = known
-      ? ('command-known' as const)
+    // エモートは他カテゴリと見分けやすいよう別の色種を割り当てる（実際の色は UI 側）。
+    const tokenKind = command
+      ? command.category === 'emote'
+        ? ('command-known-emote' as const)
+        : ('command-known' as const)
       : isCommandTokenSettled(line)
         ? ('command-unknown' as const)
         : ('text' as const)
