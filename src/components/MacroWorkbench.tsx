@@ -15,6 +15,7 @@ import { lineRangeAt } from '@/lib/macro/parse'
 import { halfWidthLength } from '@/lib/macro/text-width'
 import { MAX_LINE_LENGTH, MAX_LINES } from '@/lib/macro/lint'
 import { getDictionary } from '@/lib/commands/dictionary'
+import { searchCommands } from '@/lib/commands/search'
 import { buildShareUrl, decodeDocument, readShareParam } from '@/lib/share/url'
 import type {
   CommandCategory,
@@ -141,10 +142,11 @@ const DIAGNOSTIC_TEXT_CLASS: Record<DiagnosticSeverity, string> = {
 
 // UI はここでモデルを表示するだけ。文字数・構文・コマンドの意味は lib/macro が判断する（AGENTS.md）。
 export function MacroWorkbench() {
-  // 最初から "/" を入れておくと、コマンド一覧のサジェストが最初から見える状態になる
-  // （見出しや案内文を省いて、サジェストエリア自体を初期ヘルプとして使う）。
-  const [body, setBody] = useState('/')
+  // 初期状態は検索の案内を読みやすくするため空にする。エディタで / を入力すれば、
+  // 従来どおりコマンド補完が表示される。
+  const [body, setBody] = useState('')
   const [cursor, setCursor] = useState(0)
+  const [commandSearchQuery, setCommandSearchQuery] = useState('')
   const [selection, setSelection] = useState<{ key: string | null; index: number }>({
     key: null,
     index: 0,
@@ -158,6 +160,7 @@ export function MacroWorkbench() {
     key: string | null
     id: string | null
   }>({ key: null, id: null })
+  const [expandedSearchCommandId, setExpandedSearchCommandId] = useState<string | null>(null)
   const [dismissedPlaceholderKey, setDismissedPlaceholderKey] = useState<string | null>(null)
   const [placeholderSelection, setPlaceholderSelection] = useState<{
     key: string | null
@@ -212,6 +215,10 @@ export function MacroWorkbench() {
   const activeCommand = useMemo(
     () => getActiveCommand(body, cursor, dictionary),
     [body, cursor],
+  )
+  const commandSearchResults = useMemo(
+    () => searchCommands(commandSearchQuery, dictionary),
+    [commandSearchQuery],
   )
   const placeholderCompletion = useMemo(
     () => getPlaceholderCompletion(body, cursor, dictionary),
@@ -289,6 +296,45 @@ export function MacroWorkbench() {
     requestAnimationFrame(() => {
       textareaRef.current?.setSelectionRange(nextCursor, nextCursor)
     })
+  }
+
+  // 検索結果はエディタの入力途中でなくても選べるため、補完範囲がある時は既存の
+  // 置換処理を使い、それ以外では現在のカーソル位置へ正式名を挿入する。
+  function applySearchCommand(command: CommandDefinition) {
+    if (completion) {
+      applyCompletion(command)
+      return
+    }
+
+    const name = command.names[0]
+    const before = body.slice(0, cursor)
+    const after = body.slice(cursor)
+    const separator = after.length === 0 || !/^[ \n]/.test(after) ? ' ' : ''
+    const newBody = before + name + separator + after
+    const { start, end } = lineRangeAt(newBody, cursor + name.length)
+
+    if (
+      newBody.split('\n').length > MAX_LINES ||
+      halfWidthLength(newBody.slice(start, end)) > MAX_LINE_LENGTH
+    ) {
+      setShareStatus('コマンドを挿入するとマクロの行数または文字数の上限を超えます。')
+      return
+    }
+
+    const nextCursor = cursor + name.length + separator.length
+    setBody(newBody)
+    setCursor(nextCursor)
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus()
+      textareaRef.current?.setSelectionRange(nextCursor, nextCursor)
+    })
+  }
+
+  // 検索を始めた時点でプレビューを止め、右ペインを検索結果へ戻す。
+  function handleCommandSearchChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const query = event.target.value
+    setCommandSearchQuery(query)
+    if (query.trim()) stopLogPlayback()
   }
 
   function applyPlaceholderCompletion(candidate: PlaceholderCandidate) {
@@ -684,7 +730,82 @@ export function MacroWorkbench() {
       </section>
 
       <section className="flex flex-col gap-4">
-        {logPlayback ? (
+        <input
+          type="search"
+          value={commandSearchQuery}
+          onChange={handleCommandSearchChange}
+          placeholder="コマンドを検索（例: ac、パーティ、ターゲット）"
+          aria-label="コマンドを検索"
+          className="w-full rounded border border-zinc-300 bg-transparent px-3 py-1.5 text-sm dark:border-zinc-700"
+        />
+        {commandSearchQuery.trim() ? (
+          commandSearchResults.length > 0 ? (
+            <ul className="max-h-64 overflow-y-auto rounded border border-zinc-300 dark:border-zinc-700">
+              {commandSearchResults.map((command) => {
+                const isExpanded = expandedSearchCommandId === command.id
+                const sentences = splitSentences(command.description)
+                return (
+                  <li key={command.id}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedSearchCommandId((current) =>
+                          current === command.id ? null : command.id,
+                        )
+                      }
+                      onDoubleClick={() => applySearchCommand(command)}
+                      className="w-full px-3 py-1.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                      <span className="flex items-baseline justify-between gap-2">
+                        <span>
+                          <span className="font-mono font-semibold">{command.names.join(' / ')}</span>
+                          <span className="ml-2 text-xs text-zinc-500">{command.signature}</span>
+                        </span>
+                        <span
+                          className={`shrink-0 text-xs font-semibold ${CATEGORY_BADGE_CLASS[command.category]}`}
+                        >
+                          {CATEGORY_LABEL[command.category]}
+                        </span>
+                      </span>
+                      <p className="text-xs text-zinc-500">{sentences[0]}</p>
+                    </button>
+                    {isExpanded && (
+                      <div className="border-t border-zinc-200 bg-zinc-50 px-3 py-2 text-xs dark:border-zinc-800 dark:bg-zinc-900">
+                        {sentences.length > 1 && (
+                          <div className="mb-1.5 flex flex-col gap-0.5 text-zinc-700 dark:text-zinc-300">
+                            {sentences.map((sentence, sentenceIndex) => (
+                              <p key={sentenceIndex}>{sentence}</p>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-zinc-500">
+                          対応範囲：{command.support} ・{' '}
+                          <a
+                            href={command.sourceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline"
+                          >
+                            公式情報
+                          </a>
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => applySearchCommand(command)}
+                          className="mt-1.5 rounded border border-zinc-300 px-2 py-1 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                        >
+                          この候補を挿入
+                        </button>
+                      </div>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <p className="px-1 text-sm text-zinc-500">一致するコマンドがありません。</p>
+          )
+        ) : logPlayback ? (
           <ul className="flex flex-col gap-1 font-mono text-sm">
             {logPlayback.entries.slice(0, logPlayback.revealedCount).map((entry) => (
               <li key={entry.line} className={LOG_KIND_CLASS[entry.kind]}>
@@ -706,13 +827,9 @@ export function MacroWorkbench() {
           </ul>
         ) : (
           <>
-            {/* 最終的にはコマンド逆引き検索になる予定の枠。まだ検索は未配線。 */}
-            <input
-              type="text"
-              disabled
-              placeholder="コマンドを検索（準備中）"
-              className="w-full rounded border border-zinc-300 bg-transparent px-3 py-1.5 text-sm text-zinc-400 placeholder:text-zinc-400 dark:border-zinc-700"
-            />
+            <p className="px-1 text-sm text-zinc-500">
+              コマンド名・短縮名・説明から検索できます。先頭の「/」は省略できます。エディタに直接「/」を入力しても候補が表示されます。
+            </p>
             {visibleCompletion ? (
           <ul className="max-h-64 overflow-y-auto rounded border border-zinc-300 dark:border-zinc-700">
             {visibleCompletion.candidates.map((command, index) => {
