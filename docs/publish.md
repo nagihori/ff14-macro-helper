@@ -24,6 +24,7 @@
 | `src/lib/published-macros/store.ts` | 書き込み（公開名の登録／変更、マクロの保存） |
 | `src/auth.ts` / `src/lib/admin.ts` | Discord ログイン（Auth.js）と管理者判定 |
 | `src/app/macros/**/actions.ts`, `reactions.ts` | サーバーアクション（投稿・公開停止・投票） |
+| `scripts/copy-db.mjs` | 別 DB（本番）の users / macros を開発 DB へコピー（テスト用。コピー先は退避してから上書き） |
 
 ファイル単位の役割は [`SRC_INDEX.md`](../SRC_INDEX.md) を参照。
 
