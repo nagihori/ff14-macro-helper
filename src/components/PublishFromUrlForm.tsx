@@ -3,19 +3,16 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { readOriginFromShareUrl } from '@/lib/share/url'
-import { findPublishedMacro, samplePublishedMacros } from '@/lib/published-macros/sample-data'
 import styles from './PublishFromUrlForm.module.scss'
 
-const tagSuggestions = [...new Set(samplePublishedMacros.flatMap((macro) => macro.tags))]
-
 // URL・タイトル・タグだけを受け取る最小フォーム。DB 導入時は送信処理を API に置換する。
-export function PublishFromUrlForm({ initialShareUrl = '' }: { initialShareUrl?: string }) {
+export function PublishFromUrlForm({ initialShareUrl = '', tagSuggestions, knownMacros }: { initialShareUrl?: string; tagSuggestions: string[]; knownMacros: { slug: string; title: string }[] }) {
   const [submitted, setSubmitted] = useState(false)
   const [tags, setTags] = useState('')
   const [shareUrl, setShareUrl] = useState(initialShareUrl)
   // 共有 URL にアレンジ元（from）が含まれていれば、公開時にバックリンクを張る元として表示する。
   const originSlug = readOriginFromShareUrl(shareUrl)
-  const origin = originSlug ? findPublishedMacro(originSlug) : undefined
+  const origin = originSlug ? knownMacros.find((macro) => macro.slug === originSlug) : undefined
 
   // タグ欄は「確定済み（カンマの手前）」と「入力中の最後の語」に分けて扱う。
   const parts = tags.split(',')

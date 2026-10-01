@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { samplePublishedMacros } from '@/lib/published-macros/sample-data'
+import type { PublishedMacro } from '@/lib/published-macros/types'
 import { PublishedMacroReactions } from './PublishedMacroReactions'
 import styles from './PublishedMacroLibrary.module.scss'
 
@@ -25,12 +25,12 @@ function addTag(query: string, tag: string): string {
   return base ? `${base} ${term}` : term
 }
 
-export function PublishedMacroLibrary({ initialQuery = '' }: { initialQuery?: string }) {
+export function PublishedMacroLibrary({ allMacros, initialQuery = '' }: { allMacros: PublishedMacro[]; initialQuery?: string }) {
   const [query, setQuery] = useState(initialQuery)
-  const tags = [...new Set(samplePublishedMacros.flatMap((macro) => macro.tags))]
+  const tags = [...new Set(allMacros.flatMap((macro) => macro.tags))]
   const macros = useMemo(
-    () => samplePublishedMacros.filter((macro) => matchesSearch(query, [macro.title, macro.description, ...macro.tags.map((tag) => `#${tag}`)])),
-    [query],
+    () => allMacros.filter((macro) => matchesSearch(query, [macro.title, macro.description, ...macro.tags.map((tag) => `#${tag}`)])),
+    [allMacros, query],
   )
 
   return (

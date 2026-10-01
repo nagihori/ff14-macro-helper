@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { CopyMacroButton } from '@/components/CopyMacroButton'
 import { PublishedMacroReactions } from '@/components/PublishedMacroReactions'
-import { findPublishedMacro, findRelatedMacros, samplePublishedMacros } from '@/lib/published-macros/sample-data'
+import { findPublishedMacro, findRelatedMacros } from '@/lib/published-macros/repository'
 import { buildEditorPath } from '@/lib/share/url'
 import styles from './page.module.scss'
 
@@ -11,14 +11,11 @@ const iconProps = { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', s
 function ThumbIcon() { return <svg {...iconProps}><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 2 2v4h6a2 2 0 0 1 2 2.3l-1 6A2 2 0 0 1 18 19H7" /></svg> }
 function WarnIcon() { return <svg {...iconProps}><path d="M12 3 2 20h20zM12 10v4M12 17h.01" /></svg> }
 
-export function generateStaticParams() { return samplePublishedMacros.map((macro) => ({ slug: macro.slug })) }
-
 export default async function PublishedMacroPage({ params }: PageProps<'/macros/[slug]'>) {
   const { slug } = await params
-  const macro = findPublishedMacro(slug)
+  const macro = await findPublishedMacro(slug)
   if (!macro) notFound()
-  const related = findRelatedMacros(slug)
-  const origin = macro.arrangedFrom ? findPublishedMacro(macro.arrangedFrom) : undefined
+  const [related, origin] = await Promise.all([findRelatedMacros(slug), macro.arrangedFrom ? findPublishedMacro(macro.arrangedFrom) : undefined])
 
   return (
     <main className={styles.page}>

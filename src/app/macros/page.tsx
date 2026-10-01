@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { PublishedMacroLibrary } from '@/components/PublishedMacroLibrary'
+import { listPublishedMacros } from '@/lib/published-macros/repository'
 import styles from './page.module.scss'
 
 export const metadata = { title: '公開マクロ | ff14-macro-helper' }
@@ -7,6 +8,7 @@ export const metadata = { title: '公開マクロ | ff14-macro-helper' }
 export default async function MacroLibraryPage({ searchParams }: PageProps<'/macros'>) {
   const { q } = await searchParams
   const initialQuery = typeof q === 'string' ? q : ''
+  const allMacros = await listPublishedMacros()
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -16,7 +18,7 @@ export default async function MacroLibraryPage({ searchParams }: PageProps<'/mac
           <Link href="/macros/submit" className={styles.primaryAction}>公開する</Link>
         </nav>
       </header>
-      <PublishedMacroLibrary initialQuery={initialQuery} />
+      <PublishedMacroLibrary allMacros={allMacros} initialQuery={initialQuery} />
     </div>
   )
 }
