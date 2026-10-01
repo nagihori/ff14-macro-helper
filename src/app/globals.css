@@ -122,6 +122,10 @@
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
+/* 手動切り替え（ThemeToggle）。未設定のときは上の color-scheme: light dark で OS に従う。 */
+:root[data-theme='light'] { color-scheme: light; }
+:root[data-theme='dark'] { color-scheme: dark; }
+
 html {
   height: 100%;
   -webkit-font-smoothing: antialiased;

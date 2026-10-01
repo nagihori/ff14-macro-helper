@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { themeInitScript } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: "ff14-macro-helper",
@@ -8,8 +10,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ja">
-      <body>{children}</body>
+    // data-theme は描画前のスクリプトが付けるため、サーバー描画との差分は意図したもの。
+    <html lang="ja" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body>
+        <ThemeToggle />
+        {children}
+      </body>
     </html>
   );
 }
