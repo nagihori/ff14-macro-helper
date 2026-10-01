@@ -60,6 +60,15 @@ export async function findRelatedMacros(slug: string, limit = 3): Promise<Publis
   return (rows as Row[]).map(toMacro)
 }
 
+// 派生マクロ：このマクロをアレンジ元にして投稿された公開中のマクロ。古い順（連続マクロの続きを順にたどれるように）。
+export async function findDerivedMacros(slug: string): Promise<PublishedMacro[]> {
+  const rows = await getSql().query(
+    `select ${columns} ${from} where m.status = 'published' and o.slug = $1 order by m.published_at, m.slug`,
+    [slug],
+  )
+  return (rows as Row[]).map(toMacro)
+}
+
 // タグ辞書の代わり。公開中のマクロに付いているタグを、使われている数の多い順に返す。
 export async function listTags(): Promise<string[]> {
   const rows = await getSql().query(
