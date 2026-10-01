@@ -1,6 +1,6 @@
 @use '../styles/mixins' as *;
 
-// 共有 URL からの公開フォーム（UI 試作）。
+// 共有URLからの公開フォーム（UI 試作）。
 .formPage {
   width: 100%;
   max-width: 42rem;
@@ -87,7 +87,7 @@
   color: var(--text-notice);
 }
 
-// 共有 URL から読み取ったアレンジ元の案内。
+// 共有URLから読み取ったアレンジ元の案内。
 .origin {
   @include type(sm);
   color: var(--text-secondary);
@@ -123,3 +123,35 @@
 
   &:hover { color: var(--text-strong); }
 }
+
+// 複数行の説明欄。縦方向だけリサイズできる。
+.textarea {
+  display: block;
+  min-height: 3.5rem;
+  resize: vertical;
+  line-height: 1.5rem;
+}
+
+// 補足説明の折りたたみ（ネイティブの details）。▶ が開くと下向きになる。
+.accordion {
+  @include type(sm);
+  color: var(--text-secondary);
+}
+
+.accordionSummary {
+  cursor: pointer;
+  list-style: none;
+  font-weight: 500;
+
+  &::-webkit-details-marker { display: none; }
+  &::before {
+    content: '▶\FE0E';
+    display: inline-block;
+    margin-right: 0.375rem;
+    font-size: 0.75em;
+    transition: transform 0.15s;
+  }
+  &:hover { color: var(--text-strong); }
+}
+
+.accordion[open] > .accordionSummary::before { transform: rotate(90deg); }
