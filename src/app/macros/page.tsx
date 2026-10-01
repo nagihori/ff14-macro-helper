@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BRAND_NAME } from '@/lib/site-config'
 import { auth } from '@/auth'
 import { AuthButton } from '@/components/AuthButton'
 import { PublishedMacroLibrary } from '@/components/PublishedMacroLibrary'
@@ -6,7 +7,7 @@ import { listPublishedMacros, listSuspendedMacros } from '@/lib/published-macros
 import { withDescriptionParts } from '@/lib/published-macros/resolve-descriptions'
 import styles from './page.module.scss'
 
-export const metadata = { title: '公開マクロ | ff14-macro-helper' }
+export const metadata = { title: '公開マクロ' }
 
 export default async function MacroLibraryPage({ searchParams }: PageProps<'/macros'>) {
   const { q } = await searchParams
@@ -19,7 +20,7 @@ export default async function MacroLibraryPage({ searchParams }: PageProps<'/mac
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <Link href="/" className={styles.brand}>ff14-macro-helper</Link>
+        <Link href="/" className={styles.brand}>{BRAND_NAME}</Link>
         <nav className={styles.actions} aria-label="ページ操作">
           <Link href="/" className={styles.secondaryAction}>マクロエディタへ</Link>
           <Link href="/macros/submit" className={styles.primaryAction}>自作マクロを投稿</Link>

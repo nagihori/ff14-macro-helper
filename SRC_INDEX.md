@@ -35,6 +35,7 @@
 - [`components/LogLegend.tsx`](src/components/LogLegend.tsx)（＋ `.module.scss`）— ログプレビューの下の凡例。いま出ている行の送信先の色、代名詞の表示（`**値**`／`<>` のまま）、再現できない行の警告。色は `styles/_mixins.scss` の `$log-tones` を `MacroWorkbench` と共有
 - [`components/DiscordLogo.tsx`](src/components/DiscordLogo.tsx) — Discord 公式シンボル（白）。変形・色変更はしない
 - [`lib/site-url.ts`](src/lib/site-url.ts) — サイトの絶対 URL の基準（`SITE_URL`）。共有カードの基準と、説明内のマクロ URL の判別で共用
+- [`lib/site-config.ts`](src/lib/site-config.ts) — サイト名・既定の title / description（`BRAND_NAME` `DEFAULT_TITLE` `DEFAULT_DESCRIPTION`）。layout・各ページ・OGP 画像が参照
 - [`lib/macro/double-slash.ts`](src/lib/macro/double-slash.ts) — 行頭「/」の直後の「/」（手癖の「//」）を「/」に戻す純粋な関数
 - [`components/ActionButton.tsx`](src/components/ActionButton.tsx)（＋ `.module.scss`）— 非エンジニア向けのアイコン付き丸ボタン（ボタン／リンク兼用）。`feedback` でコピー結果（チェック／バツ＋文言）に切り替わる
 - [`components/ActionGroup.tsx`](src/components/ActionGroup.tsx)（＋ `.module.scss`）— アクションボタン群の共通枠（エリア中央揃え・折り返し。スマホ幅では縦積み・幅いっぱい）

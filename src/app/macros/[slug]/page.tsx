@@ -17,6 +17,7 @@ import { MacroDescription } from '@/components/MacroDescription'
 import { findDerivedMacros, findMacroForViewer, findPublishedMacro, findRelatedMacros, isMacroAuthor } from '@/lib/published-macros/repository'
 import type { PublishedMacro } from '@/lib/published-macros/types'
 import { buildEditorPath } from '@/lib/share/url'
+import { BRAND_NAME } from '@/lib/site-config'
 import { UI_TEXT } from '@/lib/ui-text'
 import styles from './page.module.scss'
 
@@ -25,16 +26,17 @@ import styles from './page.module.scss'
 export async function generateMetadata({ params }: PageProps<'/macros/[slug]'>): Promise<Metadata> {
   const { slug } = await params
   const macro = await findPublishedMacro(slug)
-  if (!macro) return { title: '公開マクロ | ff14-macro-helper', robots: { index: false } }
+  if (!macro) return { title: '公開マクロ', robots: { index: false } }
   const lines = macro.body.split('\n').length
   const [described] = await withDescriptionParts([macro])
   const plain = descriptionToPlainText(described.descriptionParts ?? [])
   const description = plain || `FFXIV マクロ（${lines} 行）${macro.tags.length > 0 ? ' ' + macro.tags.map((tag) => `#${tag}`).join(' ') : ''}`
-  const title = `${macro.title} | ff14-macro-helper`
+  // 詳細ページだけ「{マクロタイトル} « {BRAND_NAME}」。layout のテンプレートは通さない。
+  const title = `${macro.title} « ${BRAND_NAME}`
   return {
-    title,
+    title: { absolute: title },
     description,
-    openGraph: { type: 'article', siteName: 'ff14-macro-helper', locale: 'ja_JP', title, description, url: `/macros/${slug}` },
+    openGraph: { type: 'article', siteName: BRAND_NAME, locale: 'ja_JP', title, description, url: `/macros/${slug}` },
     twitter: { card: 'summary_large_image', title, description },
   }
 }

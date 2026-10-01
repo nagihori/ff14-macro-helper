@@ -1,6 +1,6 @@
 import { LegalDocument } from '@/components/LegalDocument'
 
-export const metadata = { title: 'プライバシーポリシー | ff14-macro-helper' }
+export const metadata = { title: 'プライバシーポリシー' }
 
 const ISSUES_URL = 'https://github.com/nagihori/ff14-macro-helper/issues'
 

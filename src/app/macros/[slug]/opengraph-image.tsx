@@ -1,12 +1,13 @@
 import { ImageResponse } from 'next/og'
+import { BRAND_NAME } from '@/lib/site-config'
 import { findPublishedMacro } from '@/lib/published-macros/repository'
 
 // 公開マクロの共有カード（OGP 画像）。公開中のマクロだけ中身を描き、それ以外は共通のカードにする。
-export const alt = '公開マクロ | ff14-macro-helper'
+export const alt = `公開マクロ | ${BRAND_NAME}`
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-const SITE = 'ff14-macro-helper'
+const SITE = BRAND_NAME
 
 // 日本語フォントは同梱せず（ImageResponse の 500KB 上限のため）、描く文字だけの部分集合を Google Fonts から取る。
 // 取得に失敗したら null を返し、日本語を含まない最低限のカードにする。
