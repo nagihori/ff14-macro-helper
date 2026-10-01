@@ -1,4 +1,7 @@
 // 画面をまたいで使う小さな部品。値は globals.css のトークン（CSS 変数）を参照する。
+@use 'sass:list';
+@use 'sass:map';
+@use 'sass:string';
 
 // 文字サイズと行間のセット（Tailwind の text-* と同じ比率）。
 $type-scale: (
@@ -11,9 +14,9 @@ $type-scale: (
 );
 
 @mixin type($size) {
-  $pair: map-get($type-scale, $size);
-  font-size: nth($pair, 1);
-  line-height: nth($pair, 2);
+  $pair: map.get($type-scale, $size);
+  font-size: list.nth($pair, 1);
+  line-height: list.nth($pair, 2);
 }
 
 // 狭い画面の下限（Tailwind の sm / md / xl に相当）。
@@ -70,4 +73,9 @@ $bp-xl: 1280px;
   min-height: 100vh;
   background: var(--surface-page);
   color: var(--text-strong);
+}
+
+// ライト/ダークで別のパレット色を使う時の短縮。tone(blue-600, blue-400) → light-dark(var(--blue-600), var(--blue-400))
+@function tone($light, $dark) {
+  @return string.unquote('light-dark(var(--#{$light}), var(--#{$dark}))');
 }
