@@ -11,7 +11,10 @@ export default async function MacroLibraryPage({ searchParams }: PageProps<'/mac
     <div className={styles.page}>
       <header className={styles.header}>
         <Link href="/" className={styles.brand}>ff14-macro-helper</Link>
-        <Link href="/" className={styles.backLink}>エディタに戻る</Link>
+        <nav className={styles.actions} aria-label="ページ操作">
+          <Link href="/" className={styles.secondaryAction}>エディタに戻る</Link>
+          <Link href="/macros/submit" className={styles.primaryAction}>公開する</Link>
+        </nav>
       </header>
       <PublishedMacroLibrary initialQuery={initialQuery} />
     </div>

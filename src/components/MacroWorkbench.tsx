@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { analyze } from '@/lib/macro/analyze'
 import { toLogPreview } from '@/lib/macro/log-preview'
 import { buildHighlight } from '@/lib/macro/highlight'
@@ -16,6 +16,7 @@ import { halfWidthLength } from '@/lib/macro/text-width'
 import { MAX_LINE_LENGTH, MAX_LINES } from '@/lib/macro/lint'
 import { getDictionary } from '@/lib/commands/dictionary'
 import { searchCommands } from '@/lib/commands/search'
+import { getCheckedBody, setEditorDraft, subscribeCheckedBody } from '@/lib/share/editor-draft'
 import { buildShareUrl, decodeDocument, readShareParam } from '@/lib/share/url'
 import type {
   CommandCategory,
@@ -23,6 +24,7 @@ import type {
   LogEntry,
   PlaceholderCandidate,
 } from '@/lib/macro/types'
+import { useMacroCheck } from './useMacroCheck'
 import styles from './MacroWorkbench.module.scss'
 
 const dictionary = getDictionary()
@@ -86,6 +88,9 @@ export function MacroWorkbench() {
   // 従来どおりコマンド補完が表示される。
   const [body, setBody] = useState('')
   const [cursor, setCursor] = useState(0)
+  // ボタン押下時のチェックで問題が見つかった本文。同じ本文のあいだは最終行も確定扱いで表示し、編集すると通常に戻る。
+  const checkedBody = useSyncExternalStore(subscribeCheckedBody, getCheckedBody, () => null)
+  const { guard, dialog: checkDialog } = useMacroCheck()
   const [commandSearchQuery, setCommandSearchQuery] = useState('')
   const [selection, setSelection] = useState<{ key: string | null; index: number }>({
     key: null,
@@ -143,7 +148,10 @@ export function MacroWorkbench() {
     }
   }, [])
 
-  const analysis = useMemo(() => analyze(body, dictionary), [body])
+  // 「公開する」ボタンが最新の本文を読めるよう、写しを置いておく。
+  useEffect(() => { setEditorDraft(body) }, [body])
+
+  const analysis = useMemo(() => analyze(body, dictionary, { complete: checkedBody === body }), [body, checkedBody])
   const highlightLines = useMemo(
     () => buildHighlight(analysis.lines, dictionary),
     [analysis.lines],
@@ -452,7 +460,7 @@ export function MacroWorkbench() {
     }
   }
 
-  async function handleCopy() {
+  async function copyBody() {
     try {
       await navigator.clipboard.writeText(body)
       setShareStatus('コピーしました。')
@@ -461,7 +469,7 @@ export function MacroWorkbench() {
     }
   }
 
-  async function handleShare() {
+  async function copyShareUrl() {
     const url = buildShareUrl(analysis.document, window.location.href)
     try {
       await navigator.clipboard.writeText(url)
@@ -470,6 +478,10 @@ export function MacroWorkbench() {
       setShareStatus(url)
     }
   }
+
+  // コピー・共有の前には必ず本文をチェックし、問題があれば確認を挟む。
+  function handleCopy() { guard(body, 'コピーする', copyBody) }
+  function handleShare() { guard(body, '共有 URL をコピーする', copyShareUrl) }
 
   // クリック時点のスナップショットを、行ごとの delaySeconds（/wait の累積）だけ
   // 遅らせながら1行ずつ出す。実行中に再クリックされたら前回分のタイマーは破棄する。
@@ -523,6 +535,7 @@ export function MacroWorkbench() {
 
   return (
     <div className={styles.workbench}>
+      {checkDialog}
       <div className={styles.toolbar}>
         <button type="button" onClick={handleCopy} className={styles.copyButton}>
           コピー

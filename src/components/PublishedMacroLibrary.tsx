@@ -6,10 +6,23 @@ import { samplePublishedMacros } from '@/lib/published-macros/sample-data'
 import { PublishedMacroReactions } from './PublishedMacroReactions'
 import styles from './PublishedMacroLibrary.module.scss'
 
+// 空白（全角含む）で区切った語をすべて含むものだけを残す（AND 検索）。
 // タグも通常の検索語と同じ検索欄で扱えるように、表示用の # を付けて検索対象へ加える。
+function splitTerms(query: string): string[] {
+  return query.toLocaleLowerCase('ja-JP').split(/[\s\u3000]+/).filter(Boolean)
+}
+
 function matchesSearch(query: string, values: string[]): boolean {
-  const normalized = query.trim().toLocaleLowerCase('ja-JP')
-  return normalized.length === 0 || values.join(' ').toLocaleLowerCase('ja-JP').includes(normalized)
+  const haystack = values.join(' ').toLocaleLowerCase('ja-JP')
+  return splitTerms(query).every((term) => haystack.includes(term))
+}
+
+// タグをクリックしたら、いまの検索語へ追加する（すでに入っていれば何もしない）。
+function addTag(query: string, tag: string): string {
+  const term = `#${tag}`
+  if (splitTerms(query).includes(term.toLocaleLowerCase('ja-JP'))) return query
+  const base = query.trimEnd()
+  return base ? `${base} ${term}` : term
 }
 
 export function PublishedMacroLibrary({ initialQuery = '' }: { initialQuery?: string }) {
@@ -26,17 +39,16 @@ export function PublishedMacroLibrary({ initialQuery = '' }: { initialQuery?: st
         <p className={styles.eyebrow}>MACRO LIBRARY</p>
         <h1 className={styles.heroTitle}>公開マクロを探す</h1>
         <p className={styles.heroLead}>実用的なマクロを見つけ、エディタで自分用に調整できます。</p>
-        <Link href="/macros/submit" className={styles.heroAction}>公開する</Link>
       </section>
 
       <section className={styles.search} aria-label="マクロを絞り込む">
         <label htmlFor="macro-search" className={styles.searchLabel}>キーワードで探す</label>
         <div className={styles.searchField}>
-          <input id="macro-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="例：パーティ、採集、#チャット" className={styles.searchInput} />
+          <input id="macro-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="例：パーティ 開始、採集、#チャット" className={styles.searchInput} />
           {query && <button type="button" onClick={() => setQuery('')} aria-label="検索をクリア" className={styles.clearButton}>×</button>}
         </div>
         <div className={styles.tagCloud} aria-label="タグから検索">
-          {tags.map((tag) => <button key={tag} type="button" onClick={() => setQuery(`#${tag}`)} className={styles.tagCloudItem}>#{tag}</button>)}
+          {tags.map((tag) => <button key={tag} type="button" onClick={() => setQuery((current) => addTag(current, tag))} className={styles.tagCloudItem}>#{tag}</button>)}
         </div>
       </section>
 

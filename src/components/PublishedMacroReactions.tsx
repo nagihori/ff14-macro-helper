@@ -24,10 +24,24 @@ export function PublishedMacroReactions({ macroSlug, initialHelpful, initialProb
     setSelected(kind)
   }
 
+  // 取り消し：Cookie を即時失効させ、投票前の状態（ボタン表示）へ戻す。
+  function cancel() {
+    document.cookie = `ff14-macro-reaction-${macroSlug}=; path=/; max-age=0; samesite=lax`
+    setSelected(null)
+  }
+
   if (selected) {
-    const label = selected === 'helpful' ? '役に立った' : '不具合あり'
-    const count = selected === 'helpful' ? initialHelpful + 1 : initialProblem + 1
-    return <p className={styles.recorded}><span className={styles.recordedLabel}>{label} {count}</span> を記録しました</p>
+    const helpful = initialHelpful + (selected === 'helpful' ? 1 : 0)
+    const problem = initialProblem + (selected === 'problem' ? 1 : 0)
+    const cancelButton = <button type="button" onClick={cancel} title="投票を取り消す" aria-label="投票を取り消す" className={styles.cancel}>×</button>
+    return (
+      <p className={styles.recorded} aria-label="このマクロへの投票結果">
+        <span className={`${styles.count} ${styles.helpfulText} ${selected === 'helpful' ? styles.mine : ''}`}>役に立った {helpful}</span>
+        {selected === 'helpful' && cancelButton}
+        <span className={`${styles.count} ${styles.problemText} ${selected === 'problem' ? styles.mine : ''}`}>不具合あり {problem}</span>
+        {selected === 'problem' && cancelButton}
+      </p>
+    )
   }
 
   return (

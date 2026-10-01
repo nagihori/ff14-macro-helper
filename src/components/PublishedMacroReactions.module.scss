@@ -2,13 +2,31 @@
 
 // 「役に立った」「不具合あり」の2ボタンと、押した後の記録メッセージ。
 .recorded {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
   @include type(sm);
-  color: var(--text-muted);
 }
 
-.recordedLabel {
-  font-weight: 500;
-  color: light-dark(var(--zinc-800), var(--zinc-200));
+.count { font-weight: 400; }
+
+.helpfulText { color: light-dark(var(--emerald-800), var(--emerald-200)); }
+.problemText { color: light-dark(var(--rose-800), var(--rose-200)); }
+
+// 自分が投票した側は太字。
+.mine { font-weight: 700; }
+
+// 投票の取り消し。目立たない小さな ×。
+.cancel {
+  margin-left: -0.5rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  @include type(xs);
+  color: var(--text-muted);
+
+  &:hover { background: var(--surface-hover); color: var(--text-strong); }
 }
 
 .buttons {

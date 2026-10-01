@@ -50,6 +50,16 @@ $bp-xl: 1280px;
   font-weight: 700;
 }
 
+// 枠線だけの丸ボタン（副操作）。pill-action と並べて使う。
+@mixin pill-action-secondary {
+  @include pill-action;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  color: var(--text-strong);
+  transition: background-color 0.15s;
+  &:hover { background: var(--surface-hover); }
+}
+
 // 入力欄。
 @mixin text-field {
   width: 100%;

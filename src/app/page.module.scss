@@ -31,18 +31,13 @@
   color: var(--text-muted);
 }
 
-.libraryLink {
+.actions {
+  display: flex;
   flex-shrink: 0;
-  border-radius: 9999px;
-  border: 1px solid var(--border-default);
-  padding: 0.5rem 1rem;
-  @include type(sm);
-  font-weight: 500;
-  color: light-dark(var(--zinc-700), var(--zinc-200));
-  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
-
-  &:hover {
-    border-color: var(--border-strong);
-    background: var(--surface-card);
-  }
+  align-items: center;
+  gap: 0.5rem;
+  // 右肩に固定したテーマ切り替えと重ならないよう、少し内側に寄せる。
+  margin-right: 1.5rem;
 }
+
+.secondaryAction { @include pill-action-secondary; }

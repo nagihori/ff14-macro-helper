@@ -75,8 +75,14 @@
   color: var(--text-muted);
 }
 
-.openAction { margin-top: 2rem; }
-.openLink { @include pill-action; }
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.openLink { @include pill-action-secondary; }
 
 .reactions { margin-top: 2.5rem; }
 
@@ -88,13 +94,77 @@
   color: var(--text-muted);
 }
 
-.submitHint { margin-top: 1.25rem; }
+// 似たマクロ。一覧のカードから投稿者・日付・投票ボタンを外した小型版（カード全体が詳細へのリンク）。
+.related { margin-top: 2.5rem; }
 
-.submitLink {
+.relatedHeading {
   @include type(sm);
+  font-weight: 600;
+}
+
+.relatedList {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+
+  @media (min-width: $bp-sm) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.relatedCard {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  border-radius: var(--radius-2xl);
+  padding: 1rem;
+
+  &:hover { border-color: var(--border-default); }
+}
+
+.relatedTags {
+  @include type(xs);
+  color: var(--text-muted);
+}
+
+.relatedTitle {
+  @include type(sm);
+  font-weight: 600;
+}
+
+.relatedDescription {
+  @include type(xs);
   color: var(--text-secondary);
+}
+
+.relatedReactions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  @include type(xs);
+}
+
+.helpfulCount,
+.problemCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.helpfulCount { color: light-dark(var(--emerald-800), var(--emerald-200)); }
+.problemCount { color: light-dark(var(--rose-800), var(--rose-200)); }
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.originLink {
   text-decoration: underline;
   text-underline-offset: 4px;
-
-  &:hover { color: light-dark(var(--zinc-950), #fff); }
+  &:hover { color: var(--text-strong); }
 }

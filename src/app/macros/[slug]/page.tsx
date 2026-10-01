@@ -1,9 +1,15 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { CopyMacroButton } from '@/components/CopyMacroButton'
 import { PublishedMacroReactions } from '@/components/PublishedMacroReactions'
-import { findPublishedMacro, samplePublishedMacros } from '@/lib/published-macros/sample-data'
-import { encodeDocument } from '@/lib/share/url'
+import { findPublishedMacro, findRelatedMacros, samplePublishedMacros } from '@/lib/published-macros/sample-data'
+import { buildEditorPath } from '@/lib/share/url'
 import styles from './page.module.scss'
+
+// 一覧用に件数だけを示す線画アイコン（現在の文字色に従う）。
+const iconProps = { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const
+function ThumbIcon() { return <svg {...iconProps}><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 2 2v4h6a2 2 0 0 1 2 2.3l-1 6A2 2 0 0 1 18 19H7" /></svg> }
+function WarnIcon() { return <svg {...iconProps}><path d="M12 3 2 20h20zM12 10v4M12 17h.01" /></svg> }
 
 export function generateStaticParams() { return samplePublishedMacros.map((macro) => ({ slug: macro.slug })) }
 
@@ -11,6 +17,8 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
   const { slug } = await params
   const macro = findPublishedMacro(slug)
   if (!macro) notFound()
+  const related = findRelatedMacros(slug)
+  const origin = macro.arrangedFrom ? findPublishedMacro(macro.arrangedFrom) : undefined
 
   return (
     <main className={styles.page}>
@@ -29,17 +37,36 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
             <pre className={styles.code}>{macro.body}</pre>
             <p className={styles.disclaimer}>ゲーム内の動作を保証するものではありません。</p>
           </section>
-          <div className={styles.openAction}>
-            <Link href={`/?m=${encodeDocument({ version: 1, body: macro.body })}`} className={styles.openLink}>エディタで開く</Link>
+          <div className={styles.actions}>
+            <CopyMacroButton text={macro.body} />
+            <Link href={buildEditorPath({ version: 1, body: macro.body }, macro.slug)} className={styles.openLink}>エディタで編集</Link>
           </div>
           <section className={styles.reactions}>
             <PublishedMacroReactions macroSlug={macro.slug} initialHelpful={macro.reactions.helpful} initialProblem={macro.reactions.problem} />
           </section>
-          <footer className={styles.meta}>投稿者 {macro.authorHandle} · {macro.publishedAt}</footer>
+          <footer className={styles.meta}>
+            投稿者 {macro.authorHandle} · {macro.publishedAt}
+            {origin && <> · アレンジ元：<Link href={`/macros/${origin.slug}`} className={styles.originLink}>{origin.title}</Link></>}
+          </footer>
         </article>
-        <div className={styles.submitHint}>
-          <Link href="/macros/submit" className={styles.submitLink}>このマクロをもとに公開する</Link>
-        </div>
+        {related.length > 0 && (
+          <section className={styles.related} aria-labelledby="related-heading">
+            <h2 id="related-heading" className={styles.relatedHeading}>似たマクロ</h2>
+            <div className={styles.relatedList}>
+              {related.map((item) => (
+                <Link key={item.slug} href={`/macros/${item.slug}`} className={styles.relatedCard}>
+                  <span className={styles.relatedTags}>{item.tags.map((tag) => `#${tag}`).join(' ')}</span>
+                  <span className={styles.relatedTitle}>{item.title}</span>
+                  <span className={styles.relatedDescription}>{item.description}</span>
+                  <span className={styles.relatedReactions}>
+                    <span className={styles.helpfulCount} title="役に立った"><ThumbIcon />{item.reactions.helpful}<span className={styles.srOnly}>件が役に立った</span></span>
+                    <span className={styles.problemCount} title="不具合あり"><WarnIcon />{item.reactions.problem}<span className={styles.srOnly}>件が不具合あり</span></span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </main>
   )

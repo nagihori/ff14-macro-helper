@@ -1,0 +1,3 @@
+@use '../styles/mixins' as *;
+
+.button { @include pill-action; }
