@@ -208,6 +208,9 @@ $severity-wave: (
 
 // 行全体が対象の診断（行長・行数超過）は、行全体を波線で囲む。
 .line {
+  // 1行を1ブロックにして、折り返した時の高さを行番号側で測れるようにする（空行も1行ぶん確保）。
+  display: block;
+  min-height: 1.5rem;
   @each $severity, $color in $severity-wave {
     &[data-severity='#{$severity}'] { text-decoration: underline wavy $color; }
   }

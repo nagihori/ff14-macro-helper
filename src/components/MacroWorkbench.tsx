@@ -133,6 +133,8 @@ export function MacroWorkbench() {
   const [restoreError, setRestoreError] = useState<string | null>(null)
 
   const [ghostPosition, setGhostPosition] = useState<{ left: number; top: number } | null>(null)
+  // 長い行は折り返すので、行番号の高さはハイライト層の各行の実測に合わせる。
+  const [lineHeights, setLineHeights] = useState<number[]>([])
 
   // ログプレビューは常時追従ではなく「マクロ実行」を押した時点のスナップショットを
   // /wait 秒数ぶん遅延させながら1行ずつ出す（ROADMAP.md 申し送り）。
@@ -249,6 +251,22 @@ export function MacroWorkbench() {
     }
     setGhostPosition(measureCaretOffset(mirrorRef.current, body, cursor))
   }, [ghostText, body, cursor])
+
+  useLayoutEffect(() => {
+    const overlay = overlayRef.current
+    if (!overlay) return
+    const measure = () => {
+      const heights = Array.from(overlay.children, (child) => child.getBoundingClientRect().height)
+      setLineHeights((prev) =>
+        prev.length === heights.length && prev.every((h, i) => h === heights[i]) ? prev : heights,
+      )
+    }
+    measure()
+    // 画面幅の変化（回転など）でも折り返しが変わる。
+    const observer = new ResizeObserver(measure)
+    observer.observe(overlay)
+    return () => observer.disconnect()
+  }, [highlightLines])
 
   function syncCursor(el: HTMLTextAreaElement) {
     setCursor(el.selectionStart)
@@ -639,8 +657,8 @@ export function MacroWorkbench() {
             </ActionBar>
             <div className={styles.editorRow}>
             <div ref={gutterRef} aria-hidden className={styles.gutter}>
-              {highlightLines.map((highlightLine) => (
-                <div key={highlightLine.line}>{highlightLine.line}</div>
+              {highlightLines.map((highlightLine, lineIndex) => (
+                <div key={highlightLine.line} style={{ height: lineHeights[lineIndex] }}>{highlightLine.line}</div>
               ))}
             </div>
             <div className={styles.editorBody}>
@@ -663,7 +681,7 @@ export function MacroWorkbench() {
                 placeholder={'/ac "アクション名" <t>\n/wait 1'}
               />
               <div ref={overlayRef} aria-hidden className={styles.overlay}>
-                {highlightLines.map((highlightLine, lineIndex) => {
+                {highlightLines.map((highlightLine) => {
                   const wholeLineDiagnostic = analysis.diagnostics.find(
                     (diagnostic) =>
                       diagnostic.line === highlightLine.line &&
@@ -680,7 +698,6 @@ export function MacroWorkbench() {
                           {segment.text}
                         </span>
                       ))}
-                      {lineIndex < highlightLines.length - 1 ? '\n' : null}
                     </span>
                   )
                 })}
