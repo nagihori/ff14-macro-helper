@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react'
 import { setReaction, type ReactionCounts, type ReactionKind } from '@/app/macros/reactions'
+import { ThumbIcon, WarningIcon } from './icons'
 import styles from './PublishedMacroReactions.module.scss'
 
 // 自分の選択は Cookie（サーバーアクションが書く）から読み取り、同じブラウザでの重複リアクションを UI 上も防ぐ。
@@ -47,9 +48,9 @@ export function PublishedMacroReactions({ macroSlug, initialHelpful, initialProb
     const cancelButton = <button type="button" onClick={cancel} title="投票を取り消す" aria-label="投票を取り消す" className={styles.cancel}>×</button>
     return (
       <p className={styles.recorded} aria-label="このマクロへの投票結果">
-        <span className={`${styles.count} ${styles.helpfulText} ${selected === 'helpful' ? styles.mine : ''}`}>役に立った {helpful}</span>
+        <span className={`${styles.count} ${styles.helpfulText} ${selected === 'helpful' ? styles.mine : ''}`}><ThumbIcon />役に立った {helpful}</span>
         {selected === 'helpful' && cancelButton}
-        <span className={`${styles.count} ${styles.problemText} ${selected === 'problem' ? styles.mine : ''}`}>不具合あり {problem}</span>
+        <span className={`${styles.count} ${styles.problemText} ${selected === 'problem' ? styles.mine : ''}`}><WarningIcon />不具合あり {problem}</span>
         {selected === 'problem' && cancelButton}
       </p>
     )
@@ -57,8 +58,8 @@ export function PublishedMacroReactions({ macroSlug, initialHelpful, initialProb
 
   return (
     <div className={styles.buttons} aria-label="このマクロへのリアクション">
-      <button type="button" onClick={() => choose('helpful')} className={`${styles.button} ${styles.helpful}`}>役に立った {counts.helpful}</button>
-      <button type="button" onClick={() => choose('problem')} className={`${styles.button} ${styles.problem}`}>不具合あり {counts.problem}</button>
+      <button type="button" onClick={() => choose('helpful')} className={`${styles.button} ${styles.helpful}`}><ThumbIcon />役に立った {counts.helpful}</button>
+      <button type="button" onClick={() => choose('problem')} className={`${styles.button} ${styles.problem}`}><WarningIcon />不具合あり {counts.problem}</button>
     </div>
   )
 }

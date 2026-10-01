@@ -1,4 +1,27 @@
 @use '../styles/mixins' as *;
 
 .form { display: inline; }
-.button { @include pill-action-secondary; }
+.logout { @include pill-action-secondary; }
+
+// Discord ブランドガイドラインの Blurple ボタン。色はブランド固定なのでテーマで変えない。
+.discord {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 9999px;
+  background: #5865f2;
+  color: #fff;
+  padding: 0.625rem 1.25rem;
+  @include type(sm);
+  font-weight: 700;
+  transition: background-color 0.15s;
+
+  &:hover { background: #4752c4; }
+}
+
+// ロゴとテキストの間・ボタンの左右に余白を取る（ガイドライン）。縦横比は崩さない。
+.logo {
+  width: 1.5rem;
+  height: auto;
+  flex: none;
+}

@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import type { PublishedMacro } from '@/lib/published-macros/types'
 import { PublishedMacroReactions } from './PublishedMacroReactions'
+import { MacroDescription } from './MacroDescription'
+import { PageHero } from './PageHero'
 import styles from './PublishedMacroLibrary.module.scss'
 
 // 空白（全角含む）で区切った語をすべて含むものだけを残す（AND 検索）。
@@ -35,11 +37,7 @@ export function PublishedMacroLibrary({ allMacros, initialQuery = '' }: { allMac
 
   return (
     <main className={styles.library}>
-      <section className={styles.hero}>
-        <p className={styles.eyebrow}>MACRO LIBRARY</p>
-        <h1 className={styles.heroTitle}>公開マクロを探す</h1>
-        <p className={styles.heroLead}>実用的なマクロを見つけ、エディタで自分用に調整できます。</p>
-      </section>
+      <PageHero eyebrow="MACRO LIBRARY" title="公開マクロを探す" lead="実用的なマクロを見つけ、エディタで自分用に調整できます。" />
 
       <section className={styles.search} aria-label="マクロを絞り込む">
         <label htmlFor="macro-search" className={styles.searchLabel}>キーワードで探す</label>
@@ -57,7 +55,7 @@ export function PublishedMacroLibrary({ allMacros, initialQuery = '' }: { allMac
         {macros.map((macro) => <article key={macro.slug} className={styles.card}>
           <div className={styles.cardTags}>{macro.tags.map((tag) => <button key={tag} type="button" onClick={() => setQuery(`#${tag}`)} className={styles.cardTag}>#{tag}</button>)}</div>
           <h2 className={styles.cardTitle}><Link href={`/macros/${macro.slug}`} className={styles.cardTitleLink}>{macro.title}</Link></h2>
-          <p className={styles.cardDescription}>{macro.description}</p>
+          <p className={styles.cardDescription}><MacroDescription description={macro.description} parts={macro.descriptionParts} linkClassName={styles.cardDescriptionLink} /></p>
           <p className={styles.cardMeta}>投稿者 {macro.authorHandle} · {macro.publishedAt}</p>
           <div className={styles.cardReactions}><PublishedMacroReactions macroSlug={macro.slug} initialHelpful={macro.reactions.helpful} initialProblem={macro.reactions.problem} /></div>
         </article>)}

@@ -44,6 +44,7 @@
 }
 
 .description {
+  white-space: pre-line; // 説明の改行を表示に反映する
   margin-top: 0.75rem;
   line-height: 1.75rem;
   color: var(--text-secondary);
@@ -56,16 +57,27 @@
   font-weight: 600;
 }
 
-.code {
+// 暗い面の上に、操作帯とコード本文を重ねる。
+.codeBlock {
   margin-top: 0.75rem;
-  overflow-x: auto;
+  overflow: hidden;
   border-radius: var(--radius-xl);
   background: var(--surface-dark);
+}
+
+.code {
+  overflow-x: auto;
   padding: 1.25rem;
   font-family: var(--font-mono);
   @include type(sm);
   line-height: 1.75rem;
   color: var(--text-on-dark);
+}
+
+.descriptionLink {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  &:hover { color: var(--text-strong); }
 }
 
 .disclaimer {
@@ -75,14 +87,7 @@
   color: var(--text-muted);
 }
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
-}
-
-.openLink { @include pill-action-secondary; }
+.actions { margin-top: 1.5rem; }
 
 .reactions { margin-top: 2.5rem; }
 
