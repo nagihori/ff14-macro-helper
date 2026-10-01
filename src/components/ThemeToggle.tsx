@@ -24,8 +24,40 @@ function subscribe(onChange: () => void) {
   }
 }
 
+// 線だけのアイコン（Lucide の sun / moon の形。ライブラリは入れず SVG をそのまま置く）。色は currentColor。
+function iconProps() {
+  return {
+    width: 16,
+    height: 16,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+  }
+}
+
+function SunIcon() {
+  return (
+    <svg {...iconProps()}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg {...iconProps()}>
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+    </svg>
+  )
+}
+
 // 右肩に置く目立たない切り替えボタン。サーバー描画ではテーマが分からないので、
-// マウントするまでは絵文字を出さず、場所だけ確保する（hydration の不一致を避ける）。
+// マウントするまではアイコンを出さず、場所だけ確保する（hydration の不一致を避ける）。
 export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribe, getTheme, () => null)
 
@@ -48,7 +80,7 @@ export function ThemeToggle() {
       aria-label={theme === 'dark' ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
       title={theme === 'dark' ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
     >
-      {theme === null ? null : theme === 'dark' ? '🌙' : '☀️'}
+      {theme === null ? null : theme === 'dark' ? <MoonIcon /> : <SunIcon />}
     </button>
   )
 }

@@ -1,6 +1,4 @@
-@use '../styles/mixins' as *;
-
-// 右肩に固定する控えめな切り替えボタン。普段は薄く、触れた時だけ濃くする。
+// 右肩に固定する控えめな切り替えボタン。線だけのアイコン。普段は薄く、触れた時だけ濃くする。
 .toggle {
   position: fixed;
   top: 0.5rem;
@@ -8,13 +6,17 @@
   z-index: 10;
   width: 1.5rem;
   height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 9999px;
-  @include type(sm);
-  line-height: 1.5rem;
-  text-align: center;
+  color: var(--text-muted);
   opacity: 0.45;
   transition: opacity 0.15s;
 
   &:hover,
-  &:focus-visible { opacity: 1; }
+  &:focus-visible {
+    opacity: 1;
+    color: var(--text-strong);
+  }
 }

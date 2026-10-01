@@ -20,7 +20,7 @@
 ## コンポーネント
 
 - [`components/MacroWorkbench.tsx`](src/components/MacroWorkbench.tsx) — マクロエディタ本体。解析・診断・ハイライト・コマンド補完・プレースホルダ補完・ログプレビュー・コマンド辞書検索・共有 URL の生成と復元。ロジックは `lib/` 側に置き、ここは表示と入力処理
-- [`components/ThemeToggle.tsx`](src/components/ThemeToggle.tsx) — 右肩に固定した絵文字ひとつのライト/ダーク切り替え。`<html data-theme>` を切り替え、選択は localStorage（`lib/theme.ts`）に保存。未設定なら OS 設定に従う
+- [`components/ThemeToggle.tsx`](src/components/ThemeToggle.tsx) — 右肩に固定した線画アイコン（太陽・月）ひとつのライト/ダーク切り替え。`<html data-theme>` を切り替え、選択は localStorage（`lib/theme.ts`）に保存。未設定なら OS 設定に従う
 - [`components/PublishedMacroLibrary.tsx`](src/components/PublishedMacroLibrary.tsx) — 公開マクロ一覧の UI。タイトル・説明・`#タグ` を同じ検索欄で絞り込む（データはサンプル固定）
 - [`components/PublishedMacroReactions.tsx`](src/components/PublishedMacroReactions.tsx) — 「役に立った」「不具合あり」ボタン。Cookie で同一ブラウザの重複を防ぐ（件数はサーバー未連携）
 - [`components/PublishFromUrlForm.tsx`](src/components/PublishFromUrlForm.tsx) — 共有 URL・タイトル・タグの公開フォーム。送信はまだ UI 試作で、メッセージを出すだけ
