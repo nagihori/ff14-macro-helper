@@ -9,7 +9,7 @@ export type PublishState = { errors: string[] }
 
 const text = (formData: FormData, key: string) => (typeof formData.get(key) === 'string' ? (formData.get(key) as string) : '')
 
-// 公開フォームの送信。ログイン必須。共有 URL の復号と lint をサーバー側でもう一度行い、通ったものだけ保存する。
+// 公開フォームの送信。ログイン必須。共有URLの復号と lint をサーバー側でもう一度行い、通ったものだけ保存する。
 export async function submitMacro(_previous: PublishState, formData: FormData): Promise<PublishState> {
   const values: PublishInput = { shareUrl: text(formData, 'shareUrl'), title: text(formData, 'title'), description: text(formData, 'description'), tags: text(formData, 'tags'), handle: text(formData, 'handle') }
   const session = await auth()
