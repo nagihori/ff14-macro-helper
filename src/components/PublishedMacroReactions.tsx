@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useTransition } from 'react'
+import { setReaction, type ReactionCounts, type ReactionKind } from '@/app/macros/reactions'
 import styles from './PublishedMacroReactions.module.scss'
 
-type ReactionKind = 'helpful' | 'problem'
-
-// Cookie の選択を読み取り、同じブラウザでの重複リアクションを UI 上も防ぐ。
+// 自分の選択は Cookie（サーバーアクションが書く）から読み取り、同じブラウザでの重複リアクションを UI 上も防ぐ。
 function readReaction(slug: string): ReactionKind | null {
   const value = document.cookie.split('; ').find((item) => item.startsWith(`ff14-macro-reaction-${slug}=`))?.split('=')[1]
   return value === 'helpful' || value === 'problem' ? value : null
@@ -13,26 +12,38 @@ function readReaction(slug: string): ReactionKind | null {
 
 export function PublishedMacroReactions({ macroSlug, initialHelpful, initialProblem }: { macroSlug: string; initialHelpful: number; initialProblem: number }) {
   const [selected, setSelected] = useState<ReactionKind | null>(null)
+  // 件数はサーバー集計（自分の 1 票を含む）。押した直後は先に表示を動かし、サーバーの返答で確定する。
+  const [counts, setCounts] = useState<ReactionCounts>({ helpful: initialHelpful, problem: initialProblem })
+  const [, startTransition] = useTransition()
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Cookie の外部状態をマウント後に同期する。
     setSelected(readReaction(macroSlug))
   }, [macroSlug])
 
-  function choose(kind: ReactionKind) {
-    if (selected) return
-    document.cookie = `ff14-macro-reaction-${macroSlug}=${kind}; path=/; max-age=31536000; samesite=lax`
-    setSelected(kind)
+  function vote(next: ReactionKind | null) {
+    const previous = { selected, counts }
+    const bump = (kind: ReactionKind, by: number) => ({ ...counts, [kind]: Math.max(0, counts[kind] + by) })
+    setCounts(next ? bump(next, 1) : bump(selected!, -1))
+    setSelected(next)
+    startTransition(async () => {
+      const result = await setReaction(macroSlug, next)
+      if (result) setCounts(result)
+      else { setCounts(previous.counts); setSelected(previous.selected) } // 停止された・存在しないなど
+    })
   }
 
-  // 取り消し：Cookie を即時失効させ、投票前の状態（ボタン表示）へ戻す。
+  function choose(kind: ReactionKind) {
+    if (selected) return
+    vote(kind)
+  }
+
+  // 取り消し：投票前の状態（ボタン表示）へ戻す。
   function cancel() {
-    document.cookie = `ff14-macro-reaction-${macroSlug}=; path=/; max-age=0; samesite=lax`
-    setSelected(null)
+    if (selected) vote(null)
   }
 
   if (selected) {
-    const helpful = initialHelpful + (selected === 'helpful' ? 1 : 0)
-    const problem = initialProblem + (selected === 'problem' ? 1 : 0)
+    const { helpful, problem } = counts
     const cancelButton = <button type="button" onClick={cancel} title="投票を取り消す" aria-label="投票を取り消す" className={styles.cancel}>×</button>
     return (
       <p className={styles.recorded} aria-label="このマクロへの投票結果">
@@ -46,8 +57,8 @@ export function PublishedMacroReactions({ macroSlug, initialHelpful, initialProb
 
   return (
     <div className={styles.buttons} aria-label="このマクロへのリアクション">
-      <button type="button" onClick={() => choose('helpful')} className={`${styles.button} ${styles.helpful}`}>役に立った {initialHelpful}</button>
-      <button type="button" onClick={() => choose('problem')} className={`${styles.button} ${styles.problem}`}>不具合あり {initialProblem}</button>
+      <button type="button" onClick={() => choose('helpful')} className={`${styles.button} ${styles.helpful}`}>役に立った {counts.helpful}</button>
+      <button type="button" onClick={() => choose('problem')} className={`${styles.button} ${styles.problem}`}>不具合あり {counts.problem}</button>
     </div>
   )
 }

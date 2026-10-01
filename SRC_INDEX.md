@@ -28,7 +28,8 @@
 - [`components/LegalDocument.tsx`](src/components/LegalDocument.tsx)（＋ `.module.scss`）— 利用規約・プライバシーポリシー共通の文書枠。見出し・段落・箇条書きの余白と、もう一方の文書へのリンク
 - [`components/ThemeToggle.tsx`](src/components/ThemeToggle.tsx) — 右肩に固定した線画アイコン（太陽・月）ひとつのライト/ダーク切り替え。`<html data-theme>` を切り替え、選択は localStorage（`lib/theme.ts`）に保存。未設定なら OS 設定に従う
 - [`components/PublishedMacroLibrary.tsx`](src/components/PublishedMacroLibrary.tsx) — 公開マクロ一覧の UI。タイトル・説明・`#タグ` を同じ検索欄で絞り込む（空白区切りの AND 検索。タグ例のクリックは検索語へ追加、カード内タグは置き換え。データは親ページが DB から取得して `allMacros` で渡す）
-- [`components/PublishedMacroReactions.tsx`](src/components/PublishedMacroReactions.tsx) — 「役に立った」「不具合あり」ボタン。Cookie で同一ブラウザの重複を防ぐ。投票後も両件数を緑／赤で表示し、自分の側は太字＋取り消し ×（件数はサーバー未連携）
+- [`components/PublishedMacroReactions.tsx`](src/components/PublishedMacroReactions.tsx) — 「役に立った」「不具合あり」ボタン。件数はサーバー集計で、押した直後は先に表示を動かしてサーバーの返答で確定する。同一ブラウザの重複は Cookie で防ぎ、投票後も両件数を緑／赤で表示し、自分の側は太字＋取り消し ×
+- [`app/macros/reactions.ts`](src/app/macros/reactions.ts) — 投票のサーバーアクション `setReaction`。Cookie の現在値との差分だけを `helpful_count` / `problem_count` に反映する（公開中のマクロのみ・件数は負にならない）。Cookie は書き換え可能なので厳密な不正対策ではない
 - [`components/CopyMacroButton.tsx`](src/components/CopyMacroButton.tsx) — 詳細ページの「マクロテキストをコピー」主ボタン。コピー結果をボタン文言で知らせる
 - [`components/useMacroCheck.tsx`](src/components/useMacroCheck.tsx) — コピー・共有 URL・公開の直前に本文を解析し、エラー／警告があれば `MacroCheckDialog` を挟む `guard()` を返すフック（打ちかけの最終行も確定扱いで解析）
 - [`components/MacroCheckDialog.tsx`](src/components/MacroCheckDialog.tsx)（＋ `.module.scss`）— 問題の一覧（重大度・行番号・内容）を見せ、「エディタで修正する」か「このまま進む」を選ばせる確認ダイアログ
@@ -39,6 +40,6 @@
 
 ## メモ
 
-- 公開マクロ系（`src/app/macros/*`、`PublishedMacro*`、`PublishFromUrlForm`）の読み取りは Neon（`src/lib/published-macros/repository.ts`、接続は `src/lib/db.ts`）。公開停止（`status = 'suspended'`）の行は一覧・詳細・似たマクロ・アレンジ元リンクから外れる。書き込みは `store.ts`、入力検証は UI と切り離した `publish.ts`（単体テスト `publish.test.ts`、`npm test`）。公開名は初回の投稿時に `users.public_handle` へ保存し、フォームの「変更する」で変更できる（過去の自分の投稿の表示名も追従）。管理者の判定は `src/lib/admin.ts`。リアクションの集計は未実装
+- 公開マクロ系（`src/app/macros/*`、`PublishedMacro*`、`PublishFromUrlForm`）の読み取りは Neon（`src/lib/published-macros/repository.ts`、接続は `src/lib/db.ts`）。公開停止（`status = 'suspended'`）の行は一覧・詳細・似たマクロ・アレンジ元リンクから外れる。書き込みは `store.ts`、入力検証は UI と切り離した `publish.ts`（単体テスト `publish.test.ts`、`npm test`）。公開名は初回の投稿時に `users.public_handle` へ保存し、フォームの「変更する」で変更できる（過去の自分の投稿の表示名も追従）。管理者の判定は `src/lib/admin.ts`。リアクションは `app/macros/reactions.ts` で集計
 - DB のスキーマは `db/migrations/*.sql`（`npm run db:migrate`）、動作確認用のサンプルは `scripts/seed-samples.mjs`
 - `MacroWorkbench.tsx` の説明は冒頭と state 定義を読んだ範囲＋機能名からの推測を含む。細部は要確認
