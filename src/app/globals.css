@@ -80,6 +80,7 @@
   --surface-page: light-dark(var(--stone-50), var(--zinc-950));
   --surface-page-editor: light-dark(var(--zinc-50), #000);
   --surface-card: light-dark(#fff, var(--zinc-900));
+  --surface-tint: light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.08)); /* ページ背景に重ねる薄いグレー（タイトルボックス） */
   --surface-input-inset: light-dark(#fff, var(--zinc-950));
   --surface-sunken: light-dark(var(--zinc-50), var(--zinc-900));
   --surface-hover: light-dark(var(--zinc-100), var(--zinc-800));
