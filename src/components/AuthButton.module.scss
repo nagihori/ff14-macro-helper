@@ -1,0 +1,4 @@
+@use '../styles/mixins' as *;
+
+.form { display: inline; }
+.button { @include pill-action-secondary; }

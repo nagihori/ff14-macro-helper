@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { auth } from '@/auth'
+import { AdminMacroControls } from '@/components/AdminMacroControls'
 import { CopyMacroButton } from '@/components/CopyMacroButton'
 import { PublishedMacroReactions } from '@/components/PublishedMacroReactions'
-import { findPublishedMacro, findRelatedMacros, samplePublishedMacros } from '@/lib/published-macros/sample-data'
+import { findMacroForViewer, findPublishedMacro, findRelatedMacros } from '@/lib/published-macros/repository'
 import { buildEditorPath } from '@/lib/share/url'
 import styles from './page.module.scss'
 
@@ -11,19 +13,20 @@ const iconProps = { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', s
 function ThumbIcon() { return <svg {...iconProps}><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 2 2v4h6a2 2 0 0 1 2 2.3l-1 6A2 2 0 0 1 18 19H7" /></svg> }
 function WarnIcon() { return <svg {...iconProps}><path d="M12 3 2 20h20zM12 10v4M12 17h.01" /></svg> }
 
-export function generateStaticParams() { return samplePublishedMacros.map((macro) => ({ slug: macro.slug })) }
-
 export default async function PublishedMacroPage({ params }: PageProps<'/macros/[slug]'>) {
   const { slug } = await params
-  const macro = findPublishedMacro(slug)
+  // 停止中のマクロは、管理者と投稿者本人にだけ見せる。操作（再公開）の許可そのものはサーバーアクション側で判定する。
+  const user = (await auth())?.user
+  const admin = user?.isAdmin === true
+  const macro = await findMacroForViewer(slug, user && { id: user.id, isAdmin: admin })
   if (!macro) notFound()
-  const related = findRelatedMacros(slug)
-  const origin = macro.arrangedFrom ? findPublishedMacro(macro.arrangedFrom) : undefined
+  const [related, origin] = await Promise.all([findRelatedMacros(slug), macro.arrangedFrom ? findPublishedMacro(macro.arrangedFrom) : undefined])
 
   return (
     <main className={styles.page}>
       <div className={styles.container}>
         <Link href="/macros" className={styles.backLink}>← 公開マクロ一覧に戻る</Link>
+        {macro.status === 'suspended' && <p role="status" className={styles.suspendedNotice}>{admin ? 'このマクロは公開停止中です。管理者と投稿者にだけ表示されています。' : <>このマクロは運営により公開停止されています。あなたにだけ表示されています。心当たりがない場合や再公開のご希望は、<Link href="/terms#contact" className={styles.originLink}>利用規約の連絡先</Link>からご連絡ください。</>}</p>}
         <article className={styles.article}>
           <div className={styles.tags}>
             {macro.tags.map((tag) => (
@@ -44,6 +47,7 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
           <section className={styles.reactions}>
             <PublishedMacroReactions macroSlug={macro.slug} initialHelpful={macro.reactions.helpful} initialProblem={macro.reactions.problem} />
           </section>
+          {admin && <AdminMacroControls slug={macro.slug} status={macro.status} />}
           <footer className={styles.meta}>
             投稿者 {macro.authorHandle} · {macro.publishedAt}
             {origin && <> · アレンジ元：<Link href={`/macros/${origin.slug}`} className={styles.originLink}>{origin.title}</Link></>}

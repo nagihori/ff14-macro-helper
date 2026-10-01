@@ -92,3 +92,34 @@
   @include type(sm);
   color: var(--text-secondary);
 }
+
+// 公開名など、入力欄の下に添える補足。
+.hint {
+  display: block;
+  margin-top: 0.5rem;
+  @include type(xs);
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+// サーバー側の検証エラー。色だけに頼らず、行番号と内容を文で出す。
+.errors {
+  border-radius: var(--radius-xl);
+  border: 1px solid light-dark(var(--rose-200), var(--rose-900));
+  background: light-dark(var(--rose-50), color-mix(in oklab, var(--rose-950) 40%, transparent));
+  padding: 1rem 1rem 1rem 2rem;
+  list-style: disc;
+  @include type(sm);
+  line-height: 1.5rem;
+  color: light-dark(var(--rose-800), var(--rose-200));
+}
+
+// 文中に置く、リンク風の小さな操作ボタン（変更する／変更をやめる）。
+.linkButton {
+  margin-left: 0.25rem;
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+
+  &:hover { color: var(--text-strong); }
+}

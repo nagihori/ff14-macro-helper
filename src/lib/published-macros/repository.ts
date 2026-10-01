@@ -1,0 +1,91 @@
+import { getSql } from '@/lib/db'
+import type { PublishedMacro } from './types'
+
+// 公開マクロの読み取り。停止中（status = 'suspended'）は、どの入口からも返さない。
+// 日付は日本時間の YYYY/MM/DD に整形して返す。
+const columns = `
+  m.slug, m.title, m.description, m.body, m.tags, m.author_handle,
+  to_char(m.published_at at time zone 'Asia/Tokyo', 'YYYY/MM/DD') as published_at,
+  o.slug as arranged_from_slug,
+  m.helpful_count, m.problem_count, m.status
+`
+// 元マクロが停止中なら、バックリンクは張らない。
+const from = `
+  from macros m
+  left join macros o on o.id = m.arranged_from and o.status = 'published'
+`
+
+type Row = {
+  slug: string; title: string; description: string; body: string; tags: string[]
+  author_handle: string; published_at: string; arranged_from_slug: string | null
+  helpful_count: number; problem_count: number; status: 'published' | 'suspended'
+}
+
+function toMacro(row: Row): PublishedMacro {
+  return {
+    slug: row.slug,
+    title: row.title,
+    description: row.description,
+    tags: row.tags,
+    body: row.body,
+    authorHandle: row.author_handle,
+    publishedAt: row.published_at,
+    arrangedFrom: row.arranged_from_slug ?? undefined,
+    reactions: { helpful: row.helpful_count, problem: row.problem_count },
+    status: row.status,
+  }
+}
+
+// 新しい順の一覧。
+export async function listPublishedMacros(): Promise<PublishedMacro[]> {
+  const rows = await getSql().query(`select ${columns} ${from} where m.status = 'published' order by m.published_at desc`)
+  return (rows as Row[]).map(toMacro)
+}
+
+export async function findPublishedMacro(slug: string): Promise<PublishedMacro | undefined> {
+  const rows = await getSql().query(`select ${columns} ${from} where m.status = 'published' and m.slug = $1`, [slug])
+  return rows[0] ? toMacro(rows[0] as Row) : undefined
+}
+
+// 似たマクロ：共通タグの数が多い順（同数なら新しい順）に最大 limit 件。共通タグがないものは含めない。
+export async function findRelatedMacros(slug: string, limit = 3): Promise<PublishedMacro[]> {
+  const rows = await getSql().query(
+    `select ${columns} ${from}
+     join macros base on base.slug = $1
+     where m.status = 'published' and m.slug <> $1 and m.tags && base.tags
+     order by cardinality(array(select unnest(m.tags) intersect select unnest(base.tags))) desc, m.published_at desc
+     limit $2`,
+    [slug, limit],
+  )
+  return (rows as Row[]).map(toMacro)
+}
+
+// タグ辞書の代わり。公開中のマクロに付いているタグを、使われている数の多い順に返す。
+export async function listTags(): Promise<string[]> {
+  const rows = await getSql().query(
+    `select tag from macros m, unnest(m.tags) as tag where m.status = 'published' group by tag order by count(*) desc, tag`,
+  )
+  return rows.map((row) => row.tag as string)
+}
+
+// ---- 停止中のマクロ（管理者と、その投稿者だけが見られる） ----
+
+export type Viewer = { id: string; isAdmin: boolean }
+
+// 公開中のマクロに加えて、閲覧者が管理者、または投稿者本人なら、停止中のものも 1 件引く。
+export async function findMacroForViewer(slug: string, viewer?: Viewer): Promise<PublishedMacro | undefined> {
+  const rows = await getSql().query(
+    `select ${columns} ${from} where m.slug = $1 and (m.status = 'published' or $2::boolean or m.author_id = $3::uuid)`,
+    [slug, viewer?.isAdmin ?? false, viewer?.id ?? null],
+  )
+  return rows[0] ? toMacro(rows[0] as Row) : undefined
+}
+
+// 停止中の一覧。管理者は全件、それ以外のログイン中の人は自分の投稿だけ。
+export async function listSuspendedMacros(viewer: Viewer): Promise<PublishedMacro[]> {
+  const rows = await getSql().query(
+    `select ${columns} ${from} where m.status = 'suspended' and ($1::boolean or m.author_id = $2::uuid) order by m.suspended_at desc`,
+    [viewer.isAdmin, viewer.id],
+  )
+  return (rows as Row[]).map(toMacro)
+}

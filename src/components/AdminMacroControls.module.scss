@@ -1,0 +1,30 @@
+@use '../styles/mixins' as *;
+
+// 管理者にだけ出す操作欄。一般の操作と区別するため、破線の枠で囲む。
+.box {
+  margin-top: 2rem;
+  border-radius: var(--radius-xl);
+  border: 1px dashed var(--border-default);
+  padding: 1rem;
+}
+
+.label {
+  @include type(xs);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.status {
+  @include type(sm);
+  color: var(--text-secondary);
+}
+
+.button { @include pill-action-secondary; }
