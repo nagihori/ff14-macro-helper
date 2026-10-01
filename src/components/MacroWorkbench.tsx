@@ -830,6 +830,9 @@ export function MacroWorkbench() {
             <p className="px-1 text-sm text-zinc-500">
               コマンド名・短縮名・説明から検索できます。先頭の「/」は省略できます。エディタに直接「/」を入力しても候補が表示されます。
             </p>
+            <p className="px-1 text-sm text-zinc-500">
+              代名詞は「&lt;」なしで入力しても自動補完して展開されます。（t, me, pos など）
+            </p>
             {visibleCompletion ? (
           <ul className="max-h-64 overflow-y-auto rounded border border-zinc-300 dark:border-zinc-700">
             {visibleCompletion.candidates.map((command, index) => {
