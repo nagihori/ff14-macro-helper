@@ -8,7 +8,7 @@
 
 // エディタ内ハイライトの色は styles/_mixins.scss の $highlight-tones（使い方の説明 EditorGuide と共有）。
 
-// ログの送信先別の色は styles/_mixins.scss の $log-tones（凡例 LogLegend と共有）。
+// ログの送信先別の色は styles/_mixins.scss の $log-tones（ログ一覧 LogList・凡例 LogLegend と共有）。
 
 // 診断の重さ（DiagnosticSeverity）。文字色と、波線の色。
 $severity-text: (
@@ -370,35 +370,6 @@ $severity-wave: (
 }
 
 .commandSignature { color: var(--text-muted); }
-
-// ---- ログプレビュー --------------------------------------------------------
-
-.log {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-family: var(--font-mono);
-  @include type(sm);
-}
-
-.logEntry {
-  color: var(--text-strong);
-
-  @each $kind, $pair in $log-tones {
-    &[data-kind='#{$kind}'] { color: tone(list.nth($pair, 1), list.nth($pair, 2)); }
-  }
-}
-
-.logTime { color: var(--text-faint); }
-
-.logEntry svg { display: inline-block; margin-inline-end: 0.375rem; vertical-align: -0.125em; color: tone(amber-600, amber-400); }
-
-.logPlaceholder {
-  border-radius: var(--radius-sm);
-  background: light-dark(var(--purple-100), color-mix(in oklab, var(--purple-900) 50%, transparent));
-  padding-inline: 0.25rem;
-  color: tone(purple-700, purple-300);
-}
 
 // 動作プレビュー（幅いっぱい）の下に、コピー系の2つを横並びで置く。
 .actionStack {
