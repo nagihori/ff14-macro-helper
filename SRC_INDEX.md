@@ -4,12 +4,15 @@
 
 ## 全体の枠
 
-- [`app/globals.css`](src/app/globals.css) — Tailwind の読み込み、背景色・文字色の CSS 変数、ダークモード切り替え
+- [`app/globals.css`](src/app/globals.css) — デザイントークン（パレット＋意味名トークン。ライト/ダークは `light-dark()` で1行）、`html` / `body` の基本スタイル。リセットを読み込む
+- [`styles/reset.css`](src/styles/reset.css) — 最小限のリセット（Tailwind の preflight から必要分だけ引き継ぎ）
+- [`styles/_mixins.scss`](src/styles/_mixins.scss) — 各 `*.module.scss` から `@use` する共通部品（文字サイズ `type()`、ブレークポイント、タグリンク・カード・ピルボタン等、`tone()`）
 - [`app/layout.tsx`](src/app/layout.tsx) — ルートレイアウト。`lang="ja"`、metadata、globals.css の読み込み
+- スタイルは各 tsx と同じ場所の `*.module.scss`（CSS Modules + SCSS、意味名クラス）。色は `globals.css` のトークンを参照する
 
 ## ページ
 
-- [`app/page.tsx`](src/app/page.tsx) — トップ。ヘッダーと公開マクロ一覧への導線を置き、`MacroWorkbench` を表示
+- [`app/page.tsx`](src/app/page.tsx)（＋ `page.module.scss`）— トップ。ヘッダーと公開マクロ一覧への導線を置き、`MacroWorkbench` を表示
 - [`app/macros/page.tsx`](src/app/macros/page.tsx) — 公開マクロ一覧。`?q=` を受け取り `PublishedMacroLibrary` へ初期検索語として渡す
 - [`app/macros/[slug]/page.tsx`](src/app/macros/%5Bslug%5D/page.tsx) — 公開マクロの詳細。本文・タグ・リアクション・投稿者を表示し、「エディタで開く」で本文を `?m=` に載せてトップへ送る
 - [`app/macros/submit/page.tsx`](src/app/macros/submit/page.tsx) — 公開投稿ページ。`PublishFromUrlForm` を置くだけの薄いラッパー
