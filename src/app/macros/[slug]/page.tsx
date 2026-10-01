@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { auth } from '@/auth'
+import { AdminMacroControls } from '@/components/AdminMacroControls'
 import { CopyMacroButton } from '@/components/CopyMacroButton'
 import { PublishedMacroReactions } from '@/components/PublishedMacroReactions'
-import { findPublishedMacro, findRelatedMacros } from '@/lib/published-macros/repository'
+import { findMacroIncludingSuspended, findPublishedMacro, findRelatedMacros } from '@/lib/published-macros/repository'
 import { buildEditorPath } from '@/lib/share/url'
 import styles from './page.module.scss'
 
@@ -13,7 +15,9 @@ function WarnIcon() { return <svg {...iconProps}><path d="M12 3 2 20h20zM12 10v4
 
 export default async function PublishedMacroPage({ params }: PageProps<'/macros/[slug]'>) {
   const { slug } = await params
-  const macro = await findPublishedMacro(slug)
+  // 停止中のマクロは、管理者にだけ見せる（再公開のため）。操作の許可そのものはサーバーアクション側で判定する。
+  const admin = (await auth())?.user.isAdmin === true
+  const macro = await (admin ? findMacroIncludingSuspended(slug) : findPublishedMacro(slug))
   if (!macro) notFound()
   const [related, origin] = await Promise.all([findRelatedMacros(slug), macro.arrangedFrom ? findPublishedMacro(macro.arrangedFrom) : undefined])
 
@@ -21,6 +25,7 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
     <main className={styles.page}>
       <div className={styles.container}>
         <Link href="/macros" className={styles.backLink}>← 公開マクロ一覧に戻る</Link>
+        {macro.status === 'suspended' && <p role="status" className={styles.suspendedNotice}>このマクロは公開停止中です。管理者にだけ表示されています。</p>}
         <article className={styles.article}>
           <div className={styles.tags}>
             {macro.tags.map((tag) => (
@@ -41,6 +46,7 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
           <section className={styles.reactions}>
             <PublishedMacroReactions macroSlug={macro.slug} initialHelpful={macro.reactions.helpful} initialProblem={macro.reactions.problem} />
           </section>
+          {admin && <AdminMacroControls slug={macro.slug} status={macro.status} />}
           <footer className={styles.meta}>
             投稿者 {macro.authorHandle} · {macro.publishedAt}
             {origin && <> · アレンジ元：<Link href={`/macros/${origin.slug}`} className={styles.originLink}>{origin.title}</Link></>}

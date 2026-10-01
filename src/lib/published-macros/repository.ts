@@ -7,7 +7,7 @@ const columns = `
   m.slug, m.title, m.description, m.body, m.tags, m.author_handle,
   to_char(m.published_at at time zone 'Asia/Tokyo', 'YYYY/MM/DD') as published_at,
   o.slug as arranged_from_slug,
-  m.helpful_count, m.problem_count
+  m.helpful_count, m.problem_count, m.status
 `
 // 元マクロが停止中なら、バックリンクは張らない。
 const from = `
@@ -18,7 +18,7 @@ const from = `
 type Row = {
   slug: string; title: string; description: string; body: string; tags: string[]
   author_handle: string; published_at: string; arranged_from_slug: string | null
-  helpful_count: number; problem_count: number
+  helpful_count: number; problem_count: number; status: 'published' | 'suspended'
 }
 
 function toMacro(row: Row): PublishedMacro {
@@ -32,6 +32,7 @@ function toMacro(row: Row): PublishedMacro {
     publishedAt: row.published_at,
     arrangedFrom: row.arranged_from_slug ?? undefined,
     reactions: { helpful: row.helpful_count, problem: row.problem_count },
+    status: row.status,
   }
 }
 
@@ -65,4 +66,17 @@ export async function listTags(): Promise<string[]> {
     `select tag from macros m, unnest(m.tags) as tag where m.status = 'published' group by tag order by count(*) desc, tag`,
   )
   return rows.map((row) => row.tag as string)
+}
+
+// ---- 管理者向け（呼び出し側で isAdmin を確認すること） ----
+
+// 停止中も含めて 1 件引く。停止中のマクロを見て、再公開するための入口。
+export async function findMacroIncludingSuspended(slug: string): Promise<PublishedMacro | undefined> {
+  const rows = await getSql().query(`select ${columns} ${from} where m.slug = $1`, [slug])
+  return rows[0] ? toMacro(rows[0] as Row) : undefined
+}
+
+export async function listSuspendedMacros(): Promise<PublishedMacro[]> {
+  const rows = await getSql().query(`select ${columns} ${from} where m.status = 'suspended' order by m.suspended_at desc`)
+  return (rows as Row[]).map(toMacro)
 }

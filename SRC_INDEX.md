@@ -13,8 +13,9 @@
 ## ページ
 
 - [`app/page.tsx`](src/app/page.tsx)（＋ `page.module.scss`）— トップ。ヘッダー（右肩に「公開マクロを探す」副・「公開する」主）を置き、`MacroWorkbench` を表示
-- [`app/macros/page.tsx`](src/app/macros/page.tsx) — 公開マクロ一覧。`?q=` を受け取り `PublishedMacroLibrary` へ初期検索語として渡す。右肩に「公開する」（主）と「エディタに戻る」（副）
-- [`app/macros/[slug]/page.tsx`](src/app/macros/%5Bslug%5D/page.tsx) — 公開マクロの詳細。本文・タグ・リアクション・投稿者・似たマクロ（共通タグ順、`findRelatedMacros`）を表示し、「マクロテキストをコピー」（主）と「エディタで編集」（副）で本文を（アレンジ元の slug を `&from=` で持たせて） `?m=` に載せてトップへ送る
+- [`app/macros/page.tsx`](src/app/macros/page.tsx) — 公開マクロ一覧。`?q=` を受け取り `PublishedMacroLibrary` へ初期検索語として渡す。右肩に「公開する」（主）と「エディタに戻る」（副）。管理者には「公開停止中」のマクロへの入口も出す
+- [`app/macros/[slug]/page.tsx`](src/app/macros/%5Bslug%5D/page.tsx) — 公開マクロの詳細。本文・タグ・リアクション・投稿者・似たマクロ（共通タグ順、`findRelatedMacros`）を表示し、「マクロテキストをコピー」（主）と「エディタで編集」（副）で本文を（アレンジ元の slug を `&from=` で持たせて） `?m=` に載せてトップへ送る。管理者には停止中のマクロも表示し、`AdminMacroControls` を出す
+- [`app/macros/[slug]/actions.ts`](src/app/macros/%5Bslug%5D/actions.ts) — 公開停止／再公開のサーバーアクション。セッションの `isAdmin` は信用せず、`users` の Discord ID を `ADMIN_DISCORD_IDS` と毎回照合する
 - [`app/macros/submit/page.tsx`](src/app/macros/submit/page.tsx) — 公開投稿ページ。ログイン状態・保存済みの公開名・タグ候補・既存マクロ（アレンジ元の照合用）を取得して `PublishFromUrlForm` に渡す。未ログインならフォームの代わりに `AuthButton`（ログイン後にこのページへ戻る）
 - [`app/macros/submit/actions.ts`](src/app/macros/submit/actions.ts) — 公開フォームのサーバーアクション。ログイン必須。`validatePublish` で共有 URL の復号と lint を再検証し、通ったものだけ `store.ts` で保存して詳細ページへ移る
 - [`app/api/auth/[...nextauth]/route.ts`](src/app/api/auth/%5B...nextauth%5D/route.ts) — Auth.js のハンドラ。設定は [`src/auth.ts`](src/auth.ts)（Discord・scope は identify のみ・JWT。アバター／表示名／メールはトークンに残さない。管理者は `ADMIN_DISCORD_IDS`）
@@ -34,9 +35,10 @@
 - [`components/PublishButton.tsx`](src/components/PublishButton.tsx) — エディタ右肩の「公開する」。現在の本文から共有 URL を作り、`/macros/submit?url=` へ渡して遷移（本文は `lib/share/editor-draft.ts` の写しを読む。問題が見つかった本文もここ経由でエディタへ伝え、戻った時に波線を残す）
 - [`components/PublishFromUrlForm.tsx`](src/components/PublishFromUrlForm.tsx)（＋ `.module.scss`）— 共有 URL・タイトル・説明・タグ（初回のみ公開名）の公開フォーム（保存済みの公開名は「変更する」リンクで入力欄に切り替わる）。`?url=` で共有 URL を初期入力。タグ欄は既存タグを弱いリンクで下に並べ、入力中の語で絞り込む。URL に `from=`（アレンジ元）があれば元マクロを表示。送信は `submitMacro`（useActionState）で、サーバー側のエラーを文で一覧表示する。未ログインなら `loginSlot` を出す
 - [`components/AuthButton.tsx`](src/components/AuthButton.tsx)（＋ `.module.scss`）— Discord ログイン／ログアウト（サーバーコンポーネント。`redirectTo` でログイン後の戻り先を指定）
+- [`components/AdminMacroControls.tsx`](src/components/AdminMacroControls.tsx)（＋ `.module.scss`）— 詳細ページの管理者向け操作欄（公開停止／再公開）。破線の枠で一般の操作と区別する
 
 ## メモ
 
-- 公開マクロ系（`src/app/macros/*`、`PublishedMacro*`、`PublishFromUrlForm`）の読み取りは Neon（`src/lib/published-macros/repository.ts`、接続は `src/lib/db.ts`）。公開停止（`status = 'suspended'`）の行は一覧・詳細・似たマクロ・アレンジ元リンクから外れる。書き込みは `store.ts`、入力検証は UI と切り離した `publish.ts`（単体テスト `publish.test.ts`、`npm test`）。公開名は初回の投稿時に `users.public_handle` へ保存し、フォームの「変更する」で変更できる（過去の自分の投稿の表示名も追従）。管理者による公開停止の操作とリアクションの集計は未実装
+- 公開マクロ系（`src/app/macros/*`、`PublishedMacro*`、`PublishFromUrlForm`）の読み取りは Neon（`src/lib/published-macros/repository.ts`、接続は `src/lib/db.ts`）。公開停止（`status = 'suspended'`）の行は一覧・詳細・似たマクロ・アレンジ元リンクから外れる。書き込みは `store.ts`、入力検証は UI と切り離した `publish.ts`（単体テスト `publish.test.ts`、`npm test`）。公開名は初回の投稿時に `users.public_handle` へ保存し、フォームの「変更する」で変更できる（過去の自分の投稿の表示名も追従）。管理者の判定は `src/lib/admin.ts`。リアクションの集計は未実装
 - DB のスキーマは `db/migrations/*.sql`（`npm run db:migrate`）、動作確認用のサンプルは `scripts/seed-samples.mjs`
 - `MacroWorkbench.tsx` の説明は冒頭と state 定義を読んだ範囲＋機能名からの推測を含む。細部は要確認

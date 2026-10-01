@@ -31,3 +31,25 @@
 // 主操作（公開する）は塗り、副操作（エディタに戻る）は枠線のみ。
 .primaryAction { @include pill-action; }
 .secondaryAction { @include pill-action-secondary; }
+
+// 管理者にだけ出す、公開停止中のマクロの入口。
+.suspended {
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+  @include type(sm);
+
+  @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+}
+
+.suspendedHeading {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.suspendedLink {
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

@@ -1,13 +1,11 @@
 import NextAuth from 'next-auth'
 import Discord from 'next-auth/providers/discord'
+import { isAdminAccountId } from '@/lib/admin'
 import { getSql } from '@/lib/db'
 
 // Discord ログイン。scope は identify のみ（メール・サーバー情報は取得しない）。
 // セッションは JWT（DB アダプタなし）。アバターはセッションにも保存にも載せない（プライバシーポリシーの約束）。
-// 管理者は ADMIN_DISCORD_IDS（カンマ区切りの Discord ユーザー ID）で判定する。
-function isAdminAccount(providerAccountId: string): boolean {
-  return (process.env.ADMIN_DISCORD_IDS ?? '').split(',').map((id) => id.trim()).filter(Boolean).includes(providerAccountId)
-}
+// 管理者は ADMIN_DISCORD_IDS で判定する（src/lib/admin.ts）。
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [Discord({ authorization: { params: { scope: 'identify' } } })],
@@ -25,7 +23,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           [account.provider, providerAccountId, displayName],
         )
         token.userId = rows[0].id as string
-        token.isAdmin = isAdminAccount(providerAccountId)
+        token.isAdmin = isAdminAccountId(providerAccountId)
       }
       // アバターと表示名は、ブラウザに持たせるトークンへ残さない。
       delete token.picture

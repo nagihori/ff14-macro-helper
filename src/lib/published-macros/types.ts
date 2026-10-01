@@ -10,4 +10,5 @@ export type PublishedMacro = {
   publishedAt: string // 'YYYY/MM/DD'（日本時間）
   arrangedFrom?: string // アレンジ元の slug
   reactions: { helpful: number; problem: number }
+  status: 'published' | 'suspended' // 一般向けの取得では常に 'published'。停止中は管理者向けの取得でだけ返る
 }
