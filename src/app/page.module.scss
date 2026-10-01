@@ -1,0 +1,43 @@
+@use '../styles/mixins' as *;
+
+// エディタ（トップ）ページ。
+.page {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  background: var(--surface-page-editor);
+  font-family: var(--font-sans);
+}
+
+.header {
+  display: flex;
+  width: 100%;
+  max-width: 64rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 2rem 2rem 0;
+}
+
+.title {
+  @include type(xl);
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.lead {
+  @include type(sm);
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+  // 右肩に固定したテーマ切り替えと重ならないよう、少し内側に寄せる。
+  margin-right: 1.5rem;
+}
+
+.secondaryAction { @include pill-action-secondary; }

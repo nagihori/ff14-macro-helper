@@ -1,15 +1,20 @@
+import Link from 'next/link'
+import { PublishButton } from '@/components/PublishButton'
 import { MacroWorkbench } from '@/components/MacroWorkbench'
+import styles from './page.module.scss'
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center bg-zinc-50 font-sans dark:bg-black">
-      <header className="w-full max-w-5xl px-8 pt-8">
-        <h1 className="text-xl font-semibold text-black dark:text-zinc-50">
-          ff14-macro-helper
-        </h1>
-        <p className="text-sm text-zinc-500">
-          FFXIV マクロの編集・診断・ログプレビュー・共有をブラウザ内で完結します。
-        </p>
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <div>
+          <h1 className={styles.title}>ff14-macro-helper</h1>
+          <p className={styles.lead}>FFXIV マクロの編集・診断・ログプレビュー・共有をブラウザ内で完結します。</p>
+        </div>
+        <nav className={styles.actions} aria-label="ページ操作">
+          <Link href="/macros" className={styles.secondaryAction}>公開マクロを探す</Link>
+          <PublishButton />
+        </nav>
       </header>
       <MacroWorkbench />
     </div>

@@ -1,0 +1,22 @@
+import Link from 'next/link'
+import { PublishedMacroLibrary } from '@/components/PublishedMacroLibrary'
+import styles from './page.module.scss'
+
+export const metadata = { title: '公開マクロ | ff14-macro-helper' }
+
+export default async function MacroLibraryPage({ searchParams }: PageProps<'/macros'>) {
+  const { q } = await searchParams
+  const initialQuery = typeof q === 'string' ? q : ''
+  return (
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <Link href="/" className={styles.brand}>ff14-macro-helper</Link>
+        <nav className={styles.actions} aria-label="ページ操作">
+          <Link href="/" className={styles.secondaryAction}>エディタに戻る</Link>
+          <Link href="/macros/submit" className={styles.primaryAction}>公開する</Link>
+        </nav>
+      </header>
+      <PublishedMacroLibrary initialQuery={initialQuery} />
+    </div>
+  )
+}

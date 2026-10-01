@@ -1,0 +1,3 @@
+@use '../../../styles/mixins' as *;
+
+.page { @include page-shell; }

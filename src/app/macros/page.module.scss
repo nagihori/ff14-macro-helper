@@ -1,0 +1,33 @@
+@use '../../styles/mixins' as *;
+
+// 公開マクロ一覧ページの外枠とヘッダー。
+.page { @include page-shell; }
+
+.header {
+  display: flex;
+  width: 100%;
+  max-width: 72rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-inline: auto;
+  padding: 1.5rem;
+
+  @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+}
+
+.brand {
+  @include type(sm);
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  // 右肩に固定したテーマ切り替えと重ならないよう、少し内側に寄せる。
+  margin-right: 1.5rem;
+}
+
+// 主操作（公開する）は塗り、副操作（エディタに戻る）は枠線のみ。
+.primaryAction { @include pill-action; }
+.secondaryAction { @include pill-action-secondary; }

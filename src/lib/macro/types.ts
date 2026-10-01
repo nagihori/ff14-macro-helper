@@ -88,6 +88,8 @@ export type MacroLine = {
   raw: string
   commandToken: string | null
   argsText: string
+  // 入力を終えた行か。改行で次の行へ進んだ行、または全文を確定扱いで解析した時（コピー・共有・公開の直前）の全行が true。
+  terminated: boolean
 }
 
 export type MacroAnalysis = {

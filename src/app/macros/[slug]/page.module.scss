@@ -1,0 +1,170 @@
+@use '../../../styles/mixins' as *;
+
+// 公開マクロの詳細ページ。
+.page {
+  @include page-shell;
+  padding: 1.5rem;
+
+  @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+}
+
+.container {
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+.backLink { @include back-link; }
+
+.article {
+  @include card;
+  margin-top: 2rem;
+  border-radius: var(--radius-3xl);
+  padding: 1.75rem;
+
+  @media (min-width: $bp-sm) { padding: 2.5rem; }
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  @include type(xs);
+  font-weight: 600;
+  @include tag-link;
+}
+
+.title {
+  margin-top: 1.25rem;
+  @include type(title);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.description {
+  margin-top: 0.75rem;
+  line-height: 1.75rem;
+  color: var(--text-secondary);
+}
+
+.bodySection { margin-top: 2rem; }
+
+.bodyHeading {
+  @include type(sm);
+  font-weight: 600;
+}
+
+.code {
+  margin-top: 0.75rem;
+  overflow-x: auto;
+  border-radius: var(--radius-xl);
+  background: var(--surface-dark);
+  padding: 1.25rem;
+  font-family: var(--font-mono);
+  @include type(sm);
+  line-height: 1.75rem;
+  color: var(--text-on-dark);
+}
+
+.disclaimer {
+  margin-top: 0.75rem;
+  @include type(xs);
+  line-height: 1.25rem;
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.openLink { @include pill-action-secondary; }
+
+.reactions { margin-top: 2.5rem; }
+
+.meta {
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 1.25rem;
+  @include type(xs);
+  color: var(--text-muted);
+}
+
+// 似たマクロ。一覧のカードから投稿者・日付・投票ボタンを外した小型版（カード全体が詳細へのリンク）。
+.related { margin-top: 2.5rem; }
+
+.relatedHeading {
+  @include type(sm);
+  font-weight: 600;
+}
+
+.relatedList {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+
+  @media (min-width: $bp-sm) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.relatedCard {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  border-radius: var(--radius-2xl);
+  padding: 1rem;
+
+  &:hover { border-color: var(--border-default); }
+}
+
+.relatedTags {
+  @include type(xs);
+  color: var(--text-muted);
+}
+
+.relatedTitle {
+  @include type(sm);
+  font-weight: 600;
+}
+
+.relatedDescription {
+  @include type(xs);
+  color: var(--text-secondary);
+}
+
+.relatedReactions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  @include type(xs);
+}
+
+.helpfulCount,
+.problemCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.helpfulCount { color: light-dark(var(--emerald-800), var(--emerald-200)); }
+.problemCount { color: light-dark(var(--rose-800), var(--rose-200)); }
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.originLink {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  &:hover { color: var(--text-strong); }
+}

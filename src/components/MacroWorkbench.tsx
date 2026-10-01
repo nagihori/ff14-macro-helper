@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { analyze } from '@/lib/macro/analyze'
 import { toLogPreview } from '@/lib/macro/log-preview'
 import { buildHighlight } from '@/lib/macro/highlight'
@@ -16,16 +16,16 @@ import { halfWidthLength } from '@/lib/macro/text-width'
 import { MAX_LINE_LENGTH, MAX_LINES } from '@/lib/macro/lint'
 import { getDictionary } from '@/lib/commands/dictionary'
 import { searchCommands } from '@/lib/commands/search'
+import { getCheckedBody, setEditorDraft, subscribeCheckedBody } from '@/lib/share/editor-draft'
 import { buildShareUrl, decodeDocument, readShareParam } from '@/lib/share/url'
 import type {
   CommandCategory,
   CommandDefinition,
-  DiagnosticSeverity,
-  HighlightSegmentKind,
   LogEntry,
-  LogEntryKind,
   PlaceholderCandidate,
 } from '@/lib/macro/types'
+import { useMacroCheck } from './useMacroCheck'
+import styles from './MacroWorkbench.module.scss'
 
 const dictionary = getDictionary()
 
@@ -78,67 +78,9 @@ const CATEGORY_LABEL: Record<CommandCategory, string> = {
   pronoun: '代名詞',
 }
 
-// カテゴリバッジの色。エモートだけ青緑系にして他カテゴリと見分けやすくする。
-const CATEGORY_BADGE_CLASS: Record<CommandCategory, string> = {
-  chat: 'text-blue-600 dark:text-blue-400',
-  party_social: 'text-blue-600 dark:text-blue-400',
-  target: 'text-blue-600 dark:text-blue-400',
-  action_hotbar: 'text-blue-600 dark:text-blue-400',
-  battle: 'text-blue-600 dark:text-blue-400',
-  system: 'text-blue-600 dark:text-blue-400',
-  macro: 'text-blue-600 dark:text-blue-400',
-  config: 'text-blue-600 dark:text-blue-400',
-  emote: 'text-teal-600 dark:text-teal-400',
-  menu: 'text-blue-600 dark:text-blue-400',
-  pronoun: 'text-blue-600 dark:text-blue-400',
-}
-
-const HIGHLIGHT_CLASS: Record<HighlightSegmentKind, string> = {
-  'command-known': 'text-blue-600 dark:text-blue-400',
-  'command-known-emote': 'text-teal-600 dark:text-teal-400',
-  'command-unknown': 'text-amber-600 dark:text-amber-400 underline decoration-wavy decoration-amber-500',
-  'arg-placeholder': 'text-purple-600 dark:text-purple-400',
-  'arg-placeholder-wait': 'text-pink-600 dark:text-pink-400',
-  'arg-placeholder-invalid': 'text-red-600 dark:text-red-400 underline decoration-wavy',
-  'arg-string': 'text-emerald-600 dark:text-emerald-400',
-  'arg-number': 'text-teal-600 dark:text-teal-400',
-  'fullwidth-space': 'bg-red-500/40 rounded-xs',
-  text: 'text-zinc-900 dark:text-zinc-50',
-}
-
-// ログプレビューの送信先チャンネル別の色分け。渚さんデフォルト配色のトークンなので
-// 実機の見た目と揃えたい時はここだけ触れば済むようにしている。
-const LOG_KIND_CLASS: Record<LogEntryKind, string> = {
-  say: 'text-zinc-900 dark:text-zinc-50',
-  yell: 'text-yellow-600 dark:text-yellow-400',
-  shout: 'text-orange-600 dark:text-orange-400',
-  tell: 'text-pink-600 dark:text-pink-400',
-  party: 'text-cyan-500 dark:text-cyan-300',
-  alliance: 'text-amber-500 dark:text-amber-300',
-  freecompany: 'text-sky-400 dark:text-sky-200',
-  linkshell: 'text-green-500 dark:text-green-300',
-  echo: 'text-zinc-400 dark:text-zinc-500',
-  action: 'text-indigo-600 dark:text-indigo-400',
-  system: 'text-zinc-500 dark:text-zinc-400',
-  error: 'text-red-600 dark:text-red-400',
-  unknown: 'text-zinc-700 dark:text-zinc-300',
-}
-
 // コマンド単位ではなく行全体が対象の診断（行長・行数超過）は、行全体を波線で囲む。
-// command-unknown 等トークン単位の診断は HIGHLIGHT_CLASS 側で個別に処理済み。
+// command-unknown 等トークン単位の診断は、ハイライト側（MacroWorkbench.module.scss）で個別に処理済み。
 const WHOLE_LINE_DIAGNOSTIC_CODES = new Set(['line-length-exceeded', 'line-count-exceeded'])
-
-const DIAGNOSTIC_UNDERLINE_CLASS: Record<DiagnosticSeverity, string> = {
-  error: 'underline decoration-wavy decoration-red-500',
-  warning: 'underline decoration-wavy decoration-amber-500',
-  info: 'underline decoration-wavy decoration-zinc-400',
-}
-
-const DIAGNOSTIC_TEXT_CLASS: Record<DiagnosticSeverity, string> = {
-  error: 'text-red-600 dark:text-red-400',
-  warning: 'text-amber-600 dark:text-amber-400',
-  info: 'text-zinc-500 dark:text-zinc-400',
-}
 
 // UI はここでモデルを表示するだけ。文字数・構文・コマンドの意味は lib/macro が判断する（AGENTS.md）。
 export function MacroWorkbench() {
@@ -146,6 +88,9 @@ export function MacroWorkbench() {
   // 従来どおりコマンド補完が表示される。
   const [body, setBody] = useState('')
   const [cursor, setCursor] = useState(0)
+  // ボタン押下時のチェックで問題が見つかった本文。同じ本文のあいだは最終行も確定扱いで表示し、編集すると通常に戻る。
+  const checkedBody = useSyncExternalStore(subscribeCheckedBody, getCheckedBody, () => null)
+  const { guard, dialog: checkDialog } = useMacroCheck()
   const [commandSearchQuery, setCommandSearchQuery] = useState('')
   const [selection, setSelection] = useState<{ key: string | null; index: number }>({
     key: null,
@@ -203,7 +148,10 @@ export function MacroWorkbench() {
     }
   }, [])
 
-  const analysis = useMemo(() => analyze(body, dictionary), [body])
+  // 「公開する」ボタンが最新の本文を読めるよう、写しを置いておく。
+  useEffect(() => { setEditorDraft(body) }, [body])
+
+  const analysis = useMemo(() => analyze(body, dictionary, { complete: checkedBody === body }), [body, checkedBody])
   const highlightLines = useMemo(
     () => buildHighlight(analysis.lines, dictionary),
     [analysis.lines],
@@ -512,7 +460,7 @@ export function MacroWorkbench() {
     }
   }
 
-  async function handleCopy() {
+  async function copyBody() {
     try {
       await navigator.clipboard.writeText(body)
       setShareStatus('コピーしました。')
@@ -521,7 +469,7 @@ export function MacroWorkbench() {
     }
   }
 
-  async function handleShare() {
+  async function copyShareUrl() {
     const url = buildShareUrl(analysis.document, window.location.href)
     try {
       await navigator.clipboard.writeText(url)
@@ -530,6 +478,10 @@ export function MacroWorkbench() {
       setShareStatus(url)
     }
   }
+
+  // コピー・共有の前には必ず本文をチェックし、問題があれば確認を挟む。
+  function handleCopy() { guard(body, 'コピーする', copyBody) }
+  function handleShare() { guard(body, '共有 URL をコピーする', copyShareUrl) }
 
   // クリック時点のスナップショットを、行ごとの delaySeconds（/wait の累積）だけ
   // 遅らせながら1行ずつ出す。実行中に再クリックされたら前回分のタイマーは破棄する。
@@ -574,394 +526,347 @@ export function MacroWorkbench() {
   }, [body])
 
   const isLogPlaying = !!logPlayback && logPlayback.revealedCount < logPlayback.entries.length
+  const lineLengthLevel =
+    currentLineStats.length > MAX_LINE_LENGTH
+      ? 'over'
+      : currentLineStats.length >= LINE_LENGTH_WARNING
+        ? 'near'
+        : undefined
 
   return (
-    <div className="w-full max-w-5xl px-8 pb-8">
-      <div className="flex gap-2 pb-6">
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="rounded bg-black px-3 py-1.5 text-sm text-white dark:bg-white dark:text-black"
-        >
+    <div className={styles.workbench}>
+      {checkDialog}
+      <div className={styles.toolbar}>
+        <button type="button" onClick={handleCopy} className={styles.copyButton}>
           コピー
         </button>
-        <button
-          type="button"
-          onClick={handleShare}
-          className="rounded border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700"
-        >
+        <button type="button" onClick={handleShare} className={styles.shareButton}>
           共有 URL をコピー
         </button>
-        {shareStatus && <p className="self-center text-sm text-zinc-500">{shareStatus}</p>}
+        {shareStatus && <p className={styles.status}>{shareStatus}</p>}
       </div>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <section className="flex flex-col gap-2">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-sm font-semibold text-zinc-500">エディタ</h2>
-          <div className="flex items-baseline gap-3">
-            <p className="font-mono text-xs text-zinc-500">
-              L{currentLineStats.number}・
-              <span
-                className={
-                  currentLineStats.length > MAX_LINE_LENGTH
-                    ? 'text-red-600 dark:text-red-400'
-                    : currentLineStats.length >= LINE_LENGTH_WARNING
-                      ? 'text-orange-600 dark:text-orange-400'
-                      : ''
-                }
-              >
-                {currentLineStats.length}
-              </span>
-              {' / '}
-              {MAX_LINE_LENGTH} 文字（推定・半角換算）
-            </p>
-            <button
-              type="button"
-              onClick={handlePlayLog}
-              disabled={isLogPlaying}
-              className="flex items-center gap-1.5 rounded bg-black px-3 py-1 text-xs text-white disabled:opacity-50 dark:bg-white dark:text-black"
-            >
-              {isLogPlaying && (
-                <span
-                  aria-hidden
-                  className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"
-                />
-              )}
-              {isLogPlaying ? '実行中…' : 'プレビュー'}
-            </button>
-          </div>
-        </div>
-        {restoreError && (
-          <p className="rounded bg-red-100 px-3 py-2 text-sm text-red-800" role="alert">
-            {restoreError}
-          </p>
-        )}
-        <div className="flex flex-1 rounded border border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-          <div
-            ref={gutterRef}
-            aria-hidden
-            className="select-none overflow-hidden border-r border-zinc-200 px-2 py-3 text-right font-mono text-sm leading-6 text-zinc-400 dark:border-zinc-800"
-          >
-            {highlightLines.map((highlightLine) => (
-              <div key={highlightLine.line}>{highlightLine.line}</div>
-            ))}
-          </div>
-          <div className="relative flex-1">
-            <textarea
-              ref={textareaRef}
-              value={body}
-              onChange={handleChange}
-              onFocus={stopLogPlayback}
-              onSelect={(event) => syncCursor(event.currentTarget)}
-              onClick={(event) => syncCursor(event.currentTarget)}
-              onKeyUp={(event) => syncCursor(event.currentTarget)}
-              onKeyDown={handleKeyDown}
-              onScroll={handleScroll}
-              rows={15}
-              spellCheck={false}
-              className="relative w-full flex-1 bg-transparent p-3 font-mono text-sm leading-6 text-transparent caret-black whitespace-pre-wrap dark:caret-white"
-              placeholder={'/ac "アクション名" <t>\n/wait 1'}
-            />
-            <div
-              ref={overlayRef}
-              aria-hidden
-              className="pointer-events-none absolute inset-0 overflow-hidden p-3 font-mono text-sm leading-6 whitespace-pre-wrap"
-            >
-              {highlightLines.map((highlightLine, lineIndex) => {
-                const wholeLineDiagnostic = analysis.diagnostics.find(
-                  (diagnostic) =>
-                    diagnostic.line === highlightLine.line &&
-                    WHOLE_LINE_DIAGNOSTIC_CODES.has(diagnostic.code),
-                )
-                return (
-                  <span
-                    key={highlightLine.line}
-                    className={
-                      wholeLineDiagnostic
-                        ? DIAGNOSTIC_UNDERLINE_CLASS[wholeLineDiagnostic.severity]
-                        : undefined
-                    }
-                  >
-                    {highlightLine.segments.map((segment, segmentIndex) => (
-                      <span
-                        key={segmentIndex}
-                        className={HIGHLIGHT_CLASS[segment.kind]}
-                      >
-                        {segment.text}
-                      </span>
-                    ))}
-                    {lineIndex < highlightLines.length - 1 ? '\n' : null}
-                  </span>
-                )
-              })}
-            </div>
-            <div
-              ref={mirrorRef}
-              aria-hidden
-              className="invisible absolute inset-0 overflow-hidden p-3 font-mono text-sm leading-6 whitespace-pre-wrap"
-            />
-            <div
-              ref={ghostLayerRef}
-              aria-hidden
-              className="pointer-events-none absolute inset-0 overflow-hidden"
-            >
-              {ghostText && ghostPosition && (
-                <span
-                  className="absolute font-mono text-sm leading-6 whitespace-pre text-zinc-400 dark:text-zinc-600"
-                  style={{ left: ghostPosition.left, top: ghostPosition.top }}
-                >
-                  {ghostText}
+      <div className={styles.panes}>
+        <section className={styles.editorPane}>
+          <div className={styles.editorHeader}>
+            <h2 className={styles.paneTitle}>エディタ</h2>
+            <div className={styles.editorTools}>
+              <p className={styles.lineStats}>
+                L{currentLineStats.number}・
+                <span className={styles.lineLength} data-level={lineLengthLevel}>
+                  {currentLineStats.length}
                 </span>
-              )}
+                {' / '}
+                {MAX_LINE_LENGTH} 文字（推定・半角換算）
+              </p>
+              <button
+                type="button"
+                onClick={handlePlayLog}
+                disabled={isLogPlaying}
+                className={styles.previewButton}
+              >
+                {isLogPlaying && <span aria-hidden className={styles.spinner} />}
+                {isLogPlaying ? '実行中…' : 'プレビュー'}
+              </button>
             </div>
           </div>
-        </div>
-        <p
-          className={`h-5 truncate px-1 text-sm ${
-            currentLineDiagnostics.length > 0
-              ? DIAGNOSTIC_TEXT_CLASS[currentLineDiagnostics[0].severity]
-              : 'text-transparent'
-          }`}
-        >
-          {currentLineDiagnostics.length > 0
-            ? currentLineDiagnostics.map((diagnostic) => diagnostic.message).join('　')
-            : ' '}
-        </p>
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <input
-          type="search"
-          value={commandSearchQuery}
-          onChange={handleCommandSearchChange}
-          placeholder="コマンドを検索（例: ac、パーティ、ターゲット）"
-          aria-label="コマンドを検索"
-          className="w-full rounded border border-zinc-300 bg-transparent px-3 py-1.5 text-sm dark:border-zinc-700"
-        />
-        {commandSearchQuery.trim() ? (
-          commandSearchResults.length > 0 ? (
-            <ul className="max-h-64 overflow-y-auto rounded border border-zinc-300 dark:border-zinc-700">
-              {commandSearchResults.map((command) => {
-                const isExpanded = expandedSearchCommandId === command.id
-                const sentences = splitSentences(command.description)
-                return (
-                  <li key={command.id}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedSearchCommandId((current) =>
-                          current === command.id ? null : command.id,
-                        )
-                      }
-                      onDoubleClick={() => applySearchCommand(command)}
-                      className="w-full px-3 py-1.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    >
-                      <span className="flex items-baseline justify-between gap-2">
-                        <span>
-                          <span className="font-mono font-semibold">{command.names.join(' / ')}</span>
-                          <span className="ml-2 text-xs text-zinc-500">{command.signature}</span>
-                        </span>
-                        <span
-                          className={`shrink-0 text-xs font-semibold ${CATEGORY_BADGE_CLASS[command.category]}`}
-                        >
-                          {CATEGORY_LABEL[command.category]}
-                        </span>
-                      </span>
-                      <p className="text-xs text-zinc-500">{sentences[0]}</p>
-                    </button>
-                    {isExpanded && (
-                      <div className="border-t border-zinc-200 bg-zinc-50 px-3 py-2 text-xs dark:border-zinc-800 dark:bg-zinc-900">
-                        {sentences.length > 1 && (
-                          <div className="mb-1.5 flex flex-col gap-0.5 text-zinc-700 dark:text-zinc-300">
-                            {sentences.map((sentence, sentenceIndex) => (
-                              <p key={sentenceIndex}>{sentence}</p>
-                            ))}
-                          </div>
-                        )}
-                        <p className="text-zinc-500">
-                          対応範囲：{command.support} ・{' '}
-                          <a
-                            href={command.sourceUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="underline"
-                          >
-                            公式情報
-                          </a>
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => applySearchCommand(command)}
-                          className="mt-1.5 rounded border border-zinc-300 px-2 py-1 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                        >
-                          この候補を挿入
-                        </button>
-                      </div>
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
-          ) : (
-            <p className="px-1 text-sm text-zinc-500">一致するコマンドがありません。</p>
-          )
-        ) : logPlayback ? (
-          <ul className="flex flex-col gap-1 font-mono text-sm">
-            {logPlayback.entries.slice(0, logPlayback.revealedCount).map((entry) => (
-              <li key={entry.line} className={LOG_KIND_CLASS[entry.kind]}>
-                <span className="text-zinc-400">[{entry.timestamp}]</span>{' '}
-                {entry.segments.map((segment, index) =>
-                  segment.kind === 'placeholder' ? (
-                    <span
-                      key={index}
-                      className="rounded bg-purple-100 px-1 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300"
-                    >
-                      {segment.text}
-                    </span>
-                  ) : (
-                    <span key={index}>{segment.text}</span>
-                  ),
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <>
-            <p className="px-1 text-sm text-zinc-500">
-              コマンド名・短縮名・説明から検索できます。先頭の「/」は省略できます。エディタに直接「/」を入力しても候補が表示されます。
+          {restoreError && (
+            <p className={styles.restoreError} role="alert">
+              {restoreError}
             </p>
-            {visibleCompletion ? (
-          <ul className="max-h-64 overflow-y-auto rounded border border-zinc-300 dark:border-zinc-700">
-            {visibleCompletion.candidates.map((command, index) => {
-              const isExpanded = expandedSuggestionId === command.id
-              const sentences = splitSentences(command.description)
-              return (
-                <li key={command.id}>
-                  <button
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() =>
-                      setExpandedSuggestion((prev) =>
-                        prev.key === completionKey && prev.id === command.id
-                          ? { key: completionKey, id: null }
-                          : { key: completionKey, id: command.id },
-                      )
-                    }
-                    onDoubleClick={() => applyCompletion(command)}
-                    className={`w-full px-3 py-1.5 text-left text-sm ${
-                      index === selectedIndex ? 'bg-zinc-100 dark:bg-zinc-800' : ''
-                    }`}
-                  >
-                    <span className="flex items-baseline justify-between gap-2">
-                      <span>
-                        <span className="font-mono font-semibold">{command.names.join(' / ')}</span>
-                        <span className="ml-2 text-xs text-zinc-500">{command.signature}</span>
-                      </span>
-                      <span
-                        className={`shrink-0 text-xs font-semibold ${CATEGORY_BADGE_CLASS[command.category]}`}
-                      >
-                        {CATEGORY_LABEL[command.category]}
-                      </span>
+          )}
+          <div className={styles.editorFrame}>
+            <div ref={gutterRef} aria-hidden className={styles.gutter}>
+              {highlightLines.map((highlightLine) => (
+                <div key={highlightLine.line}>{highlightLine.line}</div>
+              ))}
+            </div>
+            <div className={styles.editorBody}>
+              <textarea
+                ref={textareaRef}
+                value={body}
+                onChange={handleChange}
+                onFocus={stopLogPlayback}
+                onSelect={(event) => syncCursor(event.currentTarget)}
+                onClick={(event) => syncCursor(event.currentTarget)}
+                onKeyUp={(event) => syncCursor(event.currentTarget)}
+                onKeyDown={handleKeyDown}
+                onScroll={handleScroll}
+                rows={15}
+                spellCheck={false}
+                className={styles.textarea}
+                placeholder={'/ac "アクション名" <t>\n/wait 1'}
+              />
+              <div ref={overlayRef} aria-hidden className={styles.overlay}>
+                {highlightLines.map((highlightLine, lineIndex) => {
+                  const wholeLineDiagnostic = analysis.diagnostics.find(
+                    (diagnostic) =>
+                      diagnostic.line === highlightLine.line &&
+                      WHOLE_LINE_DIAGNOSTIC_CODES.has(diagnostic.code),
+                  )
+                  return (
+                    <span
+                      key={highlightLine.line}
+                      className={styles.line}
+                      data-severity={wholeLineDiagnostic?.severity}
+                    >
+                      {highlightLine.segments.map((segment, segmentIndex) => (
+                        <span key={segmentIndex} className={styles.segment} data-kind={segment.kind}>
+                          {segment.text}
+                        </span>
+                      ))}
+                      {lineIndex < highlightLines.length - 1 ? '\n' : null}
                     </span>
-                    <p className="text-xs text-zinc-500">{sentences[0]}</p>
-                  </button>
-                  {isExpanded && (
-                    <div className="border-t border-zinc-200 bg-zinc-50 px-3 py-2 text-xs dark:border-zinc-800 dark:bg-zinc-900">
-                      {sentences.length > 1 && (
-                        <div className="mb-1.5 flex flex-col gap-0.5 text-zinc-700 dark:text-zinc-300">
-                          {sentences.map((sentence, sentenceIndex) => (
-                            <p key={sentenceIndex}>{sentence}</p>
-                          ))}
-                        </div>
-                      )}
-                      <p className="text-zinc-500">
-                        対応範囲：{command.support}
-                        {command.sourceUrl && (
-                          <>
-                            {' '}
-                            ・{' '}
+                  )
+                })}
+              </div>
+              <div ref={mirrorRef} aria-hidden className={styles.mirror} />
+              <div ref={ghostLayerRef} aria-hidden className={styles.ghostLayer}>
+                {ghostText && ghostPosition && (
+                  <span
+                    className={styles.ghostText}
+                    style={{ left: ghostPosition.left, top: ghostPosition.top }}
+                  >
+                    {ghostText}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <p
+            className={styles.diagnosticLine}
+            data-severity={currentLineDiagnostics[0]?.severity}
+          >
+            {currentLineDiagnostics.length > 0
+              ? currentLineDiagnostics.map((diagnostic) => diagnostic.message).join('　')
+              : ' '}
+          </p>
+        </section>
+
+        <section className={styles.sidePane}>
+          <input
+            type="search"
+            value={commandSearchQuery}
+            onChange={handleCommandSearchChange}
+            placeholder="コマンドを検索（例: ac、パーティ、ターゲット）"
+            aria-label="コマンドを検索"
+            className={styles.searchInput}
+          />
+          {commandSearchQuery.trim() ? (
+            commandSearchResults.length > 0 ? (
+              <ul className={styles.suggestionList}>
+                {commandSearchResults.map((command) => {
+                  const isExpanded = expandedSearchCommandId === command.id
+                  const sentences = splitSentences(command.description)
+                  return (
+                    <li key={command.id}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedSearchCommandId((current) =>
+                            current === command.id ? null : command.id,
+                          )
+                        }
+                        onDoubleClick={() => applySearchCommand(command)}
+                        className={`${styles.suggestion} ${styles.hoverable}`}
+                      >
+                        <span className={styles.suggestionHead}>
+                          <span>
+                            <span className={styles.commandName}>{command.names.join(' / ')}</span>
+                            <span className={styles.signature}>{command.signature}</span>
+                          </span>
+                          <span className={styles.categoryBadge} data-category={command.category}>
+                            {CATEGORY_LABEL[command.category]}
+                          </span>
+                        </span>
+                        <p className={styles.suggestionSummary}>{sentences[0]}</p>
+                      </button>
+                      {isExpanded && (
+                        <div className={styles.details}>
+                          {sentences.length > 1 && (
+                            <div className={styles.detailsSentences}>
+                              {sentences.map((sentence, sentenceIndex) => (
+                                <p key={sentenceIndex}>{sentence}</p>
+                              ))}
+                            </div>
+                          )}
+                          <p className={styles.supportLine}>
+                            対応範囲：{command.support} ・{' '}
                             <a
                               href={command.sourceUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="underline"
-                              onMouseDown={(event) => event.stopPropagation()}
+                              className={styles.sourceLink}
                             >
                               公式情報
                             </a>
-                          </>
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => applySearchCommand(command)}
+                            className={styles.insertButton}
+                          >
+                            この候補を挿入
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : (
+              <p className={styles.hint}>一致するコマンドがありません。</p>
+            )
+          ) : logPlayback ? (
+            <ul className={styles.log}>
+              {logPlayback.entries.slice(0, logPlayback.revealedCount).map((entry) => (
+                <li key={entry.line} className={styles.logEntry} data-kind={entry.kind}>
+                  <span className={styles.logTime}>[{entry.timestamp}]</span>{' '}
+                  {entry.segments.map((segment, index) =>
+                    segment.kind === 'placeholder' ? (
+                      <span key={index} className={styles.logPlaceholder}>
+                        {segment.text}
+                      </span>
+                    ) : (
+                      <span key={index}>{segment.text}</span>
+                    ),
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <>
+              <p className={styles.hint}>
+                コマンド名・短縮名・説明から検索できます。先頭の「/」は省略できます。エディタに直接「/」を入力しても候補が表示されます。
+              </p>
+              <p className={styles.hint}>
+                代名詞は「&lt;」なしで入力しても自動補完して展開されます。（t, me, pos など）
+              </p>
+              {visibleCompletion ? (
+                <ul className={styles.suggestionList}>
+                  {visibleCompletion.candidates.map((command, index) => {
+                    const isExpanded = expandedSuggestionId === command.id
+                    const sentences = splitSentences(command.description)
+                    return (
+                      <li key={command.id}>
+                        <button
+                          type="button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() =>
+                            setExpandedSuggestion((prev) =>
+                              prev.key === completionKey && prev.id === command.id
+                                ? { key: completionKey, id: null }
+                                : { key: completionKey, id: command.id },
+                            )
+                          }
+                          onDoubleClick={() => applyCompletion(command)}
+                          className={styles.suggestion}
+                          data-selected={index === selectedIndex || undefined}
+                        >
+                          <span className={styles.suggestionHead}>
+                            <span>
+                              <span className={styles.commandName}>{command.names.join(' / ')}</span>
+                              <span className={styles.signature}>{command.signature}</span>
+                            </span>
+                            <span className={styles.categoryBadge} data-category={command.category}>
+                              {CATEGORY_LABEL[command.category]}
+                            </span>
+                          </span>
+                          <p className={styles.suggestionSummary}>{sentences[0]}</p>
+                        </button>
+                        {isExpanded && (
+                          <div className={styles.details}>
+                            {sentences.length > 1 && (
+                              <div className={styles.detailsSentences}>
+                                {sentences.map((sentence, sentenceIndex) => (
+                                  <p key={sentenceIndex}>{sentence}</p>
+                                ))}
+                              </div>
+                            )}
+                            <p className={styles.supportLine}>
+                              対応範囲：{command.support}
+                              {command.sourceUrl && (
+                                <>
+                                  {' '}
+                                  ・{' '}
+                                  <a
+                                    href={command.sourceUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={styles.sourceLink}
+                                    onMouseDown={(event) => event.stopPropagation()}
+                                  >
+                                    公式情報
+                                  </a>
+                                </>
+                              )}
+                            </p>
+                            <button
+                              type="button"
+                              onMouseDown={(event) => event.preventDefault()}
+                              onClick={() => applyCompletion(command)}
+                              className={styles.insertButton}
+                            >
+                              この候補を挿入
+                            </button>
+                          </div>
                         )}
-                      </p>
+                      </li>
+                    )
+                  })}
+                </ul>
+              ) : visiblePlaceholderCompletion ? (
+                <ul className={styles.placeholderList}>
+                  {visiblePlaceholderCompletion.candidates.map((candidate, index) => (
+                    <li key={candidate.insertText}>
                       <button
                         type="button"
                         onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => applyCompletion(command)}
-                        className="mt-1.5 rounded border border-zinc-300 px-2 py-1 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                        onClick={() => applyPlaceholderCompletion(candidate)}
+                        className={styles.suggestion}
+                        data-selected={index === placeholderSelectedIndex || undefined}
                       >
-                        この候補を挿入
+                        <span className={styles.commandName}>{candidate.label}</span>
+                        <span className={styles.signature}>{candidate.description}</span>
                       </button>
-                    </div>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
-        ) : visiblePlaceholderCompletion ? (
-          <ul className="overflow-hidden rounded border border-zinc-300 dark:border-zinc-700">
-            {visiblePlaceholderCompletion.candidates.map((candidate, index) => (
-              <li key={candidate.insertText}>
-                <button
-                  type="button"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => applyPlaceholderCompletion(candidate)}
-                  className={`w-full px-3 py-1.5 text-left text-sm ${
-                    index === placeholderSelectedIndex ? 'bg-zinc-100 dark:bg-zinc-800' : ''
-                  }`}
-                >
-                  <span className="font-mono font-semibold">{candidate.label}</span>
-                  <span className="ml-2 text-xs text-zinc-500">{candidate.description}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : activeCommand ? (
-          <div className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">
-            <p className="flex items-baseline justify-between gap-2">
-              <span className="font-mono font-semibold">{activeCommand.names.join(' / ')}</span>
-              <span
-                className={`shrink-0 text-xs font-semibold ${CATEGORY_BADGE_CLASS[activeCommand.category]}`}
-              >
-                {CATEGORY_LABEL[activeCommand.category]}
-              </span>
-            </p>
-            <p className="text-zinc-500">{activeCommand.signature}</p>
-            <div className="flex flex-col gap-0.5">
-              {splitSentences(activeCommand.description).map((sentence, index) => (
-                <p key={index}>{sentence}</p>
-              ))}
-            </div>
-            <p className="text-xs text-zinc-500">
-              対応範囲：{activeCommand.support}
-              {activeCommand.sourceUrl && (
-                <>
-                  {' '}
-                  ・{' '}
-                  <a
-                    href={activeCommand.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline"
-                  >
-                    公式情報
-                  </a>
-                </>
-              )}
-            </p>
-          </div>
-            ) : null}
-          </>
-        )}
-      </section>
+                    </li>
+                  ))}
+                </ul>
+              ) : activeCommand ? (
+                <div className={styles.commandCard}>
+                  <p className={styles.suggestionHead}>
+                    <span className={styles.commandName}>{activeCommand.names.join(' / ')}</span>
+                    <span className={styles.categoryBadge} data-category={activeCommand.category}>
+                      {CATEGORY_LABEL[activeCommand.category]}
+                    </span>
+                  </p>
+                  <p className={styles.commandSignature}>{activeCommand.signature}</p>
+                  <div className={styles.sentences}>
+                    {splitSentences(activeCommand.description).map((sentence, index) => (
+                      <p key={index}>{sentence}</p>
+                    ))}
+                  </div>
+                  <p className={styles.supportLine}>
+                    対応範囲：{activeCommand.support}
+                    {activeCommand.sourceUrl && (
+                      <>
+                        {' '}
+                        ・{' '}
+                        <a
+                          href={activeCommand.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={styles.sourceLink}
+                        >
+                          公式情報
+                        </a>
+                      </>
+                    )}
+                  </p>
+                </div>
+              ) : null}
+            </>
+          )}
+        </section>
       </div>
     </div>
   )
