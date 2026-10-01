@@ -33,7 +33,7 @@
 - [`components/PublishedMacroLibrary.tsx`](src/components/PublishedMacroLibrary.tsx) — 公開マクロ一覧の UI。タイトル・説明・`#タグ` を同じ検索欄で絞り込む（空白区切りの AND 検索。タグ例のクリックは検索語へ追加、カード内タグは置き換え。データは親ページが DB から取得して `allMacros` で渡す）
 - [`components/PublishedMacroReactions.tsx`](src/components/PublishedMacroReactions.tsx) — 「役に立った」「不具合あり」ボタン。件数はサーバー集計で、押した直後は先に表示を動かしてサーバーの返答で確定する。同一ブラウザの重複は Cookie で防ぎ、投票後も両件数を緑／赤で表示し、自分の側は太字＋取り消し ×
 - [`app/macros/reactions.ts`](src/app/macros/reactions.ts) — 投票のサーバーアクション `setReaction`。Cookie の現在値との差分だけを `helpful_count` / `problem_count` に反映する（公開中のマクロのみ・件数は負にならない）。Cookie は書き換え可能なので厳密な不正対策ではない
-- [`components/ShareMacroButton.tsx`](src/components/ShareMacroButton.tsx)（＋ `.module.scss`）— 詳細ページのアイコンだけの共有ボタン。共有に対応した環境では OS の共有シート、非対応ならページ URL をコピー。停止中のマクロには出さない
+- [`components/ShareMacroButton.tsx`](src/components/ShareMacroButton.tsx)（＋ `.module.scss`）— 詳細ページのアイコンだけの共有ボタン。タッチ操作の端末で共有に対応していれば OS の共有シート、それ以外（PC など）はページ URL をコピー。停止中のマクロには出さない
 - [`components/CopyMacroButton.tsx`](src/components/CopyMacroButton.tsx) — 詳細ページの「マクロテキストをコピー」主ボタン。コピー結果をボタン文言で知らせる
 - [`components/useMacroCheck.tsx`](src/components/useMacroCheck.tsx) — コピー・共有 URL・公開の直前に本文を解析し、エラー／警告があれば `MacroCheckDialog` を挟む `guard()` を返すフック（打ちかけの最終行も確定扱いで解析）
 - [`components/MacroCheckDialog.tsx`](src/components/MacroCheckDialog.tsx)（＋ `.module.scss`）— 問題の一覧（重大度・行番号・内容）を見せ、「エディタで修正する」か「このまま進む」を選ばせる確認ダイアログ
