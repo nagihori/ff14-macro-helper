@@ -36,6 +36,10 @@
 - Discord の ID・表示名・アバターを公開ページに出さない。Discord から取得するのは scope `identify` の範囲に限り、アバターとメールは保存しない。
 - `.env.example` にはプレースホルダだけを書く。実値（接続文字列・シークレット）は `.env.local` に置き、コミットしない。
 
+## 残件
+
+- 未着手・未確認の項目は [`docs/open-items.md`](docs/open-items.md) にまとめている。作業の区切りで更新し、片付いた行は消す。
+
 ## ファイル構成の索引
 
 - `src/` 内の主要な tsx / css の役割は [`SRC_INDEX.md`](SRC_INDEX.md) にまとめている。コードを探すときはここから辿る。
