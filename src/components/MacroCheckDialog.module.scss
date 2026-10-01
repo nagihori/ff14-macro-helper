@@ -1,0 +1,75 @@
+@use '../styles/mixins' as *;
+
+.dialog {
+  @include card;
+  width: min(32rem, calc(100vw - 2rem));
+  margin: auto;
+  border-radius: var(--radius-2xl);
+  padding: 1.5rem;
+  color: var(--text-strong);
+  box-shadow: var(--shadow-xl);
+
+  &::backdrop { background: rgb(0 0 0 / 0.5); }
+}
+
+.title {
+  @include type(lg);
+  font-weight: 600;
+}
+
+.lead {
+  margin-top: 0.5rem;
+  @include type(sm);
+  color: var(--text-secondary);
+}
+
+.list {
+  display: flex;
+  max-height: 16rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  overflow-y: auto;
+  @include type(sm);
+}
+
+.item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.badge {
+  flex-shrink: 0;
+  border-radius: 9999px;
+  padding: 0 0.5rem;
+  @include type(xs);
+  font-weight: 600;
+}
+
+.error {
+  background: light-dark(var(--rose-50), color-mix(in oklab, var(--rose-950) 40%, transparent));
+  color: light-dark(var(--rose-800), var(--rose-200));
+}
+
+.warning {
+  background: light-dark(var(--amber-50), color-mix(in oklab, var(--amber-950) 40%, transparent));
+  color: light-dark(var(--amber-800), var(--amber-200));
+}
+
+.line {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  @include type(xs);
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.primary { @include pill-action; }
+.secondary { @include pill-action-secondary; }

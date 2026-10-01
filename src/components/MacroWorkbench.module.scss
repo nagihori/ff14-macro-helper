@@ -1,0 +1,439 @@
+@use 'sass:list';
+@use '../styles/mixins' as *;
+
+// マクロエディタ本体。UI は表示だけを担い、色の意味づけ（種別→色）はこのファイルに集める。
+// TS 側は data-kind / data-severity / data-category を付けるだけで、色の知識を持たない（AGENTS.md）。
+
+// ---- 色の対応表 --------------------------------------------------------
+
+// エディタ内ハイライト（HighlightSegmentKind）。(ライト, ダーク) のパレット名。
+// エモートだけ青緑系にして他カテゴリと見分けやすくする。
+$highlight-tones: (
+  'command-known': (blue-600, blue-400),
+  'command-known-emote': (teal-600, teal-400),
+  'command-unknown': (amber-600, amber-400),
+  'arg-placeholder': (purple-600, purple-400),
+  'arg-placeholder-wait': (pink-600, pink-400),
+  'arg-placeholder-invalid': (red-600, red-400),
+  'arg-string': (emerald-600, emerald-400),
+  'arg-number': (teal-600, teal-400),
+);
+
+// ログプレビューの送信先チャンネル別の色分け（LogEntryKind）。
+// 渚さんデフォルト配色のトークンなので、実機の見た目と揃えたい時はここだけ触れば済む。
+$log-tones: (
+  'yell': (yellow-600, yellow-400),
+  'shout': (orange-600, orange-400),
+  'tell': (pink-600, pink-400),
+  'party': (cyan-500, cyan-300),
+  'alliance': (amber-500, amber-300),
+  'freecompany': (sky-400, sky-200),
+  'linkshell': (green-500, green-300),
+  'echo': (zinc-400, zinc-500),
+  'action': (indigo-600, indigo-400),
+  'system': (zinc-500, zinc-400),
+  'error': (red-600, red-400),
+  'unknown': (zinc-700, zinc-300),
+);
+
+// 診断の重さ（DiagnosticSeverity）。文字色と、波線の色。
+$severity-text: (
+  'error': (red-600, red-400),
+  'warning': (amber-600, amber-400),
+  'info': (zinc-500, zinc-400),
+);
+
+$severity-wave: (
+  'error': var(--red-500),
+  'warning': var(--amber-500),
+  'info': var(--zinc-400),
+);
+
+// ---- 部品 --------------------------------------------------------------
+
+// textarea・ハイライト層・計測用ミラーは、同じ文字組みでないと重ならない。ここで一括定義する。
+@mixin editor-text {
+  padding: 0.75rem;
+  font-family: var(--font-mono);
+  @include type(sm);
+  line-height: 1.5rem;
+  white-space: pre-wrap;
+}
+
+@mixin solid-button {
+  border-radius: var(--radius-sm);
+  background: var(--surface-action);
+  color: var(--text-on-action);
+}
+
+@mixin outline-button {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+}
+
+// ---- レイアウト ----------------------------------------------------------
+
+.workbench {
+  width: 100%;
+  max-width: 64rem;
+  padding: 0 2rem 2rem;
+}
+
+.toolbar {
+  display: flex;
+  gap: 0.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.copyButton {
+  @include solid-button;
+  padding: 0.375rem 0.75rem;
+  @include type(sm);
+}
+
+.shareButton {
+  @include outline-button;
+  padding: 0.375rem 0.75rem;
+  @include type(sm);
+}
+
+.status {
+  align-self: center;
+  @include type(sm);
+  color: var(--text-muted);
+}
+
+.panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+
+  @media (min-width: $bp-md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+// ---- 左：エディタ ---------------------------------------------------------
+
+.editorPane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.editorHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.paneTitle {
+  @include type(sm);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.editorTools {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.lineStats {
+  font-family: var(--font-mono);
+  @include type(xs);
+  color: var(--text-muted);
+}
+
+// 実際のエラーになる前に気づけるよう、上限に近づいたら警告色を出す（しきい値の判定は TS 側）。
+.lineLength {
+  &[data-level='over'] { color: tone(red-600, red-400); }
+  &[data-level='near'] { color: tone(orange-600, orange-400); }
+}
+
+.previewButton {
+  @include solid-button;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  @include type(xs);
+
+  &:disabled { opacity: 0.5; }
+}
+
+.spinner {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.restoreError {
+  border-radius: var(--radius-sm);
+  background: var(--red-100);
+  padding: 0.5rem 0.75rem;
+  @include type(sm);
+  color: var(--red-800);
+}
+
+.editorFrame {
+  display: flex;
+  flex: 1;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background: var(--surface-card);
+}
+
+.gutter {
+  overflow: hidden;
+  border-right: 1px solid var(--border-subtle);
+  padding: 0.75rem 0.5rem;
+  text-align: right;
+  font-family: var(--font-mono);
+  @include type(sm);
+  line-height: 1.5rem;
+  color: var(--text-faint);
+  user-select: none;
+}
+
+.editorBody {
+  position: relative;
+  flex: 1;
+}
+
+// 文字は透明にして、色付きの文字は上に重ねた overlay が描く（キャレットだけ textarea のものを見せる）。
+.textarea {
+  @include editor-text;
+  position: relative;
+  width: 100%;
+  background: transparent;
+  color: transparent;
+  caret-color: light-dark(#000, #fff);
+}
+
+.overlay {
+  @include editor-text;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+// キャレット位置の計測用。画面には出さない。
+.mirror {
+  @include editor-text;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+.ghostLayer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ghostText {
+  position: absolute;
+  font-family: var(--font-mono);
+  @include type(sm);
+  line-height: 1.5rem;
+  white-space: pre;
+  color: light-dark(var(--zinc-400), var(--zinc-600));
+}
+
+// 行全体が対象の診断（行長・行数超過）は、行全体を波線で囲む。
+.line {
+  @each $severity, $color in $severity-wave {
+    &[data-severity='#{$severity}'] { text-decoration: underline wavy $color; }
+  }
+}
+
+.segment {
+  @each $kind, $pair in $highlight-tones {
+    &[data-kind='#{$kind}'] { color: tone(list.nth($pair, 1), list.nth($pair, 2)); }
+  }
+
+  &[data-kind='text'] { color: var(--text-strong); }
+
+  &[data-kind='command-unknown'] { text-decoration: underline wavy var(--amber-500); }
+  &[data-kind='arg-placeholder-invalid'] { text-decoration: underline wavy; }
+  &[data-kind='fullwidth-space'] {
+    border-radius: var(--radius-xs);
+    background: color-mix(in oklab, var(--red-500) 40%, transparent);
+  }
+}
+
+// カーソル行の診断を1行で見せる。無い時も高さを確保して、表示の有無でレイアウトが跳ねないようにする。
+.diagnosticLine {
+  height: 1.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-inline: 0.25rem;
+  @include type(sm);
+  color: transparent;
+
+  @each $severity, $pair in $severity-text {
+    &[data-severity='#{$severity}'] { color: tone(list.nth($pair, 1), list.nth($pair, 2)); }
+  }
+}
+
+// ---- 右：検索・候補・ログ ---------------------------------------------------
+
+.sidePane {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.searchInput {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  padding: 0.375rem 0.75rem;
+  @include type(sm);
+}
+
+.hint {
+  padding-inline: 0.25rem;
+  @include type(sm);
+  color: var(--text-muted);
+}
+
+.suggestionList {
+  max-height: 16rem;
+  overflow-y: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+}
+
+.placeholderList {
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+}
+
+.suggestion {
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  text-align: left;
+  @include type(sm);
+
+  &[data-selected] { background: var(--surface-hover); }
+}
+
+.hoverable:hover { background: var(--surface-hover); }
+
+.suggestionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.commandName {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.signature {
+  margin-left: 0.5rem;
+  @include type(xs);
+  color: var(--text-muted);
+}
+
+.categoryBadge {
+  flex-shrink: 0;
+  @include type(xs);
+  font-weight: 600;
+  color: tone(blue-600, blue-400);
+
+  &[data-category='emote'] { color: tone(teal-600, teal-400); }
+}
+
+.suggestionSummary {
+  @include type(xs);
+  color: var(--text-muted);
+}
+
+// 候補をクリックして展開した説明。
+.details {
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-sunken);
+  padding: 0.5rem 0.75rem;
+  @include type(xs);
+}
+
+.sentences {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.detailsSentences {
+  @extend .sentences;
+  margin-bottom: 0.375rem;
+  color: tone(zinc-700, zinc-300);
+}
+
+.supportLine {
+  @include type(xs);
+  color: var(--text-muted);
+}
+
+.sourceLink { text-decoration: underline; }
+
+.insertButton {
+  @include outline-button;
+  margin-top: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  color: var(--text-secondary);
+
+  &:hover { background: var(--surface-hover); }
+}
+
+// 入力中のコマンドの要約カード。
+.commandCard {
+  @include outline-button;
+  padding: 0.5rem 0.75rem;
+  @include type(sm);
+}
+
+.commandSignature { color: var(--text-muted); }
+
+// ---- ログプレビュー --------------------------------------------------------
+
+.log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  @include type(sm);
+}
+
+.logEntry {
+  color: var(--text-strong);
+
+  @each $kind, $pair in $log-tones {
+    &[data-kind='#{$kind}'] { color: tone(list.nth($pair, 1), list.nth($pair, 2)); }
+  }
+}
+
+.logTime { color: var(--text-faint); }
+
+.logPlaceholder {
+  border-radius: var(--radius-sm);
+  background: light-dark(var(--purple-100), color-mix(in oklab, var(--purple-900) 50%, transparent));
+  padding-inline: 0.25rem;
+  color: tone(purple-700, purple-300);
+}

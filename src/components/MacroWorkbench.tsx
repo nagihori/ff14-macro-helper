@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { analyze } from '@/lib/macro/analyze'
 import { toLogPreview } from '@/lib/macro/log-preview'
 import { buildHighlight } from '@/lib/macro/highlight'
@@ -9,19 +10,23 @@ import {
   getCompletionState,
   resolveCompletionName,
 } from '@/lib/macro/completion'
-import { getPlaceholderCompletion } from '@/lib/macro/placeholder-completion'
+import { getEmoteMotionGhost, getPlaceholderCompletion } from '@/lib/macro/placeholder-completion'
 import { getActiveCommand } from '@/lib/macro/active-command'
 import { lineRangeAt } from '@/lib/macro/parse'
 import { halfWidthLength } from '@/lib/macro/text-width'
 import { MAX_LINE_LENGTH, MAX_LINES } from '@/lib/macro/lint'
 import { getDictionary } from '@/lib/commands/dictionary'
+import { searchCommands } from '@/lib/commands/search'
+import { getCheckedBody, setEditorDraft, subscribeCheckedBody } from '@/lib/share/editor-draft'
 import { buildShareUrl, decodeDocument, readShareParam } from '@/lib/share/url'
 import type {
+  CommandCategory,
   CommandDefinition,
-  HighlightSegmentKind,
-  LogEntryKind,
+  LogEntry,
   PlaceholderCandidate,
 } from '@/lib/macro/types'
+import { useMacroCheck } from './useMacroCheck'
+import styles from './MacroWorkbench.module.scss'
 
 const dictionary = getDictionary()
 
@@ -46,45 +51,62 @@ function measureCaretOffset(
   return { left: markerRect.left - mirrorRect.left, top: markerRect.top - mirrorRect.top }
 }
 
-const HIGHLIGHT_CLASS: Record<HighlightSegmentKind, string> = {
-  'command-known': 'text-blue-600 dark:text-blue-400',
-  'command-unknown': 'text-amber-600 dark:text-amber-400',
-  'arg-placeholder': 'text-purple-600 dark:text-purple-400',
-  'arg-placeholder-wait': 'text-pink-600 dark:text-pink-400',
-  'arg-placeholder-invalid': 'text-red-600 dark:text-red-400 underline decoration-wavy',
-  'arg-string': 'text-emerald-600 dark:text-emerald-400',
-  'arg-number': 'text-teal-600 dark:text-teal-400',
-  'fullwidth-space': 'bg-red-500/40 rounded-xs',
-  text: 'text-zinc-900 dark:text-zinc-50',
+// 辞書の description は「。」区切りの文を連結した1本の文字列（AGENTS.md により
+// UI 側でコマンド知識を持たないための表現）。一覧では最初の1文だけを要約として見せ、
+// 展開時は文ごとに改行して読みやすくする（表示上の整形のみで、内容は増減させない）。
+function splitSentences(description: string): string[] {
+  return description
+    .split('。')
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 0)
+    .map((sentence) => `${sentence}。`)
 }
 
-// ログプレビューの送信先チャンネル別の色分け。渚さんデフォルト配色のトークンなので
-// 実機の見た目と揃えたい時はここだけ触れば済むようにしている。
-const LOG_KIND_CLASS: Record<LogEntryKind, string> = {
-  say: 'text-zinc-900 dark:text-zinc-50',
-  yell: 'text-yellow-600 dark:text-yellow-400',
-  shout: 'text-orange-600 dark:text-orange-400',
-  tell: 'text-pink-600 dark:text-pink-400',
-  party: 'text-cyan-500 dark:text-cyan-300',
-  alliance: 'text-amber-500 dark:text-amber-300',
-  freecompany: 'text-sky-400 dark:text-sky-200',
-  linkshell: 'text-green-500 dark:text-green-300',
-  echo: 'text-zinc-400 dark:text-zinc-500',
-  action: 'text-indigo-600 dark:text-indigo-400',
-  system: 'text-zinc-500 dark:text-zinc-400',
-  error: 'text-red-600 dark:text-red-400',
-  unknown: 'text-zinc-700 dark:text-zinc-300',
+// カテゴリ名の日本語表示。サジェスト一覧の右肩バッジ用（AGENTS.md 的には
+// UI に個別コマンド知識を持たせない方針だが、これはコマンド辞書の category
+// 列挙に対する表示用ラベルなので、辞書側の知識を増やすものではない）。
+const CATEGORY_LABEL: Record<CommandCategory, string> = {
+  chat: 'チャット',
+  party_social: 'パーティ/ソーシャル',
+  target: '対象',
+  action_hotbar: 'アクション/ホットバー',
+  battle: 'バトル',
+  system: 'システム',
+  macro: 'マクロ専用',
+  config: 'コンフィグ',
+  emote: 'エモート',
+  menu: 'メニュー',
+  pronoun: '代名詞',
 }
+
+// コマンド単位ではなく行全体が対象の診断（行長・行数超過）は、行全体を波線で囲む。
+// command-unknown 等トークン単位の診断は、ハイライト側（MacroWorkbench.module.scss）で個別に処理済み。
+const WHOLE_LINE_DIAGNOSTIC_CODES = new Set(['line-length-exceeded', 'line-count-exceeded'])
 
 // UI はここでモデルを表示するだけ。文字数・構文・コマンドの意味は lib/macro が判断する（AGENTS.md）。
 export function MacroWorkbench() {
+  // 初期状態は検索の案内を読みやすくするため空にする。エディタで / を入力すれば、
+  // 従来どおりコマンド補完が表示される。
   const [body, setBody] = useState('')
   const [cursor, setCursor] = useState(0)
+  // ボタン押下時のチェックで問題が見つかった本文。同じ本文のあいだは最終行も確定扱いで表示し、編集すると通常に戻る。
+  const checkedBody = useSyncExternalStore(subscribeCheckedBody, getCheckedBody, () => null)
+  const { guard, dialog: checkDialog } = useMacroCheck()
+  const [commandSearchQuery, setCommandSearchQuery] = useState('')
   const [selection, setSelection] = useState<{ key: string | null; index: number }>({
     key: null,
     index: 0,
   })
   const [dismissedKey, setDismissedKey] = useState<string | null>(null)
+  // サジェストをクリックした時に、即挿入ではなくその場でヘルプ（説明・引数形式）を
+  // 展開する。挿入はダブルクリックまたはキーボードの Tab/Enter に譲る。
+  // key は候補リストの文脈（completionKey）で、文脈が変わったら展開状態は自然に無効化される
+  // （selection と同じパターン。effect で明示的にリセットしない）。
+  const [expandedSuggestion, setExpandedSuggestion] = useState<{
+    key: string | null
+    id: string | null
+  }>({ key: null, id: null })
+  const [expandedSearchCommandId, setExpandedSearchCommandId] = useState<string | null>(null)
   const [dismissedPlaceholderKey, setDismissedPlaceholderKey] = useState<string | null>(null)
   const [placeholderSelection, setPlaceholderSelection] = useState<{
     key: string | null
@@ -94,6 +116,14 @@ export function MacroWorkbench() {
   const [restoreError, setRestoreError] = useState<string | null>(null)
 
   const [ghostPosition, setGhostPosition] = useState<{ left: number; top: number } | null>(null)
+
+  // ログプレビューは常時追従ではなく「マクロ実行」を押した時点のスナップショットを
+  // /wait 秒数ぶん遅延させながら1行ずつ出す（ROADMAP.md 申し送り）。
+  const [logPlayback, setLogPlayback] = useState<{
+    entries: LogEntry[]
+    revealedCount: number
+  } | null>(null)
+  const logTimeoutsRef = useRef<number[]>([])
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
@@ -119,8 +149,10 @@ export function MacroWorkbench() {
     }
   }, [])
 
-  const analysis = useMemo(() => analyze(body, dictionary), [body])
-  const logEntries = useMemo(() => toLogPreview(analysis.lines), [analysis.lines])
+  // 「公開する」ボタンが最新の本文を読めるよう、写しを置いておく。
+  useEffect(() => { setEditorDraft(body) }, [body])
+
+  const analysis = useMemo(() => analyze(body, dictionary, { complete: checkedBody === body }), [body, checkedBody])
   const highlightLines = useMemo(
     () => buildHighlight(analysis.lines, dictionary),
     [analysis.lines],
@@ -133,8 +165,16 @@ export function MacroWorkbench() {
     () => getActiveCommand(body, cursor, dictionary),
     [body, cursor],
   )
+  const commandSearchResults = useMemo(
+    () => searchCommands(commandSearchQuery, dictionary),
+    [commandSearchQuery],
+  )
   const placeholderCompletion = useMemo(
     () => getPlaceholderCompletion(body, cursor, dictionary),
+    [body, cursor],
+  )
+  const emoteMotionGhost = useMemo(
+    () => getEmoteMotionGhost(body, cursor, dictionary),
     [body, cursor],
   )
   const currentLineStats = useMemo(() => {
@@ -145,22 +185,32 @@ export function MacroWorkbench() {
     }
   }, [body, cursor])
 
+  // カーソル行の診断だけを抜き出して1行で見せる。行全体の一覧はエディタ側の波線に譲る。
+  const currentLineDiagnostics = useMemo(
+    () => analysis.diagnostics.filter((diagnostic) => diagnostic.line === currentLineStats.number),
+    [analysis.diagnostics, currentLineStats.number],
+  )
+
   const completionKey = completion
     ? `${completion.rangeStart}:${completion.rangeEnd}:${completion.token}`
     : null
   const visibleCompletion =
     completion && !completion.isExactMatch && completionKey !== dismissedKey ? completion : null
   const selectedIndex = selection.key === completionKey ? selection.index : 0
+  const expandedSuggestionId =
+    expandedSuggestion.key === completionKey ? expandedSuggestion.id : null
 
   // ドロップダウンで選択中の候補を、入力の続きとして薄字でカーソル直後に表示する。
   // カーソルがトークン末尾にある時だけ「続きを打っている」体験として意味を持つ。
+  // エモートの motion 引数も候補が1つしかないため、同じゴースト表示に相乗りさせる
+  // （両者は入力位置が異なるので同時に発生しない）。
   const ghostText =
     visibleCompletion && cursor === visibleCompletion.rangeEnd
       ? resolveCompletionName(
           visibleCompletion.candidates[selectedIndex],
           visibleCompletion.token,
         ).slice(visibleCompletion.token.length)
-      : ''
+      : (emoteMotionGhost?.remainder ?? '')
 
   const placeholderKey = placeholderCompletion
     ? `${placeholderCompletion.rangeStart}:${placeholderCompletion.rangeEnd}`
@@ -195,6 +245,45 @@ export function MacroWorkbench() {
     requestAnimationFrame(() => {
       textareaRef.current?.setSelectionRange(nextCursor, nextCursor)
     })
+  }
+
+  // 検索結果はエディタの入力途中でなくても選べるため、補完範囲がある時は既存の
+  // 置換処理を使い、それ以外では現在のカーソル位置へ正式名を挿入する。
+  function applySearchCommand(command: CommandDefinition) {
+    if (completion) {
+      applyCompletion(command)
+      return
+    }
+
+    const name = command.names[0]
+    const before = body.slice(0, cursor)
+    const after = body.slice(cursor)
+    const separator = after.length === 0 || !/^[ \n]/.test(after) ? ' ' : ''
+    const newBody = before + name + separator + after
+    const { start, end } = lineRangeAt(newBody, cursor + name.length)
+
+    if (
+      newBody.split('\n').length > MAX_LINES ||
+      halfWidthLength(newBody.slice(start, end)) > MAX_LINE_LENGTH
+    ) {
+      setShareStatus('コマンドを挿入するとマクロの行数または文字数の上限を超えます。')
+      return
+    }
+
+    const nextCursor = cursor + name.length + separator.length
+    setBody(newBody)
+    setCursor(nextCursor)
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus()
+      textareaRef.current?.setSelectionRange(nextCursor, nextCursor)
+    })
+  }
+
+  // 検索を始めた時点でプレビューを止め、右ペインを検索結果へ戻す。
+  function handleCommandSearchChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const query = event.target.value
+    setCommandSearchQuery(query)
+    if (query.trim()) stopLogPlayback()
   }
 
   function applyPlaceholderCompletion(candidate: PlaceholderCandidate) {
@@ -293,6 +382,19 @@ export function MacroWorkbench() {
       return
     }
 
+    // motion はゴースト表示のみで一覧を出さないため、確定は Tab 限定。
+    // Enter はここで奪わず素通りさせ、末尾に改行できるようにする。
+    if (emoteMotionGhost && event.key === 'Tab') {
+      event.preventDefault()
+      const { rangeEnd, remainder } = emoteMotionGhost
+      const newBody = body.slice(0, rangeEnd) + remainder + body.slice(rangeEnd)
+      const nextCursor = rangeEnd + remainder.length
+      setBody(newBody)
+      setCursor(nextCursor)
+      requestAnimationFrame(() => textareaRef.current?.setSelectionRange(nextCursor, nextCursor))
+      return
+    }
+
     if (visiblePlaceholderCompletion) {
       const candidates = visiblePlaceholderCompletion.candidates
       if (event.key === 'ArrowDown') {
@@ -317,7 +419,7 @@ export function MacroWorkbench() {
       return
     }
 
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && !(event.nativeEvent as KeyboardEvent).isComposing) {
       handleEnterForNewLine(event)
     }
   }
@@ -359,7 +461,7 @@ export function MacroWorkbench() {
     }
   }
 
-  async function handleCopy() {
+  async function copyBody() {
     try {
       await navigator.clipboard.writeText(body)
       setShareStatus('コピーしました。')
@@ -368,7 +470,7 @@ export function MacroWorkbench() {
     }
   }
 
-  async function handleShare() {
+  async function copyShareUrl() {
     const url = buildShareUrl(analysis.document, window.location.href)
     try {
       await navigator.clipboard.writeText(url)
@@ -378,227 +480,395 @@ export function MacroWorkbench() {
     }
   }
 
+  // コピー・共有の前には必ず本文をチェックし、問題があれば確認を挟む。
+  function handleCopy() { guard(body, 'コピーする', copyBody) }
+  function handleShare() { guard(body, '共有 URL をコピーする', copyShareUrl) }
+
+  // クリック時点のスナップショットを、行ごとの delaySeconds（/wait の累積）だけ
+  // 遅らせながら1行ずつ出す。実行中に再クリックされたら前回分のタイマーは破棄する。
+  function handlePlayLog() {
+    logTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
+    logTimeoutsRef.current = []
+
+    const entries = toLogPreview(analysis.lines)
+    setLogPlayback({ entries, revealedCount: entries.length > 0 ? 1 : 0 })
+
+    entries.forEach((entry, index) => {
+      if (index === 0) return
+      const id = window.setTimeout(() => {
+        setLogPlayback((prev) =>
+          prev ? { ...prev, revealedCount: Math.max(prev.revealedCount, index + 1) } : prev,
+        )
+      }, entry.delaySeconds * 1000)
+      logTimeoutsRef.current.push(id)
+    })
+  }
+
+  useEffect(() => {
+    return () => {
+      logTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
+    }
+  }, [])
+
+  // 本文が変わる、またはエディタへフォーカスが戻ったら、右カラムをログ再生から
+  // サジェストへ戻す（実行中のタイマーも破棄）。カーソルを合わせただけでは本文は
+  // 変わらないため、フォーカス側のトリガーも別途必要（「戻り方が分かりづらい」対策）。
+  function stopLogPlayback() {
+    setLogPlayback((prev) => {
+      if (!prev) return prev
+      logTimeoutsRef.current.forEach((id) => window.clearTimeout(id))
+      logTimeoutsRef.current = []
+      return null
+    })
+  }
+
+  useEffect(() => {
+    stopLogPlayback()
+  }, [body])
+
+  const isLogPlaying = !!logPlayback && logPlayback.revealedCount < logPlayback.entries.length
+  const lineLengthLevel =
+    currentLineStats.length > MAX_LINE_LENGTH
+      ? 'over'
+      : currentLineStats.length >= LINE_LENGTH_WARNING
+        ? 'near'
+        : undefined
+
   return (
-    <div className="grid w-full max-w-5xl grid-cols-1 gap-6 p-8 md:grid-cols-2">
-      <section className="flex flex-col gap-2">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold text-zinc-500">エディタ</h2>
-          <p className="font-mono text-xs text-zinc-500">
-            L{currentLineStats.number}・
-            <span
-              className={
-                currentLineStats.length > MAX_LINE_LENGTH
-                  ? 'text-red-600 dark:text-red-400'
-                  : currentLineStats.length >= LINE_LENGTH_WARNING
-                    ? 'text-orange-600 dark:text-orange-400'
-                    : ''
-              }
-            >
-              {currentLineStats.length}
-            </span>
-            {' / '}
-            {MAX_LINE_LENGTH} 文字（推定・半角換算）
-          </p>
-        </div>
-        {restoreError && (
-          <p className="rounded bg-red-100 px-3 py-2 text-sm text-red-800" role="alert">
-            {restoreError}
-          </p>
-        )}
-        <div className="flex flex-1 rounded border border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-          <div
-            ref={gutterRef}
-            aria-hidden
-            className="select-none overflow-hidden border-r border-zinc-200 px-2 py-3 text-right font-mono text-sm leading-6 text-zinc-400 dark:border-zinc-800"
-          >
-            {highlightLines.map((highlightLine) => (
-              <div key={highlightLine.line}>{highlightLine.line}</div>
-            ))}
-          </div>
-          <div className="relative flex-1">
-            <textarea
-              ref={textareaRef}
-              value={body}
-              onChange={handleChange}
-              onSelect={(event) => syncCursor(event.currentTarget)}
-              onClick={(event) => syncCursor(event.currentTarget)}
-              onKeyUp={(event) => syncCursor(event.currentTarget)}
-              onKeyDown={handleKeyDown}
-              onScroll={handleScroll}
-              rows={15}
-              spellCheck={false}
-              className="relative w-full flex-1 bg-transparent p-3 font-mono text-sm leading-6 text-transparent caret-black whitespace-pre-wrap dark:caret-white"
-              placeholder={'/ac "アクション名" <t>\n/wait 1'}
-            />
-            <div
-              ref={overlayRef}
-              aria-hidden
-              className="pointer-events-none absolute inset-0 overflow-hidden p-3 font-mono text-sm leading-6 whitespace-pre-wrap"
-            >
-              {highlightLines.map((highlightLine, lineIndex) => (
-                <span key={highlightLine.line}>
-                  {highlightLine.segments.map((segment, segmentIndex) => (
-                    <span
-                      key={segmentIndex}
-                      className={HIGHLIGHT_CLASS[segment.kind]}
-                    >
-                      {segment.text}
-                    </span>
-                  ))}
-                  {lineIndex < highlightLines.length - 1 ? '\n' : null}
+    <div className={styles.workbench}>
+      {checkDialog}
+      <div className={styles.toolbar}>
+        <button type="button" onClick={handleCopy} className={styles.copyButton}>
+          コピー
+        </button>
+        <button type="button" onClick={handleShare} className={styles.shareButton}>
+          共有 URL をコピー
+        </button>
+        {shareStatus && <p className={styles.status}>{shareStatus}</p>}
+      </div>
+      <div className={styles.panes}>
+        <section className={styles.editorPane}>
+          <div className={styles.editorHeader}>
+            <h2 className={styles.paneTitle}>エディタ</h2>
+            <div className={styles.editorTools}>
+              <p className={styles.lineStats}>
+                L{currentLineStats.number}・
+                <span className={styles.lineLength} data-level={lineLengthLevel}>
+                  {currentLineStats.length}
                 </span>
-              ))}
+                {' / '}
+                {MAX_LINE_LENGTH} 文字（推定・半角換算）
+              </p>
+              <button
+                type="button"
+                onClick={handlePlayLog}
+                disabled={isLogPlaying}
+                className={styles.previewButton}
+              >
+                {isLogPlaying && <span aria-hidden className={styles.spinner} />}
+                {isLogPlaying ? '実行中…' : 'プレビュー'}
+              </button>
             </div>
-            <div
-              ref={mirrorRef}
-              aria-hidden
-              className="invisible absolute inset-0 overflow-hidden p-3 font-mono text-sm leading-6 whitespace-pre-wrap"
-            />
-            <div
-              ref={ghostLayerRef}
-              aria-hidden
-              className="pointer-events-none absolute inset-0 overflow-hidden"
-            >
-              {ghostText && ghostPosition && (
-                <span
-                  className="absolute font-mono text-sm leading-6 whitespace-pre text-zinc-400 dark:text-zinc-600"
-                  style={{ left: ghostPosition.left, top: ghostPosition.top }}
-                >
-                  {ghostText}
-                </span>
-              )}
-            </div>
-            {visibleCompletion && (
-            <ul className="absolute top-full left-0 z-10 mt-1 max-h-64 w-full overflow-y-auto rounded border border-zinc-300 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-              {visibleCompletion.candidates.map((command, index) => (
-                <li key={command.id}>
-                  <button
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => applyCompletion(command)}
-                    className={`w-full px-3 py-1.5 text-left text-sm ${
-                      index === selectedIndex
-                        ? 'bg-zinc-100 dark:bg-zinc-800'
-                        : ''
-                    }`}
-                  >
-                    <span className="font-mono font-semibold">{command.names.join(' / ')}</span>
-                    <span className="ml-2 text-xs text-zinc-500">{command.signature}</span>
-                    <p className="text-xs text-zinc-500">{command.description}</p>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          {visiblePlaceholderCompletion && (
-            <ul className="absolute top-full left-0 z-10 mt-1 w-full overflow-hidden rounded border border-zinc-300 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-              {visiblePlaceholderCompletion.candidates.map((candidate, index) => (
-                <li key={candidate.insertText}>
-                  <button
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => applyPlaceholderCompletion(candidate)}
-                    className={`w-full px-3 py-1.5 text-left text-sm ${
-                      index === placeholderSelectedIndex ? 'bg-zinc-100 dark:bg-zinc-800' : ''
-                    }`}
-                  >
-                    <span className="font-mono font-semibold">{candidate.label}</span>
-                    <span className="ml-2 text-xs text-zinc-500">{candidate.description}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            )}
           </div>
-        </div>
-        {activeCommand && (
-          <div className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700">
-            <p className="font-mono font-semibold">{activeCommand.names.join(' / ')}</p>
-            <p className="text-zinc-500">{activeCommand.signature}</p>
-            <p>{activeCommand.description}</p>
-            <p className="text-xs text-zinc-500">
-              対応範囲：{activeCommand.support}
-              {activeCommand.sourceUrl && (
-                <>
-                  {' '}
-                  ・{' '}
-                  <a
-                    href={activeCommand.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline"
-                  >
-                    公式情報
-                  </a>
-                </>
-              )}
+          {restoreError && (
+            <p className={styles.restoreError} role="alert">
+              {restoreError}
             </p>
-          </div>
-        )}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="rounded bg-black px-3 py-1.5 text-sm text-white dark:bg-white dark:text-black"
-          >
-            コピー
-          </button>
-          <button
-            type="button"
-            onClick={handleShare}
-            className="rounded border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700"
-          >
-            共有 URL をコピー
-          </button>
-          {shareStatus && <p className="self-center text-sm text-zinc-500">{shareStatus}</p>}
-        </div>
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-sm font-semibold text-zinc-500">診断</h2>
-          {analysis.diagnostics.length === 0 ? (
-            <p className="text-sm text-zinc-400">問題は見つかりませんでした。</p>
-          ) : (
-            <ul className="flex flex-col gap-1">
-              {analysis.diagnostics.map((diagnostic, index) => (
-                <li
-                  key={`${diagnostic.code}-${diagnostic.line}-${index}`}
-                  className="rounded border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700"
-                >
-                  <span className="font-mono text-xs text-zinc-500">
-                    L{diagnostic.line} · {diagnostic.severity}
+          )}
+          <div className={styles.editorFrame}>
+            <div ref={gutterRef} aria-hidden className={styles.gutter}>
+              {highlightLines.map((highlightLine) => (
+                <div key={highlightLine.line}>{highlightLine.line}</div>
+              ))}
+            </div>
+            <div className={styles.editorBody}>
+              <textarea
+                ref={textareaRef}
+                value={body}
+                onChange={handleChange}
+                onFocus={stopLogPlayback}
+                onSelect={(event) => syncCursor(event.currentTarget)}
+                onClick={(event) => syncCursor(event.currentTarget)}
+                onKeyUp={(event) => syncCursor(event.currentTarget)}
+                onKeyDown={handleKeyDown}
+                onScroll={handleScroll}
+                rows={15}
+                spellCheck={false}
+                className={styles.textarea}
+                placeholder={'/ac "アクション名" <t>\n/wait 1'}
+              />
+              <div ref={overlayRef} aria-hidden className={styles.overlay}>
+                {highlightLines.map((highlightLine, lineIndex) => {
+                  const wholeLineDiagnostic = analysis.diagnostics.find(
+                    (diagnostic) =>
+                      diagnostic.line === highlightLine.line &&
+                      WHOLE_LINE_DIAGNOSTIC_CODES.has(diagnostic.code),
+                  )
+                  return (
+                    <span
+                      key={highlightLine.line}
+                      className={styles.line}
+                      data-severity={wholeLineDiagnostic?.severity}
+                    >
+                      {highlightLine.segments.map((segment, segmentIndex) => (
+                        <span key={segmentIndex} className={styles.segment} data-kind={segment.kind}>
+                          {segment.text}
+                        </span>
+                      ))}
+                      {lineIndex < highlightLines.length - 1 ? '\n' : null}
+                    </span>
+                  )
+                })}
+              </div>
+              <div ref={mirrorRef} aria-hidden className={styles.mirror} />
+              <div ref={ghostLayerRef} aria-hidden className={styles.ghostLayer}>
+                {ghostText && ghostPosition && (
+                  <span
+                    className={styles.ghostText}
+                    style={{ left: ghostPosition.left, top: ghostPosition.top }}
+                  >
+                    {ghostText}
                   </span>
-                  <p>{diagnostic.message}</p>
+                )}
+              </div>
+            </div>
+          </div>
+          <p
+            className={styles.diagnosticLine}
+            data-severity={currentLineDiagnostics[0]?.severity}
+          >
+            {currentLineDiagnostics.length > 0
+              ? currentLineDiagnostics.map((diagnostic) => diagnostic.message).join('　')
+              : ' '}
+          </p>
+        </section>
+
+        <section className={styles.sidePane}>
+          <input
+            type="search"
+            value={commandSearchQuery}
+            onChange={handleCommandSearchChange}
+            placeholder="コマンドを検索（例: ac、パーティ、ターゲット）"
+            aria-label="コマンドを検索"
+            className={styles.searchInput}
+          />
+          {commandSearchQuery.trim() ? (
+            commandSearchResults.length > 0 ? (
+              <ul className={styles.suggestionList}>
+                {commandSearchResults.map((command) => {
+                  const isExpanded = expandedSearchCommandId === command.id
+                  const sentences = splitSentences(command.description)
+                  return (
+                    <li key={command.id}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedSearchCommandId((current) =>
+                            current === command.id ? null : command.id,
+                          )
+                        }
+                        onDoubleClick={() => applySearchCommand(command)}
+                        className={`${styles.suggestion} ${styles.hoverable}`}
+                      >
+                        <span className={styles.suggestionHead}>
+                          <span>
+                            <span className={styles.commandName}>{command.names.join(' / ')}</span>
+                            <span className={styles.signature}>{command.signature}</span>
+                          </span>
+                          <span className={styles.categoryBadge} data-category={command.category}>
+                            {CATEGORY_LABEL[command.category]}
+                          </span>
+                        </span>
+                        <p className={styles.suggestionSummary}>{sentences[0]}</p>
+                      </button>
+                      {isExpanded && (
+                        <div className={styles.details}>
+                          {sentences.length > 1 && (
+                            <div className={styles.detailsSentences}>
+                              {sentences.map((sentence, sentenceIndex) => (
+                                <p key={sentenceIndex}>{sentence}</p>
+                              ))}
+                            </div>
+                          )}
+                          <p className={styles.supportLine}>
+                            対応範囲：{command.support} ・{' '}
+                            <a
+                              href={command.sourceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={styles.sourceLink}
+                            >
+                              公式情報
+                            </a>
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => applySearchCommand(command)}
+                            className={styles.insertButton}
+                          >
+                            この候補を挿入
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : (
+              <p className={styles.hint}>一致するコマンドがありません。</p>
+            )
+          ) : logPlayback ? (
+            <ul className={styles.log}>
+              {logPlayback.entries.slice(0, logPlayback.revealedCount).map((entry) => (
+                <li key={entry.line} className={styles.logEntry} data-kind={entry.kind}>
+                  <span className={styles.logTime}>[{entry.timestamp}]</span>{' '}
+                  {entry.segments.map((segment, index) =>
+                    segment.kind === 'placeholder' ? (
+                      <span key={index} className={styles.logPlaceholder}>
+                        {segment.text}
+                      </span>
+                    ) : (
+                      <span key={index}>{segment.text}</span>
+                    ),
+                  )}
                 </li>
               ))}
             </ul>
-          )}
-        </div>
-
-        <div>
-          <h2 className="text-sm font-semibold text-zinc-500">ログプレビュー</h2>
-          <ul className="flex flex-col gap-1 font-mono text-sm">
-            {logEntries.map((entry) => (
-              <li key={entry.line} className={LOG_KIND_CLASS[entry.kind]}>
-                <span className="text-zinc-400">[{entry.timestamp}]</span>{' '}
-                {entry.segments.map((segment, index) =>
-                  segment.kind === 'placeholder' ? (
-                    <span
-                      key={index}
-                      className="rounded bg-purple-100 px-1 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300"
-                    >
-                      {segment.text}
+          ) : (
+            <>
+              <p className={styles.hint}>
+                コマンド名・短縮名・説明から検索できます。先頭の「/」は省略できます。エディタに直接「/」を入力しても候補が表示されます。
+              </p>
+              <p className={styles.hint}>
+                代名詞は「&lt;」なしで入力しても自動補完して展開されます。（t, me, pos など）
+              </p>
+              {visibleCompletion ? (
+                <ul className={styles.suggestionList}>
+                  {visibleCompletion.candidates.map((command, index) => {
+                    const isExpanded = expandedSuggestionId === command.id
+                    const sentences = splitSentences(command.description)
+                    return (
+                      <li key={command.id}>
+                        <button
+                          type="button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() =>
+                            setExpandedSuggestion((prev) =>
+                              prev.key === completionKey && prev.id === command.id
+                                ? { key: completionKey, id: null }
+                                : { key: completionKey, id: command.id },
+                            )
+                          }
+                          onDoubleClick={() => applyCompletion(command)}
+                          className={styles.suggestion}
+                          data-selected={index === selectedIndex || undefined}
+                        >
+                          <span className={styles.suggestionHead}>
+                            <span>
+                              <span className={styles.commandName}>{command.names.join(' / ')}</span>
+                              <span className={styles.signature}>{command.signature}</span>
+                            </span>
+                            <span className={styles.categoryBadge} data-category={command.category}>
+                              {CATEGORY_LABEL[command.category]}
+                            </span>
+                          </span>
+                          <p className={styles.suggestionSummary}>{sentences[0]}</p>
+                        </button>
+                        {isExpanded && (
+                          <div className={styles.details}>
+                            {sentences.length > 1 && (
+                              <div className={styles.detailsSentences}>
+                                {sentences.map((sentence, sentenceIndex) => (
+                                  <p key={sentenceIndex}>{sentence}</p>
+                                ))}
+                              </div>
+                            )}
+                            <p className={styles.supportLine}>
+                              対応範囲：{command.support}
+                              {command.sourceUrl && (
+                                <>
+                                  {' '}
+                                  ・{' '}
+                                  <a
+                                    href={command.sourceUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={styles.sourceLink}
+                                    onMouseDown={(event) => event.stopPropagation()}
+                                  >
+                                    公式情報
+                                  </a>
+                                </>
+                              )}
+                            </p>
+                            <button
+                              type="button"
+                              onMouseDown={(event) => event.preventDefault()}
+                              onClick={() => applyCompletion(command)}
+                              className={styles.insertButton}
+                            >
+                              この候補を挿入
+                            </button>
+                          </div>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              ) : visiblePlaceholderCompletion ? (
+                <ul className={styles.placeholderList}>
+                  {visiblePlaceholderCompletion.candidates.map((candidate, index) => (
+                    <li key={candidate.insertText}>
+                      <button
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => applyPlaceholderCompletion(candidate)}
+                        className={styles.suggestion}
+                        data-selected={index === placeholderSelectedIndex || undefined}
+                      >
+                        <span className={styles.commandName}>{candidate.label}</span>
+                        <span className={styles.signature}>{candidate.description}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : activeCommand ? (
+                <div className={styles.commandCard}>
+                  <p className={styles.suggestionHead}>
+                    <span className={styles.commandName}>{activeCommand.names.join(' / ')}</span>
+                    <span className={styles.categoryBadge} data-category={activeCommand.category}>
+                      {CATEGORY_LABEL[activeCommand.category]}
                     </span>
-                  ) : (
-                    <span key={index}>{segment.text}</span>
-                  ),
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+                  </p>
+                  <p className={styles.commandSignature}>{activeCommand.signature}</p>
+                  <div className={styles.sentences}>
+                    {splitSentences(activeCommand.description).map((sentence, index) => (
+                      <p key={index}>{sentence}</p>
+                    ))}
+                  </div>
+                  <p className={styles.supportLine}>
+                    対応範囲：{activeCommand.support}
+                    {activeCommand.sourceUrl && (
+                      <>
+                        {' '}
+                        ・{' '}
+                        <a
+                          href={activeCommand.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={styles.sourceLink}
+                        >
+                          公式情報
+                        </a>
+                      </>
+                    )}
+                  </p>
+                </div>
+              ) : null}
+            </>
+          )}
+        </section>
+      </div>
     </div>
   )
 }
