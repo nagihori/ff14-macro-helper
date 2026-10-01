@@ -30,6 +30,7 @@ $severity-wave: (
   padding: 0.75rem;
   font-family: var(--font-mono);
   @include type(sm);
+  @include touch-input-size;
   line-height: 1.5rem;
   white-space: pre-wrap;
 }
@@ -51,6 +52,8 @@ $severity-wave: (
   width: 100%;
   max-width: 64rem;
   padding: 0 2rem 2rem;
+
+  @include mobile { padding-inline: 1rem; }
 }
 
 .status {
@@ -148,6 +151,7 @@ $severity-wave: (
   text-align: right;
   font-family: var(--font-mono);
   @include type(sm);
+  @include touch-input-size;
   line-height: 1.5rem;
   color: var(--text-faint);
   user-select: none;
@@ -196,6 +200,7 @@ $severity-wave: (
   position: absolute;
   font-family: var(--font-mono);
   @include type(sm);
+  @include touch-input-size;
   line-height: 1.5rem;
   white-space: pre;
   color: light-dark(var(--zinc-400), var(--zinc-600));
@@ -253,6 +258,7 @@ $severity-wave: (
   background: transparent;
   padding: 0.375rem 0.75rem;
   @include type(sm);
+  @include touch-input-size;
 }
 
 .hint {
