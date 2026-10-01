@@ -65,15 +65,6 @@
   background: var(--surface-dark);
 }
 
-.code {
-  overflow-x: auto;
-  padding: 1.25rem;
-  font-family: var(--font-mono);
-  @include type(sm);
-  line-height: 1.75rem;
-  color: var(--text-on-dark);
-}
-
 .descriptionLink {
   text-decoration: underline;
   text-underline-offset: 4px;
