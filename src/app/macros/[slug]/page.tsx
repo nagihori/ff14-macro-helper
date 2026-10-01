@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { auth } from '@/auth'
 import { AdminMacroControls } from '@/components/AdminMacroControls'
 import { CopyMacroButton } from '@/components/CopyMacroButton'
+import { ShareMacroButton } from '@/components/ShareMacroButton'
 import { OwnerMacroControls } from '@/components/OwnerMacroControls'
 import { PublishedMacroReactions } from '@/components/PublishedMacroReactions'
 import { findDerivedMacros, findMacroForViewer, findPublishedMacro, findRelatedMacros, isMacroAuthor } from '@/lib/published-macros/repository'
@@ -87,6 +88,7 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
           <div className={styles.actions}>
             <CopyMacroButton text={macro.body} />
             <Link href={buildEditorPath({ version: 1, body: macro.body }, macro.slug)} className={styles.openLink}>エディタで編集</Link>
+            {macro.status === 'published' && <ShareMacroButton title={macro.title} path={`/macros/${macro.slug}`} />}
           </div>
           <section className={styles.reactions}>
             <PublishedMacroReactions macroSlug={macro.slug} initialHelpful={macro.reactions.helpful} initialProblem={macro.reactions.problem} />
