@@ -17,6 +17,7 @@ export function parseTags(raw: string): string[] {
 }
 
 // needsHandle: 公開名をまだ覚えていないユーザー（初回投稿）。このとき handle は必須。
+// 覚えているユーザーは handle が空なら今の名前のまま、入っていれば「変更」として扱う。
 export function validatePublish(input: PublishInput, { needsHandle }: { needsHandle: boolean }): PublishValidation {
   const errors: string[] = []
 
@@ -56,10 +57,8 @@ export function validatePublish(input: PublishInput, { needsHandle }: { needsHan
   if (tags.some((tag) => /\s/.test(tag))) errors.push('タグに空白は使えません。')
 
   const handle = input.handle.trim()
-  if (needsHandle) {
-    if (!handle) errors.push('公開名を入力してください（初回のみ）。')
-    else if (handle.length > LIMITS.handle) errors.push(`公開名は ${LIMITS.handle} 文字以内にしてください。`)
-  }
+  if (needsHandle && !handle) errors.push('公開名を入力してください（初回のみ）。')
+  else if (handle.length > LIMITS.handle) errors.push(`公開名は ${LIMITS.handle} 文字以内にしてください。`)
 
   if (errors.length > 0) return { ok: false, errors }
   return { ok: true, value: { body, originSlug, title, description, tags, handle } }

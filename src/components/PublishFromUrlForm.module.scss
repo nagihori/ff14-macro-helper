@@ -113,3 +113,13 @@
   line-height: 1.5rem;
   color: light-dark(var(--rose-800), var(--rose-200));
 }
+
+// 文中に置く、リンク風の小さな操作ボタン（変更する／変更をやめる）。
+.linkButton {
+  margin-left: 0.25rem;
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+
+  &:hover { color: var(--text-strong); }
+}

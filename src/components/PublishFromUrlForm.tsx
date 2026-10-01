@@ -16,6 +16,7 @@ export function PublishFromUrlForm({ initialShareUrl = '', tagSuggestions, known
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [handle, setHandle] = useState('')
+  const [changingHandle, setChangingHandle] = useState(false)
   // 共有 URL にアレンジ元（from）が含まれていれば、公開時にバックリンクを張る元として表示する。
   const originSlug = readOriginFromShareUrl(shareUrl)
   const origin = originSlug ? knownMacros.find((macro) => macro.slug === originSlug) : undefined
@@ -52,12 +53,15 @@ export function PublishFromUrlForm({ initialShareUrl = '', tagSuggestions, known
             <label className={styles.field}>タグ<input name="tags" value={tags} onChange={(event) => setTags(event.target.value)} placeholder="例：パーティ, チャット" className={styles.input} /></label>
             <div className={styles.suggestions} aria-label="既存のタグ">{visibleSuggestions.map((tag) => <button key={tag} type="button" onClick={() => addTag(tag)} className={styles.suggestion}>#{tag}</button>)}</div>
           </div>
-          {savedHandle === null ? (
-            <label className={styles.field}>公開名（初回のみ）<input required name="handle" maxLength={LIMITS.handle} value={handle} onChange={(event) => setHandle(event.target.value)} placeholder="例：Moco" className={styles.input} />
-              <span className={styles.hint}>投稿者として公開ページに表示される名前です。Discord のユーザー名とは別で、以後は同じ名前を使います。</span>
+          {savedHandle === null || changingHandle ? (
+            <label className={styles.field}>{savedHandle === null ? '公開名（初回のみ）' : '公開名'}<input required name="handle" maxLength={LIMITS.handle} value={handle} onChange={(event) => setHandle(event.target.value)} placeholder="例：Moco" className={styles.input} />
+              <span className={styles.hint}>
+                投稿者として公開ページに表示される名前です。Discord のユーザー名とは別で、{savedHandle === null ? '以後は同じ名前を使います。' : '変更すると過去の投稿の表示も変わります。'}
+                {savedHandle !== null && <> <button type="button" onClick={() => { setChangingHandle(false); setHandle('') }} className={styles.linkButton}>変更をやめる</button></>}
+              </span>
             </label>
           ) : (
-            <p className={styles.origin}>投稿者名：{savedHandle}</p>
+            <p className={styles.origin}>投稿者名：{savedHandle} <button type="button" onClick={() => { setHandle(savedHandle); setChangingHandle(true) }} className={styles.linkButton}>変更する</button></p>
           )}
           {state.errors.length > 0 && (
             <ul role="alert" className={styles.errors}>{state.errors.map((message) => <li key={message}>{message}</li>)}</ul>

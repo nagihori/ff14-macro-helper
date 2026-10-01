@@ -36,7 +36,9 @@ describe('validatePublish', () => {
     if (!result.ok) expect(result.errors.join('\n')).toMatch(/タイトル[\s\S]*タグは 5 個[\s\S]*空白[\s\S]*公開名/)
   })
 
-  it('公開名を覚えているユーザーは handle なしで通る', () => {
+  it('公開名を覚えているユーザーは handle なしで通り、変更時は長さを検証する', () => {
     expect(validatePublish(input({ handle: '' }), { needsHandle: false }).ok).toBe(true)
+    expect(validatePublish(input({ handle: 'Nagi' }), { needsHandle: false }).ok).toBe(true)
+    expect(validatePublish(input({ handle: 'あ'.repeat(21) }), { needsHandle: false }).ok).toBe(false)
   })
 })
