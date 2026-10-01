@@ -27,6 +27,7 @@ import type {
 import { useMacroCheck } from './useMacroCheck'
 import { ActionBar, ActionBarItem } from './ActionBar'
 import { LogLegend } from './LogLegend'
+import { LogList } from './LogList'
 import { ActionButton } from './ActionButton'
 import { ActionGroup } from './ActionGroup'
 import { CopyIcon, PreviewIcon, ShareIcon, WarningIcon } from './icons'
@@ -832,28 +833,7 @@ export function MacroWorkbench() {
             )
           ) : logPlayback ? (
             <>
-            <ul className={styles.log}>
-              {logPlayback.entries.slice(0, logPlayback.revealedCount).map((entry) => (
-                <li key={entry.line} className={styles.logEntry} data-kind={entry.kind}>
-                  {entry.unreproducible ? (
-                    <WarningIcon label="このプレビューでは再現できません" />
-                  ) : (
-                    <>
-                      <span className={styles.logTime}>[{entry.timestamp}]</span>{' '}
-                    </>
-                  )}
-                  {entry.segments.map((segment, index) =>
-                    segment.kind === 'placeholder' ? (
-                      <span key={index} className={styles.logPlaceholder}>
-                        {segment.text}
-                      </span>
-                    ) : (
-                      <span key={index}>{segment.text}</span>
-                    ),
-                  )}
-                </li>
-              ))}
-            </ul>
+            <LogList entries={logPlayback.entries.slice(0, logPlayback.revealedCount)} />
             <LogLegend entries={logPlayback.entries.slice(0, logPlayback.revealedCount)} />
             </>
           ) : (

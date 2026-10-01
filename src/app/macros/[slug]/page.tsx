@@ -8,6 +8,8 @@ import { ActionGroup } from '@/components/ActionGroup'
 import { CopyMacroButton } from '@/components/CopyMacroButton'
 import { EditIcon, ThumbIcon, WarningIcon } from '@/components/icons'
 import { MacroCodeBar } from '@/components/MacroCodeBar'
+import { MacroCodeView } from '@/components/MacroCodeView'
+import { MacroPreviewAccordion } from '@/components/MacroPreviewAccordion'
 import { ShareMacroButton } from '@/components/ShareMacroButton'
 import { OwnerMacroControls } from '@/components/OwnerMacroControls'
 import { PublishedMacroReactions } from '@/components/PublishedMacroReactions'
@@ -94,8 +96,9 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
             <h2 className={styles.bodyHeading}>マクロ本文</h2>
             <div className={styles.codeBlock}>
               <MacroCodeBar body={macro.body} editHref={editHref} title={macro.title} path={`/macros/${macro.slug}`} canShare={macro.status === 'published'} />
-              <pre className={styles.code}>{macro.body}</pre>
+              <MacroCodeView body={macro.body} />
             </div>
+            <MacroPreviewAccordion body={macro.body} />
             <p className={styles.disclaimer}>ゲーム内の動作を保証するものではありません。</p>
           </section>
           <ActionGroup className={styles.actions}>

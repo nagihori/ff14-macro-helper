@@ -1,0 +1,37 @@
+@use '../styles/mixins' as *;
+
+// 詳細ページの「動作プレビュー」。EditorGuide と同じく、ネイティブの details で初期状態は閉じる。
+.preview {
+  @include card;
+  margin-top: 0.75rem;
+  border-radius: var(--radius-xl);
+  @include type(sm);
+}
+
+.summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+
+  &::-webkit-details-marker { display: none; }
+  &::before {
+    content: '▶\FE0E';
+    display: inline-block;
+    margin-right: 0.5rem;
+    font-size: 0.75em;
+    transition: transform 0.15s;
+  }
+  &:hover { color: var(--text-strong); }
+}
+
+.preview[open] > .summary::before { transform: rotate(90deg); }
+
+.body { padding: 0.25rem 1rem 1.25rem; }
+
+.note {
+  margin-top: 0.75rem;
+  @include type(xs);
+  color: var(--text-muted);
+}
