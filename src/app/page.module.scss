@@ -18,6 +18,14 @@
   justify-content: space-between;
   gap: 1.5rem;
   padding: 1.5rem 2rem 0;
+
+  // スマホ幅ではブランド名とボタンを二段に分け、ボタン行は幅いっぱいにする。
+  @include mobile {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 1rem 1rem 0;
+  }
 }
 
 .brand {
@@ -31,6 +39,8 @@
   width: 100%;
   max-width: 64rem;
   padding: 1.5rem 2rem;
+
+  @include mobile { padding: 1rem; }
 }
 
 .actions {
@@ -40,6 +50,11 @@
   gap: 0.5rem;
   // 右肩に固定したテーマ切り替えと重ならないよう、少し内側に寄せる。
   margin-right: 1.5rem;
+
+  @include mobile {
+    margin-right: 0;
+    > * { flex: 1; text-align: center; white-space: nowrap; }
+  }
 }
 
 .secondaryAction { @include pill-action-secondary; }
@@ -49,4 +64,6 @@
   width: 100%;
   max-width: 64rem;
   padding: 0 2rem 3rem;
+
+  @include mobile { padding-inline: 1rem; }
 }

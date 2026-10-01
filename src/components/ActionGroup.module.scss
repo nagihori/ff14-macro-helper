@@ -1,3 +1,5 @@
+@use '../styles/mixins' as *;
+
 .group {
   display: flex;
   flex-wrap: wrap;
@@ -7,3 +9,12 @@
 }
 
 .fill > * { flex: 1 1 0; white-space: nowrap; }
+
+// スマホ幅では縦に積み、どのボタンも幅いっぱいにする。
+@include mobile {
+  .group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .group > *, .fill > * { flex: none; width: 100%; }
+}

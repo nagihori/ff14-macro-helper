@@ -27,6 +27,7 @@
   @include text-field;
   padding-right: 3rem;
   @include type(sm);
+  @include touch-input-size;
   box-shadow: var(--shadow-sm);
 }
 

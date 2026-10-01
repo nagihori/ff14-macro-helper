@@ -30,6 +30,7 @@ $severity-wave: (
   padding: 0.75rem;
   font-family: var(--font-mono);
   @include type(sm);
+  @include touch-input-size;
   line-height: 1.5rem;
   white-space: pre-wrap;
 }
@@ -51,6 +52,8 @@ $severity-wave: (
   width: 100%;
   max-width: 64rem;
   padding: 0 2rem 2rem;
+
+  @include mobile { padding-inline: 1rem; }
 }
 
 .status {
@@ -148,6 +151,7 @@ $severity-wave: (
   text-align: right;
   font-family: var(--font-mono);
   @include type(sm);
+  @include touch-input-size;
   line-height: 1.5rem;
   color: var(--text-faint);
   user-select: none;
@@ -196,6 +200,7 @@ $severity-wave: (
   position: absolute;
   font-family: var(--font-mono);
   @include type(sm);
+  @include touch-input-size;
   line-height: 1.5rem;
   white-space: pre;
   color: light-dark(var(--zinc-400), var(--zinc-600));
@@ -203,6 +208,9 @@ $severity-wave: (
 
 // 行全体が対象の診断（行長・行数超過）は、行全体を波線で囲む。
 .line {
+  // 1行を1ブロックにして、折り返した時の高さを行番号側で測れるようにする（空行も1行ぶん確保）。
+  display: block;
+  min-height: 1.5rem;
   @each $severity, $color in $severity-wave {
     &[data-severity='#{$severity}'] { text-decoration: underline wavy $color; }
   }
@@ -253,6 +261,7 @@ $severity-wave: (
   background: transparent;
   padding: 0.375rem 0.75rem;
   @include type(sm);
+  @include touch-input-size;
 }
 
 .hint {
