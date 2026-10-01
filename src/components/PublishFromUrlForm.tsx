@@ -46,6 +46,7 @@ export function PublishFromUrlForm({ initialShareUrl = '', tagSuggestions, known
       ) : (
         <form action={formAction} className={styles.form}>
           <label className={styles.field}>共有 URL<input required type="url" name="shareUrl" value={shareUrl} onChange={(event) => setShareUrl(event.target.value)} placeholder="https://…" className={styles.input} /></label>
+          {!origin && <p className={styles.hint}>15 行に収まらない続きのマクロは、前のマクロの詳細ページで「エディタで編集」を押し、続きを書いて公開してください。前後のマクロが相互にリンクされます（タイトルは「〇〇 [2]」のように番号を付けると探しやすくなります）。</p>}
           {origin && <p role="status" className={styles.origin}>アレンジ元：<Link href={`/macros/${origin.slug}`} className={styles.leadLink}>{origin.title}</Link>。公開するとこのマクロへのリンクが付きます。</p>}
           <label className={styles.field}>タイトル<input required name="title" maxLength={LIMITS.title} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例：コンテンツ開始前の確認" className={styles.input} /></label>
           <label className={styles.field}>説明（任意）<input name="description" maxLength={LIMITS.description} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="例：パーティの準備確認を呼びかけるマクロです。" className={styles.input} /></label>
