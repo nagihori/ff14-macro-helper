@@ -68,15 +68,24 @@ export async function listTags(): Promise<string[]> {
   return rows.map((row) => row.tag as string)
 }
 
-// ---- 管理者向け（呼び出し側で isAdmin を確認すること） ----
+// ---- 停止中のマクロ（管理者と、その投稿者だけが見られる） ----
 
-// 停止中も含めて 1 件引く。停止中のマクロを見て、再公開するための入口。
-export async function findMacroIncludingSuspended(slug: string): Promise<PublishedMacro | undefined> {
-  const rows = await getSql().query(`select ${columns} ${from} where m.slug = $1`, [slug])
+export type Viewer = { id: string; isAdmin: boolean }
+
+// 公開中のマクロに加えて、閲覧者が管理者、または投稿者本人なら、停止中のものも 1 件引く。
+export async function findMacroForViewer(slug: string, viewer?: Viewer): Promise<PublishedMacro | undefined> {
+  const rows = await getSql().query(
+    `select ${columns} ${from} where m.slug = $1 and (m.status = 'published' or $2::boolean or m.author_id = $3::uuid)`,
+    [slug, viewer?.isAdmin ?? false, viewer?.id ?? null],
+  )
   return rows[0] ? toMacro(rows[0] as Row) : undefined
 }
 
-export async function listSuspendedMacros(): Promise<PublishedMacro[]> {
-  const rows = await getSql().query(`select ${columns} ${from} where m.status = 'suspended' order by m.suspended_at desc`)
+// 停止中の一覧。管理者は全件、それ以外のログイン中の人は自分の投稿だけ。
+export async function listSuspendedMacros(viewer: Viewer): Promise<PublishedMacro[]> {
+  const rows = await getSql().query(
+    `select ${columns} ${from} where m.status = 'suspended' and ($1::boolean or m.author_id = $2::uuid) order by m.suspended_at desc`,
+    [viewer.isAdmin, viewer.id],
+  )
   return (rows as Row[]).map(toMacro)
 }

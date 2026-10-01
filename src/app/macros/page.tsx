@@ -10,8 +10,9 @@ export const metadata = { title: '公開マクロ | ff14-macro-helper' }
 export default async function MacroLibraryPage({ searchParams }: PageProps<'/macros'>) {
   const { q } = await searchParams
   const initialQuery = typeof q === 'string' ? q : ''
-  const admin = (await auth())?.user.isAdmin === true
-  const [allMacros, suspended] = await Promise.all([listPublishedMacros(), admin ? listSuspendedMacros() : []])
+  const user = (await auth())?.user
+  const admin = user?.isAdmin === true
+  const [allMacros, suspended] = await Promise.all([listPublishedMacros(), user ? listSuspendedMacros({ id: user.id, isAdmin: admin }) : []])
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -24,8 +25,8 @@ export default async function MacroLibraryPage({ searchParams }: PageProps<'/mac
       </header>
       <PublishedMacroLibrary allMacros={allMacros} initialQuery={initialQuery} />
       {suspended.length > 0 && (
-        <section className={styles.suspended} aria-label="公開停止中のマクロ（管理者のみ）">
-          <h2 className={styles.suspendedHeading}>公開停止中（管理者のみ）</h2>
+        <section className={styles.suspended} aria-label="公開停止中のマクロ">
+          <h2 className={styles.suspendedHeading}>{admin ? '公開停止中（管理者のみ）' : 'あなたの公開停止中のマクロ'}</h2>
           <ul>{suspended.map((macro) => <li key={macro.slug}><Link href={`/macros/${macro.slug}`} className={styles.suspendedLink}>{macro.title}</Link></li>)}</ul>
         </section>
       )}

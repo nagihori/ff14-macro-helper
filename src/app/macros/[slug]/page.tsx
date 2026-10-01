@@ -4,7 +4,7 @@ import { auth } from '@/auth'
 import { AdminMacroControls } from '@/components/AdminMacroControls'
 import { CopyMacroButton } from '@/components/CopyMacroButton'
 import { PublishedMacroReactions } from '@/components/PublishedMacroReactions'
-import { findMacroIncludingSuspended, findPublishedMacro, findRelatedMacros } from '@/lib/published-macros/repository'
+import { findMacroForViewer, findPublishedMacro, findRelatedMacros } from '@/lib/published-macros/repository'
 import { buildEditorPath } from '@/lib/share/url'
 import styles from './page.module.scss'
 
@@ -15,9 +15,10 @@ function WarnIcon() { return <svg {...iconProps}><path d="M12 3 2 20h20zM12 10v4
 
 export default async function PublishedMacroPage({ params }: PageProps<'/macros/[slug]'>) {
   const { slug } = await params
-  // 停止中のマクロは、管理者にだけ見せる（再公開のため）。操作の許可そのものはサーバーアクション側で判定する。
-  const admin = (await auth())?.user.isAdmin === true
-  const macro = await (admin ? findMacroIncludingSuspended(slug) : findPublishedMacro(slug))
+  // 停止中のマクロは、管理者と投稿者本人にだけ見せる。操作（再公開）の許可そのものはサーバーアクション側で判定する。
+  const user = (await auth())?.user
+  const admin = user?.isAdmin === true
+  const macro = await findMacroForViewer(slug, user && { id: user.id, isAdmin: admin })
   if (!macro) notFound()
   const [related, origin] = await Promise.all([findRelatedMacros(slug), macro.arrangedFrom ? findPublishedMacro(macro.arrangedFrom) : undefined])
 
@@ -25,7 +26,7 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
     <main className={styles.page}>
       <div className={styles.container}>
         <Link href="/macros" className={styles.backLink}>← 公開マクロ一覧に戻る</Link>
-        {macro.status === 'suspended' && <p role="status" className={styles.suspendedNotice}>このマクロは公開停止中です。管理者にだけ表示されています。</p>}
+        {macro.status === 'suspended' && <p role="status" className={styles.suspendedNotice}>{admin ? 'このマクロは公開停止中です。管理者と投稿者にだけ表示されています。' : <>このマクロは運営により公開停止されています。あなたにだけ表示されています。心当たりがない場合や再公開のご希望は、<Link href="/terms#contact" className={styles.originLink}>利用規約の連絡先</Link>からご連絡ください。</>}</p>}
         <article className={styles.article}>
           <div className={styles.tags}>
             {macro.tags.map((tag) => (

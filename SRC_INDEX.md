@@ -13,8 +13,8 @@
 ## ページ
 
 - [`app/page.tsx`](src/app/page.tsx)（＋ `page.module.scss`）— トップ。ヘッダー（右肩に「公開マクロを探す」副・「公開する」主）を置き、`MacroWorkbench` を表示
-- [`app/macros/page.tsx`](src/app/macros/page.tsx) — 公開マクロ一覧。`?q=` を受け取り `PublishedMacroLibrary` へ初期検索語として渡す。右肩に「公開する」（主）と「エディタに戻る」（副）。管理者には「公開停止中」のマクロへの入口も出す
-- [`app/macros/[slug]/page.tsx`](src/app/macros/%5Bslug%5D/page.tsx) — 公開マクロの詳細。本文・タグ・リアクション・投稿者・似たマクロ（共通タグ順、`findRelatedMacros`）を表示し、「マクロテキストをコピー」（主）と「エディタで編集」（副）で本文を（アレンジ元の slug を `&from=` で持たせて） `?m=` に載せてトップへ送る。管理者には停止中のマクロも表示し、`AdminMacroControls` を出す
+- [`app/macros/page.tsx`](src/app/macros/page.tsx) — 公開マクロ一覧。`?q=` を受け取り `PublishedMacroLibrary` へ初期検索語として渡す。右肩に「公開する」（主）と「エディタに戻る」（副）。ログイン中なら「公開停止中」のマクロへの入口も出す（管理者は全件、投稿者は自分の分）
+- [`app/macros/[slug]/page.tsx`](src/app/macros/%5Bslug%5D/page.tsx) — 公開マクロの詳細。本文・タグ・リアクション・投稿者・似たマクロ（共通タグ順、`findRelatedMacros`）を表示し、「マクロテキストをコピー」（主）と「エディタで編集」（副）で本文を（アレンジ元の slug を `&from=` で持たせて） `?m=` に載せてトップへ送る。停止中のマクロは管理者と投稿者本人にだけ表示し（`findMacroForViewer`）、停止の知らせを出す。管理者にはさらに `AdminMacroControls`
 - [`app/macros/[slug]/actions.ts`](src/app/macros/%5Bslug%5D/actions.ts) — 公開停止／再公開のサーバーアクション。セッションの `isAdmin` は信用せず、`users` の Discord ID を `ADMIN_DISCORD_IDS` と毎回照合する
 - [`app/macros/submit/page.tsx`](src/app/macros/submit/page.tsx) — 公開投稿ページ。ログイン状態・保存済みの公開名・タグ候補・既存マクロ（アレンジ元の照合用）を取得して `PublishFromUrlForm` に渡す。未ログインならフォームの代わりに `AuthButton`（ログイン後にこのページへ戻る）
 - [`app/macros/submit/actions.ts`](src/app/macros/submit/actions.ts) — 公開フォームのサーバーアクション。ログイン必須。`validatePublish` で共有 URL の復号と lint を再検証し、通ったものだけ `store.ts` で保存して詳細ページへ移る
