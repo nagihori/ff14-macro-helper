@@ -1,0 +1,83 @@
+@use 'sass:list';
+@use '../styles/mixins' as *;
+
+// ページ下部の「エディタの使い方」。ネイティブの details で、初期状態は閉じる。
+.guide {
+  @include card;
+  margin-top: 2rem;
+  border-radius: var(--radius-xl);
+  @include type(sm);
+}
+
+.summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+
+  &::-webkit-details-marker { display: none; }
+  &::before {
+    content: '▶\FE0E';
+    display: inline-block;
+    margin-right: 0.5rem;
+    font-size: 0.75em;
+    transition: transform 0.15s;
+  }
+  &:hover { color: var(--text-strong); }
+}
+
+.guide[open] > .summary::before { transform: rotate(90deg); }
+
+.body {
+  display: grid;
+  gap: 1.5rem;
+  padding: 0.25rem 1rem 1.25rem;
+  line-height: 1.5rem;
+  color: var(--text-secondary);
+
+  @media (min-width: $bp-md) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem 2rem; }
+}
+
+.heading {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.list {
+  display: grid;
+  gap: 0.375rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+.legend { display: grid; gap: 0.375rem; }
+
+.legendItem {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.sample {
+  font-family: var(--font-mono);
+  white-space: pre;
+
+  @each $kind, $pair in $highlight-tones {
+    &[data-kind='#{$kind}'] { color: tone(list.nth($pair, 1), list.nth($pair, 2)); }
+  }
+  &[data-kind='command-unknown'] { text-decoration: underline wavy var(--amber-500); }
+  &[data-kind='arg-placeholder-invalid'] { text-decoration: underline wavy; }
+  &[data-kind='fullwidth-space'] {
+    border-radius: var(--radius-xs);
+    background: color-mix(in oklab, var(--red-500) 40%, transparent);
+  }
+}
+
+.note {
+  margin-top: 0.75rem;
+  @include type(xs);
+  color: var(--text-muted);
+}

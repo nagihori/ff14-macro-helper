@@ -89,3 +89,33 @@ $bp-xl: 1280px;
 @function tone($light, $dark) {
   @return string.unquote('light-dark(var(--#{$light}), var(--#{$dark}))');
 }
+
+// エディタ内ハイライト（HighlightSegmentKind）。(ライト, ダーク) のパレット名。
+// エモートだけ青緑系にして他カテゴリと見分けやすくする。
+$highlight-tones: (
+  'command-known': (blue-600, blue-400),
+  'command-known-emote': (teal-600, teal-400),
+  'command-unknown': (amber-600, amber-400),
+  'arg-placeholder': (purple-600, purple-400),
+  'arg-placeholder-wait': (pink-600, pink-400),
+  'arg-placeholder-invalid': (red-600, red-400),
+  'arg-string': (emerald-600, emerald-400),
+  'arg-number': (teal-600, teal-400),
+);
+
+// ログプレビューの送信先チャンネル別の色分け（LogEntryKind）。
+// 渚さんデフォルト配色のトークンなので、実機の見た目と揃えたい時はここだけ触れば済む。
+$log-tones: (
+  'yell': (yellow-600, yellow-400),
+  'shout': (orange-600, orange-400),
+  'tell': (pink-600, pink-400),
+  'party': (cyan-500, cyan-300),
+  'alliance': (amber-500, amber-300),
+  'freecompany': (sky-400, sky-200),
+  'linkshell': (green-500, green-300),
+  'echo': (zinc-400, zinc-500),
+  'action': (indigo-600, indigo-400),
+  'system': (zinc-500, zinc-400),
+  'error': (red-600, red-400),
+  'unknown': (zinc-500, zinc-500), // 再現できない行は、時刻や凡例と同じ薄いグレー（--text-muted と同値）
+);

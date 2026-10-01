@@ -6,35 +6,9 @@
 
 // ---- 色の対応表 --------------------------------------------------------
 
-// エディタ内ハイライト（HighlightSegmentKind）。(ライト, ダーク) のパレット名。
-// エモートだけ青緑系にして他カテゴリと見分けやすくする。
-$highlight-tones: (
-  'command-known': (blue-600, blue-400),
-  'command-known-emote': (teal-600, teal-400),
-  'command-unknown': (amber-600, amber-400),
-  'arg-placeholder': (purple-600, purple-400),
-  'arg-placeholder-wait': (pink-600, pink-400),
-  'arg-placeholder-invalid': (red-600, red-400),
-  'arg-string': (emerald-600, emerald-400),
-  'arg-number': (teal-600, teal-400),
-);
+// エディタ内ハイライトの色は styles/_mixins.scss の $highlight-tones（使い方の説明 EditorGuide と共有）。
 
-// ログプレビューの送信先チャンネル別の色分け（LogEntryKind）。
-// 渚さんデフォルト配色のトークンなので、実機の見た目と揃えたい時はここだけ触れば済む。
-$log-tones: (
-  'yell': (yellow-600, yellow-400),
-  'shout': (orange-600, orange-400),
-  'tell': (pink-600, pink-400),
-  'party': (cyan-500, cyan-300),
-  'alliance': (amber-500, amber-300),
-  'freecompany': (sky-400, sky-200),
-  'linkshell': (green-500, green-300),
-  'echo': (zinc-400, zinc-500),
-  'action': (indigo-600, indigo-400),
-  'system': (zinc-500, zinc-400),
-  'error': (red-600, red-400),
-  'unknown': (zinc-700, zinc-300),
-);
+// ログの送信先別の色は styles/_mixins.scss の $log-tones（凡例 LogLegend と共有）。
 
 // 診断の重さ（DiagnosticSeverity）。文字色と、波線の色。
 $severity-text: (
@@ -77,24 +51,6 @@ $severity-wave: (
   width: 100%;
   max-width: 64rem;
   padding: 0 2rem 2rem;
-}
-
-.toolbar {
-  display: flex;
-  gap: 0.5rem;
-  padding-bottom: 1.5rem;
-}
-
-.copyButton {
-  @include solid-button;
-  padding: 0.375rem 0.75rem;
-  @include type(sm);
-}
-
-.shareButton {
-  @include outline-button;
-  padding: 0.375rem 0.75rem;
-  @include type(sm);
 }
 
 .status {
@@ -150,17 +106,6 @@ $severity-wave: (
   &[data-level='near'] { color: tone(orange-600, orange-400); }
 }
 
-.previewButton {
-  @include solid-button;
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.25rem 0.75rem;
-  @include type(xs);
-
-  &:disabled { opacity: 0.5; }
-}
-
 .spinner {
   width: 0.75rem;
   height: 0.75rem;
@@ -185,9 +130,15 @@ $severity-wave: (
 .editorFrame {
   display: flex;
   flex: 1;
+  flex-direction: column;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-default);
   background: var(--surface-card);
+}
+
+.editorRow {
+  display: flex;
+  flex: 1;
 }
 
 .gutter {
@@ -431,9 +382,29 @@ $severity-wave: (
 
 .logTime { color: var(--text-faint); }
 
+.logEntry svg { display: inline-block; margin-inline-end: 0.375rem; vertical-align: -0.125em; color: tone(amber-600, amber-400); }
+
 .logPlaceholder {
   border-radius: var(--radius-sm);
   background: light-dark(var(--purple-100), color-mix(in oklab, var(--purple-900) 50%, transparent));
   padding-inline: 0.25rem;
   color: tone(purple-700, purple-300);
 }
+
+// 動作プレビュー（幅いっぱい）の下に、コピー系の2つを横並びで置く。
+.actionStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+// コマンド検索欄の下の文字色の凡例（一覧右端の種類名の色）。
+.legend {
+  padding-inline: 0.25rem;
+  @include type(xs);
+  color: var(--text-muted);
+}
+
+.legendCommand { color: tone(blue-600, blue-400); font-weight: 600; }
+.legendEmote { color: tone(teal-600, teal-400); font-weight: 600; }
+

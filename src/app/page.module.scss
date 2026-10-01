@@ -14,21 +14,23 @@
   display: flex;
   width: 100%;
   max-width: 64rem;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
-  padding: 2rem 2rem 0;
+  padding: 1.5rem 2rem 0;
 }
 
-.title {
-  @include type(xl);
-  font-weight: 600;
+.brand {
+  @include type(sm);
+  font-weight: 700;
   color: var(--text-strong);
 }
 
-.lead {
-  @include type(sm);
-  color: var(--text-muted);
+// タイトルボックスはエディタと同じ幅・同じ左右の余白に揃える。
+.hero {
+  width: 100%;
+  max-width: 64rem;
+  padding: 1.5rem 2rem;
 }
 
 .actions {
@@ -41,3 +43,10 @@
 }
 
 .secondaryAction { @include pill-action-secondary; }
+
+// 使い方（アコーディオン）は、エディタと同じ幅・左右の余白に揃える。
+.guide {
+  width: 100%;
+  max-width: 64rem;
+  padding: 0 2rem 3rem;
+}

@@ -25,6 +25,15 @@ import type {
   PlaceholderCandidate,
 } from '@/lib/macro/types'
 import { useMacroCheck } from './useMacroCheck'
+import { ActionBar, ActionBarItem } from './ActionBar'
+import { LogLegend } from './LogLegend'
+import { ActionButton } from './ActionButton'
+import { ActionGroup } from './ActionGroup'
+import { CopyIcon, PreviewIcon, ShareIcon, WarningIcon } from './icons'
+import { useCopyFeedback } from './useCopyFeedback'
+import { collapseDoubleSlash } from '@/lib/macro/double-slash'
+import { ariaShortcut, formatShortcut, matchShortcut } from '@/lib/shortcuts'
+import { BAR_TEXT, UI_TEXT } from '@/lib/ui-text'
 import styles from './MacroWorkbench.module.scss'
 
 const dictionary = getDictionary()
@@ -82,12 +91,15 @@ const CATEGORY_LABEL: Record<CommandCategory, string> = {
 // command-unknown 等トークン単位の診断は、ハイライト側（MacroWorkbench.module.scss）で個別に処理済み。
 const WHOLE_LINE_DIAGNOSTIC_CODES = new Set(['line-length-exceeded', 'line-count-exceeded'])
 
+const subscribeNothing = () => () => {}
+
 // UI はここでモデルを表示するだけ。文字数・構文・コマンドの意味は lib/macro が判断する（AGENTS.md）。
 export function MacroWorkbench() {
-  // 初期状態は検索の案内を読みやすくするため空にする。エディタで / を入力すれば、
-  // 従来どおりコマンド補完が表示される。
-  const [body, setBody] = useState('')
-  const [cursor, setCursor] = useState(0)
+  // マクロは必ず「/」から書き始めるので、1行目に「/」を入れておく（?m= の共有URLやペーストで上書きされる）。
+  // 触る前はコマンド補完を出さず、右側の検索の案内を読めるようにする（editorTouched）。
+  const [body, setBody] = useState('/')
+  const [cursor, setCursor] = useState(1)
+  const [editorTouched, setEditorTouched] = useState(false)
   // ボタン押下時のチェックで問題が見つかった本文。同じ本文のあいだは最終行も確定扱いで表示し、編集すると通常に戻る。
   const checkedBody = useSyncExternalStore(subscribeCheckedBody, getCheckedBody, () => null)
   const { guard, dialog: checkDialog } = useMacroCheck()
@@ -111,7 +123,13 @@ export function MacroWorkbench() {
     key: string | null
     index: number
   }>({ key: null, index: 0 })
-  const [shareStatus, setShareStatus] = useState<string | null>(null)
+  // 挿入できなかった時などの、短い知らせ。
+  const [notice, setNotice] = useState<string | null>(null)
+  const bodyCopy = useCopyFeedback()
+  const urlCopy = useCopyFeedback()
+  // クリップボードに書けなかった時の逃げ道として、共有URLをそのまま見せる。
+  const [manualShareUrl, setManualShareUrl] = useState<string | null>(null)
+  const isMac = useSyncExternalStore(subscribeNothing, () => /Mac|iPhone|iPad/.test(navigator.platform), () => false)
   const [restoreError, setRestoreError] = useState<string | null>(null)
 
   const [ghostPosition, setGhostPosition] = useState<{ left: number; top: number } | null>(null)
@@ -123,6 +141,7 @@ export function MacroWorkbench() {
     revealedCount: number
   } | null>(null)
   const logTimeoutsRef = useRef<number[]>([])
+  const tabReleasedRef = useRef(false)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
@@ -194,7 +213,7 @@ export function MacroWorkbench() {
     ? `${completion.rangeStart}:${completion.rangeEnd}:${completion.token}`
     : null
   const visibleCompletion =
-    completion && !completion.isExactMatch && completionKey !== dismissedKey ? completion : null
+    editorTouched && completion && !completion.isExactMatch && completionKey !== dismissedKey ? completion : null
   const selectedIndex = selection.key === completionKey ? selection.index : 0
   const expandedSuggestionId =
     expandedSuggestion.key === completionKey ? expandedSuggestion.id : null
@@ -265,7 +284,7 @@ export function MacroWorkbench() {
       newBody.split('\n').length > MAX_LINES ||
       halfWidthLength(newBody.slice(start, end)) > MAX_LINE_LENGTH
     ) {
-      setShareStatus('コマンドを挿入するとマクロの行数または文字数の上限を超えます。')
+      setNotice('コマンドを挿入するとマクロの行数または文字数の上限を超えます。')
       return
     }
 
@@ -324,8 +343,17 @@ export function MacroWorkbench() {
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
     // Tab はサジェスト確定専用のキーとして扱い、フォーカスが次の要素へ漏れないよう常に奪う。
     // サジェストが無い時に既定のフォーカス移動へ抜けると、確定できたかどうかが分かりにくいため。
+    // ただしキーボードだけで出られるよう、候補が無い状態で Esc を押した直後の Tab だけはフォーカス移動に譲る。
     if (event.key === 'Tab') {
+      if (tabReleasedRef.current) {
+        tabReleasedRef.current = false
+        return
+      }
       event.preventDefault()
+    } else if (event.key === 'Escape') {
+      tabReleasedRef.current = !visibleCompletion && !visiblePlaceholderCompletion && !ghostText
+    } else if (!['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) {
+      tabReleasedRef.current = false
     }
 
     // 直前の行が未入力の "/" だけなら、コマンド補完候補が出ていても連続 Enter を
@@ -442,6 +470,17 @@ export function MacroWorkbench() {
       }
     }
 
+    setNotice(null)
+
+    // 手癖の「//」は「/」に戻す（lib/macro/double-slash.ts）。変換中の入力には触らない。
+    const collapsed = (event.nativeEvent as InputEvent).isComposing ? null : collapseDoubleSlash(body, newValue, newCursor)
+    if (collapsed) {
+      setBody(collapsed.body)
+      setCursor(collapsed.cursor)
+      requestAnimationFrame(() => el.setSelectionRange(collapsed.cursor, collapsed.cursor))
+      return
+    }
+
     setBody(newValue)
     syncCursor(el)
   }
@@ -460,28 +499,26 @@ export function MacroWorkbench() {
     }
   }
 
-  async function copyBody() {
-    try {
-      await navigator.clipboard.writeText(body)
-      setShareStatus('コピーしました。')
-    } catch {
-      setShareStatus('コピーに失敗しました。')
-    }
+  function copyBody() {
+    return bodyCopy.run(() => navigator.clipboard.writeText(body))
   }
 
-  async function copyShareUrl() {
+  function copyShareUrl() {
     const url = buildShareUrl(analysis.document, window.location.href)
-    try {
-      await navigator.clipboard.writeText(url)
-      setShareStatus('共有 URL をコピーしました。')
-    } catch {
-      setShareStatus(url)
-    }
+    return urlCopy.run(async () => {
+      try {
+        await navigator.clipboard.writeText(url)
+        setManualShareUrl(null)
+      } catch (error) {
+        setManualShareUrl(url)
+        throw error
+      }
+    })
   }
 
   // コピー・共有の前には必ず本文をチェックし、問題があれば確認を挟む。
-  function handleCopy() { guard(body, 'コピーする', copyBody) }
-  function handleShare() { guard(body, '共有 URL をコピーする', copyShareUrl) }
+  function handleCopy() { guard(body, UI_TEXT.copyMacro, copyBody) }
+  function handleShare() { guard(body, UI_TEXT.copyShareUrl, copyShareUrl) }
 
   // クリック時点のスナップショットを、行ごとの delaySeconds（/wait の累積）だけ
   // 遅らせながら1行ずつ出す。実行中に再クリックされたら前回分のタイマーは破棄する。
@@ -525,6 +562,22 @@ export function MacroWorkbench() {
     stopLogPlayback()
   }, [body])
 
+  const isLogPlayingNow = !!logPlayback && logPlayback.revealedCount < logPlayback.entries.length
+  // Ctrl+Alt+C / P / S。最新の handler を読むため、毎回の描画で付け替える。
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const name = matchShortcut(event)
+      if (!name) return
+      event.preventDefault()
+      if (name === 'copy') handleCopy()
+      else if (name === 'share') handleShare()
+      else if (!isLogPlayingNow) handlePlayLog()
+    }
+    // 日本語入力（変換中）でも効くよう、キャプチャ段階で受ける。キーは文字ではなく物理キー（event.code）で見る。
+    window.addEventListener('keydown', onKeyDown, true)
+    return () => window.removeEventListener('keydown', onKeyDown, true)
+  })
+
   const isLogPlaying = !!logPlayback && logPlayback.revealedCount < logPlayback.entries.length
   const lineLengthLevel =
     currentLineStats.length > MAX_LINE_LENGTH
@@ -536,37 +589,19 @@ export function MacroWorkbench() {
   return (
     <div className={styles.workbench}>
       {checkDialog}
-      <div className={styles.toolbar}>
-        <button type="button" onClick={handleCopy} className={styles.copyButton}>
-          コピー
-        </button>
-        <button type="button" onClick={handleShare} className={styles.shareButton}>
-          共有 URL をコピー
-        </button>
-        {shareStatus && <p className={styles.status}>{shareStatus}</p>}
-      </div>
       <div className={styles.panes}>
         <section className={styles.editorPane}>
           <div className={styles.editorHeader}>
             <h2 className={styles.paneTitle}>エディタ</h2>
             <div className={styles.editorTools}>
               <p className={styles.lineStats}>
-                L{currentLineStats.number}・
+                {currentLineStats.number}行目・
                 <span className={styles.lineLength} data-level={lineLengthLevel}>
                   {currentLineStats.length}
                 </span>
                 {' / '}
-                {MAX_LINE_LENGTH} 文字（推定・半角換算）
+                {MAX_LINE_LENGTH} 文字
               </p>
-              <button
-                type="button"
-                onClick={handlePlayLog}
-                disabled={isLogPlaying}
-                className={styles.previewButton}
-              >
-                {isLogPlaying && <span aria-hidden className={styles.spinner} />}
-                {isLogPlaying ? '実行中…' : 'プレビュー'}
-              </button>
             </div>
           </div>
           {restoreError && (
@@ -575,6 +610,34 @@ export function MacroWorkbench() {
             </p>
           )}
           <div className={styles.editorFrame}>
+            <ActionBar label="エディタの操作">
+              <ActionBarItem
+                icon={isLogPlaying ? <span aria-hidden className={styles.spinner} /> : <PreviewIcon />}
+                caption={BAR_TEXT.preview}
+                title={`${UI_TEXT.preview}（${formatShortcut('preview', isMac)}）`}
+                aria-keyshortcuts={ariaShortcut('preview')}
+                disabled={isLogPlaying}
+                active={!!logPlayback}
+                onClick={handlePlayLog}
+              />
+              <ActionBarItem
+                icon={<CopyIcon />}
+                caption={BAR_TEXT.copy}
+                title={`${UI_TEXT.copyMacro}（${formatShortcut('copy', isMac)}）`}
+                aria-keyshortcuts={ariaShortcut('copy')}
+                feedback={bodyCopy.state}
+                onClick={handleCopy}
+              />
+              <ActionBarItem
+                icon={<ShareIcon />}
+                caption={BAR_TEXT.share}
+                title={`${UI_TEXT.copyShareUrl}（${formatShortcut('share', isMac)}）`}
+                aria-keyshortcuts={ariaShortcut('share')}
+                feedback={urlCopy.state}
+                onClick={handleShare}
+              />
+            </ActionBar>
+            <div className={styles.editorRow}>
             <div ref={gutterRef} aria-hidden className={styles.gutter}>
               {highlightLines.map((highlightLine) => (
                 <div key={highlightLine.line}>{highlightLine.line}</div>
@@ -585,7 +648,10 @@ export function MacroWorkbench() {
                 ref={textareaRef}
                 value={body}
                 onChange={handleChange}
-                onFocus={stopLogPlayback}
+                onFocus={() => {
+                  setEditorTouched(true)
+                  stopLogPlayback()
+                }}
                 onSelect={(event) => syncCursor(event.currentTarget)}
                 onClick={(event) => syncCursor(event.currentTarget)}
                 onKeyUp={(event) => syncCursor(event.currentTarget)}
@@ -631,6 +697,7 @@ export function MacroWorkbench() {
                 )}
               </div>
             </div>
+            </div>
           </div>
           <p
             className={styles.diagnosticLine}
@@ -640,6 +707,31 @@ export function MacroWorkbench() {
               ? currentLineDiagnostics.map((diagnostic) => diagnostic.message).join('　')
               : ' '}
           </p>
+          <div className={styles.actionStack}>
+            <ActionGroup fill>
+              <ActionButton
+                icon={isLogPlaying ? <span aria-hidden className={styles.spinner} /> : <PreviewIcon />}
+                variant="ghost"
+                disabled={isLogPlaying}
+                onClick={handlePlayLog}
+                title={formatShortcut('preview', isMac)}
+              >
+                {isLogPlaying ? '実行中…' : UI_TEXT.preview}
+              </ActionButton>
+            </ActionGroup>
+            <ActionGroup fill>
+              <ActionButton icon={<CopyIcon />} feedback={bodyCopy.state} onClick={handleCopy} title={formatShortcut('copy', isMac)}>
+                {UI_TEXT.copyMacro}
+              </ActionButton>
+              <ActionButton icon={<ShareIcon />} variant="secondary" feedback={urlCopy.state} onClick={handleShare} title={formatShortcut('share', isMac)}>
+                {UI_TEXT.copyShareUrl}
+              </ActionButton>
+            </ActionGroup>
+          </div>
+          {notice && <p className={styles.status} role="status">{notice}</p>}
+          {manualShareUrl && (
+            <p className={styles.status}>コピーできなかったので、共有URLをここに表示します：{manualShareUrl}</p>
+          )}
         </section>
 
         <section className={styles.sidePane}>
@@ -651,6 +743,11 @@ export function MacroWorkbench() {
             aria-label="コマンドを検索"
             className={styles.searchInput}
           />
+          {!logPlayback && (
+            <p className={styles.legend}>
+              文字色（種類名）：<span className={styles.legendCommand}>コマンド</span>・<span className={styles.legendEmote}>エモート</span>
+            </p>
+          )}
           {commandSearchQuery.trim() ? (
             commandSearchResults.length > 0 ? (
               <ul className={styles.suggestionList}>
@@ -717,10 +814,17 @@ export function MacroWorkbench() {
               <p className={styles.hint}>一致するコマンドがありません。</p>
             )
           ) : logPlayback ? (
+            <>
             <ul className={styles.log}>
               {logPlayback.entries.slice(0, logPlayback.revealedCount).map((entry) => (
                 <li key={entry.line} className={styles.logEntry} data-kind={entry.kind}>
-                  <span className={styles.logTime}>[{entry.timestamp}]</span>{' '}
+                  {entry.unreproducible ? (
+                    <WarningIcon label="このプレビューでは再現できません" />
+                  ) : (
+                    <>
+                      <span className={styles.logTime}>[{entry.timestamp}]</span>{' '}
+                    </>
+                  )}
                   {entry.segments.map((segment, index) =>
                     segment.kind === 'placeholder' ? (
                       <span key={index} className={styles.logPlaceholder}>
@@ -733,13 +837,12 @@ export function MacroWorkbench() {
                 </li>
               ))}
             </ul>
+            <LogLegend entries={logPlayback.entries.slice(0, logPlayback.revealedCount)} />
+            </>
           ) : (
             <>
               <p className={styles.hint}>
                 コマンド名・短縮名・説明から検索できます。先頭の「/」は省略できます。エディタに直接「/」を入力しても候補が表示されます。
-              </p>
-              <p className={styles.hint}>
-                代名詞は「&lt;」なしで入力しても自動補完して展開されます。（t, me, pos など）
               </p>
               {visibleCompletion ? (
                 <ul className={styles.suggestionList}>
