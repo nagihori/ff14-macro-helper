@@ -42,3 +42,22 @@ export async function publishMacro(userId: string, value: ValidPublish): Promise
   }
   throw new Error('slug を発番できませんでした')
 }
+
+// 本人による編集：タイトル・説明・タグだけ（本文は直せない）。公開中のものに限る。更新できたら true。
+export async function updateMacroMeta(userId: string, slug: string, value: { title: string; description: string; tags: string[] }): Promise<boolean> {
+  const rows = await getSql().query(
+    `update macros set title = $3, description = $4, tags = $5 where slug = $1 and author_id = $2 and status = 'published' returning 1`,
+    [slug, userId, value.title, value.description, value.tags],
+  )
+  return rows.length > 0
+}
+
+// 本人による削除：本文・説明・タグを消して status = 'deleted' にする（タイトルとスラッグは派生側の表示用に残す）。
+export async function deleteMacro(userId: string, slug: string): Promise<boolean> {
+  const rows = await getSql().query(
+    `update macros set status = 'deleted', deleted_at = now(), body = '', description = '', tags = '{}'
+     where slug = $1 and author_id = $2 and status <> 'deleted' returning 1`,
+    [slug, userId],
+  )
+  return rows.length > 0
+}

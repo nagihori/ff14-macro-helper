@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation'
 import { auth } from '@/auth'
 import { AdminMacroControls } from '@/components/AdminMacroControls'
 import { CopyMacroButton } from '@/components/CopyMacroButton'
+import { OwnerMacroControls } from '@/components/OwnerMacroControls'
 import { PublishedMacroReactions } from '@/components/PublishedMacroReactions'
-import { findDerivedMacros, findMacroForViewer, findPublishedMacro, findRelatedMacros } from '@/lib/published-macros/repository'
+import { findDerivedMacros, findMacroForViewer, findRelatedMacros, isMacroAuthor } from '@/lib/published-macros/repository'
 import type { PublishedMacro } from '@/lib/published-macros/types'
 import { buildEditorPath } from '@/lib/share/url'
 import styles from './page.module.scss'
@@ -44,7 +45,8 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
   const admin = user?.isAdmin === true
   const macro = await findMacroForViewer(slug, user && { id: user.id, isAdmin: admin })
   if (!macro) notFound()
-  const [related, derived, origin] = await Promise.all([findRelatedMacros(slug), findDerivedMacros(slug), macro.arrangedFrom ? findPublishedMacro(macro.arrangedFrom) : undefined])
+  const origin = macro.arrangedFrom
+  const [related, derived, mine] = await Promise.all([findRelatedMacros(slug), findDerivedMacros(slug), user ? isMacroAuthor(slug, user.id) : false])
 
   return (
     <main className={styles.page}>
@@ -71,10 +73,11 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
           <section className={styles.reactions}>
             <PublishedMacroReactions macroSlug={macro.slug} initialHelpful={macro.reactions.helpful} initialProblem={macro.reactions.problem} />
           </section>
+          {mine && <OwnerMacroControls slug={macro.slug} canEdit={macro.status === 'published'} />}
           {admin && <AdminMacroControls slug={macro.slug} status={macro.status} />}
           <footer className={styles.meta}>
             投稿者 {macro.authorHandle} · {macro.publishedAt}
-            {origin && <> · アレンジ元：<Link href={`/macros/${origin.slug}`} className={styles.originLink}>{origin.title}</Link></>}
+            {origin && (origin.deleted ? <> · アレンジ元：{origin.title}（削除済み）</> : <> · アレンジ元：<Link href={`/macros/${origin.slug}`} className={styles.originLink}>{origin.title}</Link></>)}
           </footer>
         </article>
         <MacroCardSection id="derived-heading" heading="このマクロから派生" items={derived} />

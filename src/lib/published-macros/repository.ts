@@ -6,18 +6,19 @@ import type { PublishedMacro } from './types'
 const columns = `
   m.slug, m.title, m.description, m.body, m.tags, m.author_handle,
   to_char(m.published_at at time zone 'Asia/Tokyo', 'YYYY/MM/DD') as published_at,
-  o.slug as arranged_from_slug,
+  o.slug as arranged_from_slug, o.title as arranged_from_title, o.status as arranged_from_status,
   m.helpful_count, m.problem_count, m.status
 `
-// 元マクロが停止中なら、バックリンクは張らない。
+// 元マクロが停止中なら、バックリンクは出さない。削除済みなら、タイトルだけ出す（リンクなし）。
 const from = `
   from macros m
-  left join macros o on o.id = m.arranged_from and o.status = 'published'
+  left join macros o on o.id = m.arranged_from and o.status in ('published', 'deleted')
 `
 
 type Row = {
   slug: string; title: string; description: string; body: string; tags: string[]
   author_handle: string; published_at: string; arranged_from_slug: string | null
+  arranged_from_title: string | null; arranged_from_status: 'published' | 'deleted' | null
   helpful_count: number; problem_count: number; status: 'published' | 'suspended'
 }
 
@@ -30,7 +31,7 @@ function toMacro(row: Row): PublishedMacro {
     body: row.body,
     authorHandle: row.author_handle,
     publishedAt: row.published_at,
-    arrangedFrom: row.arranged_from_slug ?? undefined,
+    arrangedFrom: row.arranged_from_slug && row.arranged_from_title ? { slug: row.arranged_from_slug, title: row.arranged_from_title, deleted: row.arranged_from_status === 'deleted' } : undefined,
     reactions: { helpful: row.helpful_count, problem: row.problem_count },
     status: row.status,
   }
@@ -84,7 +85,7 @@ export type Viewer = { id: string; isAdmin: boolean }
 // 公開中のマクロに加えて、閲覧者が管理者、または投稿者本人なら、停止中のものも 1 件引く。
 export async function findMacroForViewer(slug: string, viewer?: Viewer): Promise<PublishedMacro | undefined> {
   const rows = await getSql().query(
-    `select ${columns} ${from} where m.slug = $1 and (m.status = 'published' or $2::boolean or m.author_id = $3::uuid)`,
+    `select ${columns} ${from} where m.slug = $1 and m.status <> 'deleted' and (m.status = 'published' or $2::boolean or m.author_id = $3::uuid)`,
     [slug, viewer?.isAdmin ?? false, viewer?.id ?? null],
   )
   return rows[0] ? toMacro(rows[0] as Row) : undefined
@@ -97,4 +98,10 @@ export async function listSuspendedMacros(viewer: Viewer): Promise<PublishedMacr
     [viewer.isAdmin, viewer.id],
   )
   return (rows as Row[]).map(toMacro)
+}
+
+// 本人の投稿か（編集・削除の入口を出すかの判定。実行可否はサーバーアクションが改めて判定する）。
+export async function isMacroAuthor(slug: string, userId: string): Promise<boolean> {
+  const rows = await getSql().query(`select 1 from macros where slug = $1 and author_id = $2 and status <> 'deleted'`, [slug, userId])
+  return rows.length > 0
 }

@@ -16,6 +16,27 @@ export function parseTags(raw: string): string[] {
   return [...new Set(tags)]
 }
 
+export type MetaInput = { title: string; description: string; tags: string }
+export type ValidMeta = { title: string; description: string; tags: string[]; errors: string[] }
+
+// タイトル・説明・タグの検証。投稿と、公開後の編集で共通。
+export function validateMeta(input: MetaInput): ValidMeta {
+  const errors: string[] = []
+  const title = input.title.trim()
+  if (!title) errors.push('タイトルを入力してください。')
+  else if (title.length > LIMITS.title) errors.push(`タイトルは ${LIMITS.title} 文字以内にしてください。`)
+
+  const description = input.description.trim()
+  if (description.length > LIMITS.description) errors.push(`説明は ${LIMITS.description} 文字以内にしてください。`)
+
+  const tags = parseTags(input.tags)
+  if (tags.length > LIMITS.tagCount) errors.push(`タグは ${LIMITS.tagCount} 個までです。`)
+  if (tags.some((tag) => tag.length > LIMITS.tagLength)) errors.push(`タグは 1 つ ${LIMITS.tagLength} 文字以内にしてください。`)
+  if (tags.some((tag) => /\s/.test(tag))) errors.push('タグに空白は使えません。')
+
+  return { title, description, tags, errors }
+}
+
 // needsHandle: 公開名をまだ覚えていないユーザー（初回投稿）。このとき handle は必須。
 // 覚えているユーザーは handle が空なら今の名前のまま、入っていれば「変更」として扱う。
 export function validatePublish(input: PublishInput, { needsHandle }: { needsHandle: boolean }): PublishValidation {
@@ -44,22 +65,13 @@ export function validatePublish(input: PublishInput, { needsHandle }: { needsHan
     errors.push('マクロ本文が空です。')
   }
 
-  const title = input.title.trim()
-  if (!title) errors.push('タイトルを入力してください。')
-  else if (title.length > LIMITS.title) errors.push(`タイトルは ${LIMITS.title} 文字以内にしてください。`)
-
-  const description = input.description.trim()
-  if (description.length > LIMITS.description) errors.push(`説明は ${LIMITS.description} 文字以内にしてください。`)
-
-  const tags = parseTags(input.tags)
-  if (tags.length > LIMITS.tagCount) errors.push(`タグは ${LIMITS.tagCount} 個までです。`)
-  if (tags.some((tag) => tag.length > LIMITS.tagLength)) errors.push(`タグは 1 つ ${LIMITS.tagLength} 文字以内にしてください。`)
-  if (tags.some((tag) => /\s/.test(tag))) errors.push('タグに空白は使えません。')
+  const meta = validateMeta(input)
+  errors.push(...meta.errors)
 
   const handle = input.handle.trim()
   if (needsHandle && !handle) errors.push('公開名を入力してください（初回のみ）。')
   else if (handle.length > LIMITS.handle) errors.push(`公開名は ${LIMITS.handle} 文字以内にしてください。`)
 
   if (errors.length > 0) return { ok: false, errors }
-  return { ok: true, value: { body, originSlug, title, description, tags, handle } }
+  return { ok: true, value: { body, originSlug, title: meta.title, description: meta.description, tags: meta.tags, handle } }
 }

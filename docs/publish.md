@@ -7,6 +7,7 @@
 - 一覧（キーワード・`#タグ` の AND 検索）、詳細（コピー・エディタで編集・似たマクロ・アレンジ元リンク・派生マクロへのリンク）。
 - 投稿は Discord ログイン必須。共有 URL・タイトル・説明・タグ・公開名（初回のみ）を受け取る。
 - リアクション（「役に立った」「不具合あり」）。同一ブラウザの重複は Cookie で防ぐ。
+- 投稿者本人による編集（タイトル・説明・タグのみ。本文は直せない）と削除。
 - 管理者による公開停止／再公開。停止中は管理者と投稿者本人にだけ見える。
 - 利用規約（`/terms`）とプライバシーポリシー（`/privacy`）。Discord アプリの登録に使う。
 
@@ -23,7 +24,7 @@
 | `src/lib/published-macros/publish.ts` | 投稿の入力検証。UI・DB に依存しない純粋な関数（単体テストあり） |
 | `src/lib/published-macros/store.ts` | 書き込み（公開名の登録／変更、マクロの保存） |
 | `src/auth.ts` / `src/lib/admin.ts` | Discord ログイン（Auth.js）と管理者判定 |
-| `src/app/macros/**/actions.ts`, `reactions.ts` | サーバーアクション（投稿・公開停止・投票） |
+| `src/app/macros/**/actions.ts`, `owner-actions.ts`, `reactions.ts` | サーバーアクション（投稿・公開停止・投稿者の編集／削除・投票） |
 | `scripts/copy-db.mjs` | 別 DB（本番）の users / macros を開発 DB へコピー（テスト用。コピー先は退避してから上書き） |
 
 ファイル単位の役割は [`SRC_INDEX.md`](../SRC_INDEX.md) を参照。
@@ -31,14 +32,17 @@
 ## データモデル
 
 - `users`：OAuth 側の ID と表示名（内部用・非公開）、公開名 `public_handle`（初回の投稿で登録）。
-- `macros`：slug・タイトル・説明・本文・タグ（`text[]`）・投稿者（`author_id`）・公開名の複写（`author_handle`）・アレンジ元（`arranged_from`）・`status`（`published` / `suspended`）・リアクション件数。
+- `macros`：slug・タイトル・説明・本文・タグ（`text[]`）・投稿者（`author_id`）・公開名の複写（`author_handle`）・アレンジ元（`arranged_from`）・`status`（`published` / `suspended` / `deleted`）・リアクション件数。
 - 公開名を変えると、本人の過去の投稿の `author_handle` も追従させる。
+
+- 削除（`deleted`）は物理削除ではない。本文・説明・タグを空にして行を残す。タイトルとスラッグが残るので、派生マクロには「アレンジ元：{タイトル}（削除済み）」とリンクなしで示せる。一覧・詳細・似たマクロ・タグ集計には出ない。管理者の再公開でも復活しない。
 
 ## 認証・認可
 
 - Auth.js（`next-auth@beta`）の Discord プロバイダ。scope は `identify` のみ。セッションは JWT（DB アダプタなし）。
 - アバター・メール・表示名は、保存もトークンへの格納もしない（プライバシーポリシーの約束）。取得した ID と表示名だけを `users` に持つ。
 - 管理者は環境変数 `ADMIN_DISCORD_IDS`（カンマ区切りの Discord ユーザー ID）。画面の出し分けにはセッションの `isAdmin` を使うが、**操作の許可はサーバーアクションが毎回 `users` の ID と照合して再判定する**（古いセッションで権限が残らないように）。
+- 投稿者の編集・削除も同様に、サーバーアクションが毎回 `author_id` と照合する。編集は公開中のものだけ（停止中は不可）。
 
 ## 投稿の流れ
 
@@ -84,7 +88,6 @@ npm test                       # 検証ロジックの単体テスト
 - X OAuth の追加（`.env.example` に枠だけある）
 
 **投稿者まわり**
-- 自分の投稿の編集・取り下げ（現状は連絡先への依頼）
 - 自分の投稿一覧（マイページ）
 - 同じ投稿者のマクロ一覧。公開名は変更できるので、リンクは名前ではなく内部の投稿者 ID を使う必要がある。その ID を URL に載せてよいかも要検討
 

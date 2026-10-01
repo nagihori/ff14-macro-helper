@@ -14,7 +14,7 @@ export async function setMacroStatus(slug: string, status: 'published' | 'suspen
   if (rows[0]?.provider !== 'discord' || !isAdminAccountId(rows[0].provider_account_id as string)) throw new Error('管理者のみ実行できます')
 
   await getSql().query(
-    `update macros set status = $2, suspended_at = case when $2 = 'suspended' then now() else null end where slug = $1`,
+    `update macros set status = $2, suspended_at = case when $2 = 'suspended' then now() else null end where slug = $1 and status <> 'deleted'`,
     [slug, status],
   )
   revalidatePath('/macros')

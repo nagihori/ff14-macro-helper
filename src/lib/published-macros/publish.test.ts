@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildShareUrl } from '@/lib/share/url'
-import { parseTags, validatePublish } from './publish'
+import { parseTags, validateMeta, validatePublish } from './publish'
 
 const base = 'https://example.test/'
 const url = (body: string, from?: string) => buildShareUrl({ version: 1, body }, base) + (from ? `&from=${from}` : '')
@@ -9,6 +9,13 @@ const input = (over: Partial<Parameters<typeof validatePublish>[0]> = {}) => ({ 
 describe('parseTags', () => {
   it('区切り・先頭の # ・重複を整える', () => {
     expect(parseTags('#パーティ, チャット、パーティ，')).toEqual(['パーティ', 'チャット'])
+  })
+})
+
+describe('validateMeta', () => {
+  it('編集用：整えた値を返し、制約違反はエラーにする', () => {
+    expect(validateMeta({ title: ' 題 ', description: '', tags: '#a, b' })).toEqual({ title: '題', description: '', tags: ['a', 'b'], errors: [] })
+    expect(validateMeta({ title: '', description: 'x'.repeat(201), tags: 'a b' }).errors).toHaveLength(3)
   })
 })
 
