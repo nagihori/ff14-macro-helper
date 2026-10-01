@@ -1,0 +1,86 @@
+@use '../styles/mixins' as *;
+
+// 共有 URL からの公開フォーム（UI 試作）。
+.formPage {
+  width: 100%;
+  max-width: 42rem;
+  margin-inline: auto;
+  padding: 3rem 1.5rem;
+
+  @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+}
+
+.backLink { @include back-link; }
+
+.title {
+  margin-top: 2rem;
+  @include type(title);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.lead {
+  margin-top: 0.75rem;
+  line-height: 1.75rem;
+  color: var(--text-secondary);
+}
+
+.leadLink {
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.form {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 2rem;
+  border-radius: var(--radius-2xl);
+  padding: 1.5rem;
+}
+
+.field {
+  display: block;
+  @include type(sm);
+  font-weight: 600;
+}
+
+.input {
+  @include text-field;
+  margin-top: 0.5rem;
+  background: var(--surface-input-inset);
+  font-weight: 400;
+}
+
+.suggestionsLabel {
+  @include type(sm);
+  font-weight: 600;
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.suggestion {
+  @include type(sm);
+  @include tag-link;
+}
+
+.submit {
+  @include pill-action;
+  align-self: flex-start;
+}
+
+.notice {
+  border-radius: var(--radius-xl);
+  background: var(--surface-notice);
+  padding: 1rem;
+  @include type(sm);
+  line-height: 1.5rem;
+  color: var(--text-notice);
+}

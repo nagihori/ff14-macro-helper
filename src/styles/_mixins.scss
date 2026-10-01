@@ -1,0 +1,73 @@
+// 画面をまたいで使う小さな部品。値は globals.css のトークン（CSS 変数）を参照する。
+
+// 文字サイズと行間のセット（Tailwind の text-* と同じ比率）。
+$type-scale: (
+  'xs': (0.75rem, 1rem),
+  'sm': (0.875rem, 1.25rem),
+  'lg': (1.125rem, 1.75rem),
+  'xl': (1.25rem, 1.75rem),
+  'title': (1.875rem, 2.25rem),
+  'display': (2.25rem, 2.5rem),
+);
+
+@mixin type($size) {
+  $pair: map-get($type-scale, $size);
+  font-size: nth($pair, 1);
+  line-height: nth($pair, 2);
+}
+
+// 狭い画面の下限（Tailwind の sm / md / xl に相当）。
+$bp-sm: 640px;
+$bp-md: 768px;
+$bp-xl: 1280px;
+
+// #タグ の琥珀色リンク。一覧・詳細・フォームで共通。
+@mixin tag-link {
+  color: var(--link-tag);
+  text-decoration: underline;
+  text-decoration-color: var(--link-tag-underline);
+  text-underline-offset: 4px;
+  &:hover { color: var(--link-tag-hover); }
+}
+
+// 「← 戻る」系の控えめなリンク。
+@mixin back-link {
+  @include type(sm);
+  color: var(--text-secondary);
+  &:hover { text-decoration: underline; }
+}
+
+// 塗りつぶしの丸ボタン（主操作）。
+@mixin pill-action {
+  border-radius: 9999px;
+  background: var(--surface-action);
+  color: var(--text-on-action);
+  padding: 0.625rem 1.25rem;
+  @include type(sm);
+  font-weight: 700;
+}
+
+// 入力欄。
+@mixin text-field {
+  width: 100%;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-default);
+  background: var(--surface-card);
+  padding: 0.75rem 1rem;
+  outline-style: none;
+  &:focus { border-color: var(--zinc-700); }
+}
+
+// 枠線つきのカード面。
+@mixin card {
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
+}
+
+// 公開マクロ系ページ共通の外枠（ページ全体の背景と文字色）。
+@mixin page-shell {
+  min-height: 100vh;
+  background: var(--surface-page);
+  color: var(--text-strong);
+}

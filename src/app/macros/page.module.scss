@@ -1,0 +1,23 @@
+@use '../../styles/mixins' as *;
+
+// 公開マクロ一覧ページの外枠とヘッダー。
+.page { @include page-shell; }
+
+.header {
+  display: flex;
+  width: 100%;
+  max-width: 72rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-inline: auto;
+  padding: 1.5rem;
+
+  @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+}
+
+.brand {
+  @include type(sm);
+  font-weight: 700;
+}
+
+.backLink { @include back-link; }

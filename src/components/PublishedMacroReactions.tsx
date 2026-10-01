@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import styles from './PublishedMacroReactions.module.scss'
 
 type ReactionKind = 'helpful' | 'problem'
 
@@ -26,8 +27,13 @@ export function PublishedMacroReactions({ macroSlug, initialHelpful, initialProb
   if (selected) {
     const label = selected === 'helpful' ? '役に立った' : '不具合あり'
     const count = selected === 'helpful' ? initialHelpful + 1 : initialProblem + 1
-    return <p className="text-sm text-zinc-500"><span className="font-medium text-zinc-800 dark:text-zinc-200">{label} {count}</span> を記録しました</p>
+    return <p className={styles.recorded}><span className={styles.recordedLabel}>{label} {count}</span> を記録しました</p>
   }
 
-  return <div className="flex flex-wrap items-center gap-2" aria-label="このマクロへのリアクション"><button type="button" onClick={() => choose('helpful')} className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">役に立った {initialHelpful}</button><button type="button" onClick={() => choose('problem')} className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">不具合あり {initialProblem}</button></div>
+  return (
+    <div className={styles.buttons} aria-label="このマクロへのリアクション">
+      <button type="button" onClick={() => choose('helpful')} className={`${styles.button} ${styles.helpful}`}>役に立った {initialHelpful}</button>
+      <button type="button" onClick={() => choose('problem')} className={`${styles.button} ${styles.problem}`}>不具合あり {initialProblem}</button>
+    </div>
+  )
 }

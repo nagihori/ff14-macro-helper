@@ -1,0 +1,100 @@
+@use '../../../styles/mixins' as *;
+
+// 公開マクロの詳細ページ。
+.page {
+  @include page-shell;
+  padding: 1.5rem;
+
+  @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+}
+
+.container {
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+.backLink { @include back-link; }
+
+.article {
+  @include card;
+  margin-top: 2rem;
+  border-radius: var(--radius-3xl);
+  padding: 1.75rem;
+
+  @media (min-width: $bp-sm) { padding: 2.5rem; }
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  @include type(xs);
+  font-weight: 600;
+  @include tag-link;
+}
+
+.title {
+  margin-top: 1.25rem;
+  @include type(title);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.description {
+  margin-top: 0.75rem;
+  line-height: 1.75rem;
+  color: var(--text-secondary);
+}
+
+.bodySection { margin-top: 2rem; }
+
+.bodyHeading {
+  @include type(sm);
+  font-weight: 600;
+}
+
+.code {
+  margin-top: 0.75rem;
+  overflow-x: auto;
+  border-radius: var(--radius-xl);
+  background: var(--surface-dark);
+  padding: 1.25rem;
+  font-family: var(--font-mono);
+  @include type(sm);
+  line-height: 1.75rem;
+  color: var(--text-on-dark);
+}
+
+.disclaimer {
+  margin-top: 0.75rem;
+  @include type(xs);
+  line-height: 1.25rem;
+  color: var(--text-muted);
+}
+
+.openAction { margin-top: 2rem; }
+.openLink { @include pill-action; }
+
+.reactions { margin-top: 2.5rem; }
+
+.meta {
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 1.25rem;
+  @include type(xs);
+  color: var(--text-muted);
+}
+
+.submitHint { margin-top: 1.25rem; }
+
+.submitLink {
+  @include type(sm);
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+
+  &:hover { color: light-dark(var(--zinc-950), #fff); }
+}

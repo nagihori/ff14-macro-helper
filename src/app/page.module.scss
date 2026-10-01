@@ -1,0 +1,48 @@
+@use '../styles/mixins' as *;
+
+// エディタ（トップ）ページ。
+.page {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  background: var(--surface-page-editor);
+  font-family: var(--font-sans);
+}
+
+.header {
+  display: flex;
+  width: 100%;
+  max-width: 64rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 2rem 2rem 0;
+}
+
+.title {
+  @include type(xl);
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.lead {
+  @include type(sm);
+  color: var(--text-muted);
+}
+
+.libraryLink {
+  flex-shrink: 0;
+  border-radius: 9999px;
+  border: 1px solid var(--border-default);
+  padding: 0.5rem 1rem;
+  @include type(sm);
+  font-weight: 500;
+  color: light-dark(var(--zinc-700), var(--zinc-200));
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
+
+  &:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-card);
+  }
+}

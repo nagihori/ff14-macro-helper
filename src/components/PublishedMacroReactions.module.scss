@@ -1,0 +1,41 @@
+@use '../styles/mixins' as *;
+
+// 「役に立った」「不具合あり」の2ボタンと、押した後の記録メッセージ。
+.recorded {
+  @include type(sm);
+  color: var(--text-muted);
+}
+
+.recordedLabel {
+  font-weight: 500;
+  color: light-dark(var(--zinc-800), var(--zinc-200));
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.button {
+  border-radius: 9999px;
+  border: 1px solid var(--reaction-border);
+  background: var(--reaction-surface);
+  padding: 0.375rem 0.75rem;
+  @include type(sm);
+  font-weight: 500;
+  color: var(--reaction-text);
+}
+
+.helpful {
+  --reaction-border: light-dark(var(--emerald-200), var(--emerald-900));
+  --reaction-surface: light-dark(var(--emerald-50), color-mix(in oklab, var(--emerald-950) 40%, transparent));
+  --reaction-text: light-dark(var(--emerald-800), var(--emerald-200));
+}
+
+.problem {
+  --reaction-border: light-dark(var(--rose-200), var(--rose-900));
+  --reaction-surface: light-dark(var(--rose-50), color-mix(in oklab, var(--rose-950) 40%, transparent));
+  --reaction-text: light-dark(var(--rose-800), var(--rose-200));
+}

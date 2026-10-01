@@ -1,0 +1,182 @@
+@use '../styles/mixins' as *;
+
+// 公開マクロ一覧（ヒーロー・検索・カードグリッド）。
+.library {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: 3rem 1.5rem;
+
+  @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+}
+
+.hero {
+  border-radius: var(--radius-3xl);
+  background: var(--surface-dark);
+  padding: 2.5rem 1.75rem;
+  color: var(--text-on-dark-strong);
+  box-shadow: var(--shadow-xl);
+
+  @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+}
+
+.eyebrow {
+  @include type(sm);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--accent-on-dark);
+}
+
+.heroTitle {
+  margin-top: 0.75rem;
+  @include type(title);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+
+  @media (min-width: $bp-sm) { @include type(display); }
+}
+
+.heroLead {
+  max-width: 42rem;
+  margin-top: 0.75rem;
+  @include type(sm);
+  line-height: 1.5rem;
+  color: var(--text-on-dark-muted);
+}
+
+.heroAction {
+  display: inline-flex;
+  margin-top: 1.5rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border-on-dark);
+  padding: 0.625rem 1.25rem;
+  @include type(sm);
+  font-weight: 700;
+  color: var(--text-on-dark-strong);
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
+
+  &:hover {
+    border-color: var(--text-on-dark-muted);
+    background: var(--zinc-900);
+  }
+}
+
+.search { margin-top: 2.5rem; }
+
+.searchLabel {
+  display: block;
+  @include type(sm);
+  font-weight: 600;
+}
+
+.searchField {
+  position: relative;
+  margin-top: 0.5rem;
+}
+
+.searchInput {
+  @include text-field;
+  padding-right: 3rem;
+  @include type(sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.clearButton {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0.5rem;
+  margin-block: auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  @include type(lg);
+  color: var(--text-muted);
+
+  &:hover { background: var(--surface-hover); }
+}
+
+.tagCloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.tagCloudItem {
+  @include type(sm);
+  font-weight: 500;
+  @include tag-link;
+}
+
+.count {
+  margin-top: 2rem;
+  @include type(sm);
+  color: var(--text-muted);
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.75rem;
+
+  @media (min-width: $bp-md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: $bp-xl) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.card {
+  @include card;
+  display: flex;
+  min-height: 18rem;
+  flex-direction: column;
+  border-radius: var(--radius-2xl);
+  padding: 1.25rem;
+}
+
+.cardTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cardTag {
+  @include type(xs);
+  font-weight: 600;
+  @include tag-link;
+}
+
+.cardTitle {
+  margin-top: 1rem;
+  @include type(lg);
+  font-weight: 600;
+}
+
+.cardTitleLink:hover { text-decoration: underline; }
+
+.cardDescription {
+  margin-top: 0.5rem;
+  @include type(sm);
+  line-height: 1.5rem;
+  color: var(--text-secondary);
+}
+
+.cardMeta {
+  margin-top: 1rem;
+  @include type(xs);
+  color: var(--text-muted);
+}
+
+.cardReactions {
+  margin-top: auto;
+  padding-top: 1.25rem;
+}
+
+.empty {
+  margin-top: 0.75rem;
+  border-radius: var(--radius-2xl);
+  border: 1px dashed var(--border-default);
+  padding-block: 2.5rem;
+  text-align: center;
+  @include type(sm);
+  color: var(--text-muted);
+}
