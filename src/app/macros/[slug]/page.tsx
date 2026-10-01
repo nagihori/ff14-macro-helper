@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { auth } from '@/auth'
@@ -5,10 +6,27 @@ import { AdminMacroControls } from '@/components/AdminMacroControls'
 import { CopyMacroButton } from '@/components/CopyMacroButton'
 import { OwnerMacroControls } from '@/components/OwnerMacroControls'
 import { PublishedMacroReactions } from '@/components/PublishedMacroReactions'
-import { findDerivedMacros, findMacroForViewer, findRelatedMacros, isMacroAuthor } from '@/lib/published-macros/repository'
+import { findDerivedMacros, findMacroForViewer, findPublishedMacro, findRelatedMacros, isMacroAuthor } from '@/lib/published-macros/repository'
 import type { PublishedMacro } from '@/lib/published-macros/types'
 import { buildEditorPath } from '@/lib/share/url'
 import styles from './page.module.scss'
+
+// 共有時の title / description / OGP。公開中のマクロだけ中身を出し、停止中などは共通の表示にして検索にも載せない。
+// OGP 画像は同じ階層の opengraph-image.tsx が生成する（Next.js が og:image を自動で付ける）。
+export async function generateMetadata({ params }: PageProps<'/macros/[slug]'>): Promise<Metadata> {
+  const { slug } = await params
+  const macro = await findPublishedMacro(slug)
+  if (!macro) return { title: '公開マクロ | ff14-macro-helper', robots: { index: false } }
+  const lines = macro.body.split('\n').length
+  const description = macro.description || `FFXIV マクロ（${lines} 行）${macro.tags.length > 0 ? ' ' + macro.tags.map((tag) => `#${tag}`).join(' ') : ''}`
+  const title = `${macro.title} | ff14-macro-helper`
+  return {
+    title,
+    description,
+    openGraph: { type: 'article', siteName: 'ff14-macro-helper', locale: 'ja_JP', title, description, url: `/macros/${slug}` },
+    twitter: { card: 'summary_large_image', title, description },
+  }
+}
 
 // 一覧用に件数だけを示す線画アイコン（現在の文字色に従う）。
 const iconProps = { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const

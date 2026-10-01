@@ -25,6 +25,7 @@
 | `src/lib/published-macros/store.ts` | 書き込み（公開名の登録／変更、マクロの保存） |
 | `src/auth.ts` / `src/lib/admin.ts` | Discord ログイン（Auth.js）と管理者判定 |
 | `src/app/macros/**/actions.ts`, `owner-actions.ts`, `reactions.ts` | サーバーアクション（投稿・公開停止・投稿者の編集／削除・投票） |
+| `src/app/macros/[slug]/opengraph-image.tsx` | 共有カード（OGP 画像）の生成 |
 | `scripts/copy-db.mjs` | 別 DB（本番）の users / macros を開発 DB へコピー（テスト用。コピー先は退避してから上書き） |
 
 ファイル単位の役割は [`SRC_INDEX.md`](../SRC_INDEX.md) を参照。
@@ -45,6 +46,15 @@
 - タイトルは「〇〇 [1]」「〇〇 [2]」のように番号を付ける運用（強制しない）。投稿フォームにも案内を出している。
 - 途中のマクロが削除されると、続き側には「アレンジ元：{タイトル}（削除済み）」が残り、鎖はそこで切れる。
 - 「続き」専用の関係（種類の列）やシリーズ一覧は、使われ方が見えてから検討する。
+
+## 共有時のメタ情報
+
+詳細ページ（`/macros/[slug]`）だけ、共有時の title / description / OGP を専用に出す。トップの `?m=` 共有 URL はサイト共通の表示のまま（本文を URL から読んでメタに載せない）。
+
+- `generateMetadata`：公開中のマクロだけ中身を出す（title・説明・`og:*`・`twitter:*`）。説明が空なら「FFXIV マクロ（N 行）＋タグ」で補う。停止中・削除済み・存在しないものは共通の表示で、検索に載せない（`noindex`）。
+- `opengraph-image.tsx`：1200×630 のカードを生成（タイトル・説明・タグ・投稿者の公開名）。日本語フォントは `ImageResponse` の 500KB 上限のため同梱せず、描く文字だけの部分集合を Google Fonts（Noto Sans JP）から実行時に取る。取得に失敗したら日本語を描かない最低限のカードにする。
+- 絶対 URL の基準は `layout.tsx` の `metadataBase`（環境変数 `SITE_URL`）。
+- 編集（タイトル・説明の変更）や削除は、カードにも次のリクエストから反映される。ただし X・Discord など配信側のキャッシュは別なので、すぐには変わらないことがある。
 
 ## 認証・認可
 
@@ -76,6 +86,7 @@ npm test                       # 検証ロジックの単体テスト
 
 - [ ] **Vercel プロジェクト**：リポジトリに `.vercel/project.json` がない（未リンク）。プロジェクトを作成して GitHub と接続する。
 - [ ] **環境変数**（Vercel の Environment Variables）：`DATABASE_URL` / `AUTH_SECRET` / `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` / `ADMIN_DISCORD_IDS`。ローカルと同じ値を流用せず、`AUTH_SECRET` は本番用に生成し直す。
+- [ ] **SITE_URL**：共有カード（og:image など）の絶対 URL の基準。独自ドメインを使うなら `https://<本番ドメイン>`（末尾スラッシュなし）を設定する。未設定でも Vercel 上では自動で補われる。
 - [ ] **DB を分ける**：ローカルと本番で同じ Neon DB を共有しない（Neon のブランチ機能で開発用を分けると楽）。本番 DB に `npm run db:migrate` を適用する。
 - [ ] **サンプルの扱い**：`seed-samples.mjs` のサンプル 3 件を本番に入れるか決める（入れない、または公開後に管理者から停止する）。
 - [ ] **Discord アプリ**：OAuth2 の Redirects に `https://<本番ドメイン>/api/auth/callback/discord` を追加。General Information の利用規約 URL に `/terms`、プライバシーポリシー URL に `/privacy` を設定。
