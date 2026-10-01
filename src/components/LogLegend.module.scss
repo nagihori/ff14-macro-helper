@@ -1,0 +1,33 @@
+@use 'sass:list';
+@use '../styles/mixins' as *;
+
+// ログプレビューの下の凡例。ログ本体と同じ色の表（$log-tones）から作る。
+.legend {
+  display: grid;
+  gap: 0.375rem;
+  margin-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+  padding: 0.75rem 0.25rem 0;
+  @include type(xs);
+  color: var(--text-muted);
+
+  svg { display: inline-block; vertical-align: -0.125em; color: tone(amber-600, amber-400); }
+  code { font-family: var(--font-mono); }
+}
+
+.kind {
+  font-weight: 600;
+  color: var(--text-strong);
+
+  @each $kind, $pair in $log-tones {
+    &[data-kind='#{$kind}'] { color: tone(list.nth($pair, 1), list.nth($pair, 2)); }
+  }
+}
+
+// ログ内の代名詞バッジ（MacroWorkbench の .logPlaceholder）と同じ見た目。
+.placeholder {
+  border-radius: var(--radius-sm);
+  background: light-dark(var(--purple-100), color-mix(in oklab, var(--purple-900) 50%, transparent));
+  padding-inline: 0.25rem;
+  color: tone(purple-700, purple-300);
+}

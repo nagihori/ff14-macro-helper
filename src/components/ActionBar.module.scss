@@ -1,0 +1,39 @@
+@use '../styles/mixins' as *;
+
+// コードブロックの上端に付く帯。色は surface-dark の上で読める文字色にする。
+.bar {
+  --bar-fg: var(--text-secondary);
+  --bar-fg-strong: var(--text-strong);
+  --bar-hover: var(--surface-hover);
+  --bar-border: var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--bar-border);
+  font-family: var(--font-mono);
+  @include type(xs);
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.5rem;
+  color: var(--bar-fg);
+  transition: background-color 0.15s, color 0.15s;
+
+  svg { width: 1.125em; height: 1.125em; flex: none; display: inline-block; }
+  &:hover:not(:disabled) { background: var(--bar-hover); color: var(--bar-fg-strong); }
+  &[aria-pressed='true'] { color: var(--bar-fg-strong); background: var(--bar-hover); }
+  &:disabled { opacity: 0.5; cursor: default; }
+}
+
+.onDark {
+  --bar-fg: var(--zinc-400);
+  --bar-fg-strong: var(--zinc-50);
+  --bar-hover: var(--zinc-800);
+  --bar-border: var(--zinc-800);
+}

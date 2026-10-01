@@ -19,13 +19,26 @@ describe('validateMeta', () => {
   })
 })
 
+describe('validateMeta の説明（複数行）', () => {
+  const errorsFor = (description: string) => validateMeta({ title: 't', description, tags: '' }).errors
+  it('5 行までの改行を許し、改行コードをそろえる', () => {
+    expect(errorsFor('a\nb\nc\nd\ne')).toEqual([])
+    expect(validateMeta({ title: 't', description: 'a\r\nb', tags: '' }).description).toBe('a\nb')
+  })
+  it('6 行以上と空行は拒否する', () => {
+    expect(errorsFor('a\nb\nc\nd\ne\nf')).toHaveLength(1)
+    expect(errorsFor('a\n\nb')).toEqual(['説明に空行は使えません。'])
+    expect(errorsFor('a\n \nb')).toEqual(['説明に空行は使えません。'])
+  })
+})
+
 describe('validatePublish', () => {
   it('正しい入力を通し、アレンジ元の slug を取り出す', () => {
     const result = validatePublish(input({ shareUrl: url('/p こんにちは', 'party-ready-check') }), { needsHandle: true })
     expect(result).toMatchObject({ ok: true, value: { body: '/p こんにちは', originSlug: 'party-ready-check', tags: ['パーティ', 'チャット'] } })
   })
 
-  it('共有 URL が壊れていれば拒否する', () => {
+  it('共有URLが壊れていれば拒否する', () => {
     expect(validatePublish(input({ shareUrl: 'not a url' }), { needsHandle: false })).toMatchObject({ ok: false })
     expect(validatePublish(input({ shareUrl: base + '?m=!!!' }), { needsHandle: false })).toMatchObject({ ok: false })
     expect(validatePublish(input({ shareUrl: base }), { needsHandle: false })).toMatchObject({ ok: false })

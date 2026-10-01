@@ -3,13 +3,21 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { auth } from '@/auth'
 import { AdminMacroControls } from '@/components/AdminMacroControls'
+import { ActionButton } from '@/components/ActionButton'
+import { ActionGroup } from '@/components/ActionGroup'
 import { CopyMacroButton } from '@/components/CopyMacroButton'
+import { EditIcon, ThumbIcon, WarningIcon } from '@/components/icons'
+import { MacroCodeBar } from '@/components/MacroCodeBar'
 import { ShareMacroButton } from '@/components/ShareMacroButton'
 import { OwnerMacroControls } from '@/components/OwnerMacroControls'
 import { PublishedMacroReactions } from '@/components/PublishedMacroReactions'
+import { withDescriptionParts } from '@/lib/published-macros/resolve-descriptions'
+import { descriptionToPlainText } from '@/lib/published-macros/description-links'
+import { MacroDescription } from '@/components/MacroDescription'
 import { findDerivedMacros, findMacroForViewer, findPublishedMacro, findRelatedMacros, isMacroAuthor } from '@/lib/published-macros/repository'
 import type { PublishedMacro } from '@/lib/published-macros/types'
 import { buildEditorPath } from '@/lib/share/url'
+import { UI_TEXT } from '@/lib/ui-text'
 import styles from './page.module.scss'
 
 // 共有時の title / description / OGP。公開中のマクロだけ中身を出し、停止中などは共通の表示にして検索にも載せない。
@@ -19,7 +27,9 @@ export async function generateMetadata({ params }: PageProps<'/macros/[slug]'>):
   const macro = await findPublishedMacro(slug)
   if (!macro) return { title: '公開マクロ | ff14-macro-helper', robots: { index: false } }
   const lines = macro.body.split('\n').length
-  const description = macro.description || `FFXIV マクロ（${lines} 行）${macro.tags.length > 0 ? ' ' + macro.tags.map((tag) => `#${tag}`).join(' ') : ''}`
+  const [described] = await withDescriptionParts([macro])
+  const plain = descriptionToPlainText(described.descriptionParts ?? [])
+  const description = plain || `FFXIV マクロ（${lines} 行）${macro.tags.length > 0 ? ' ' + macro.tags.map((tag) => `#${tag}`).join(' ') : ''}`
   const title = `${macro.title} | ff14-macro-helper`
   return {
     title,
@@ -28,11 +38,6 @@ export async function generateMetadata({ params }: PageProps<'/macros/[slug]'>):
     twitter: { card: 'summary_large_image', title, description },
   }
 }
-
-// 一覧用に件数だけを示す線画アイコン（現在の文字色に従う）。
-const iconProps = { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const
-function ThumbIcon() { return <svg {...iconProps}><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 2 2v4h6a2 2 0 0 1 2 2.3l-1 6A2 2 0 0 1 18 19H7" /></svg> }
-function WarnIcon() { return <svg {...iconProps}><path d="M12 3 2 20h20zM12 10v4M12 17h.01" /></svg> }
 
 // 「似たマクロ」「派生マクロ」共通のカード一覧。
 function MacroCardSection({ id, heading, items }: { id: string; heading: string; items: PublishedMacro[] }) {
@@ -45,10 +50,10 @@ function MacroCardSection({ id, heading, items }: { id: string; heading: string;
           <Link key={item.slug} href={`/macros/${item.slug}`} className={styles.relatedCard}>
             <span className={styles.relatedTags}>{item.tags.map((tag) => `#${tag}`).join(' ')}</span>
             <span className={styles.relatedTitle}>{item.title}</span>
-            <span className={styles.relatedDescription}>{item.description}</span>
+            <span className={styles.relatedDescription}>{descriptionToPlainText(item.descriptionParts ?? [{ type: 'text', text: item.description }])}</span>
             <span className={styles.relatedReactions}>
               <span className={styles.helpfulCount} title="役に立った"><ThumbIcon />{item.reactions.helpful}<span className={styles.srOnly}>件が役に立った</span></span>
-              <span className={styles.problemCount} title="不具合あり"><WarnIcon />{item.reactions.problem}<span className={styles.srOnly}>件が不具合あり</span></span>
+              <span className={styles.problemCount} title="不具合あり"><WarningIcon />{item.reactions.problem}<span className={styles.srOnly}>件が不具合あり</span></span>
             </span>
           </Link>
         ))}
@@ -65,7 +70,10 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
   const macro = await findMacroForViewer(slug, user && { id: user.id, isAdmin: admin })
   if (!macro) notFound()
   const origin = macro.arrangedFrom
-  const [related, derived, mine] = await Promise.all([findRelatedMacros(slug), findDerivedMacros(slug), user ? isMacroAuthor(slug, user.id) : false])
+  const editHref = buildEditorPath({ version: 1, body: macro.body }, macro.slug)
+  const [relatedRaw, derivedRaw, mine] = await Promise.all([findRelatedMacros(slug), findDerivedMacros(slug), user ? isMacroAuthor(slug, user.id) : false])
+  // 説明内の他マクロの URL をタイトルへ展開する（URL が無ければ DB には触らない）。似た・派生マクロのカードは全体がリンクなので、タイトルだけの文字にする。
+  const [[described], related, derived] = await Promise.all([withDescriptionParts([macro]), withDescriptionParts(relatedRaw), withDescriptionParts(derivedRaw)])
 
   return (
     <main className={styles.page}>
@@ -79,17 +87,20 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
             ))}
           </div>
           <h1 className={styles.title}>{macro.title}</h1>
-          <p className={styles.description}>{macro.description}</p>
+          <p className={styles.description}><MacroDescription description={macro.description} parts={described.descriptionParts} linkClassName={styles.descriptionLink} /></p>
           <section className={styles.bodySection}>
             <h2 className={styles.bodyHeading}>マクロ本文</h2>
-            <pre className={styles.code}>{macro.body}</pre>
+            <div className={styles.codeBlock}>
+              <MacroCodeBar body={macro.body} editHref={editHref} title={macro.title} path={`/macros/${macro.slug}`} canShare={macro.status === 'published'} />
+              <pre className={styles.code}>{macro.body}</pre>
+            </div>
             <p className={styles.disclaimer}>ゲーム内の動作を保証するものではありません。</p>
           </section>
-          <div className={styles.actions}>
+          <ActionGroup className={styles.actions}>
             <CopyMacroButton text={macro.body} />
-            <Link href={buildEditorPath({ version: 1, body: macro.body }, macro.slug)} className={styles.openLink}>エディタで編集</Link>
+            <ActionButton icon={<EditIcon />} variant="secondary" href={editHref}>{UI_TEXT.editInEditor}</ActionButton>
             {macro.status === 'published' && <ShareMacroButton title={macro.title} path={`/macros/${macro.slug}`} />}
-          </div>
+          </ActionGroup>
           <section className={styles.reactions}>
             <PublishedMacroReactions macroSlug={macro.slug} initialHelpful={macro.reactions.helpful} initialProblem={macro.reactions.problem} />
           </section>

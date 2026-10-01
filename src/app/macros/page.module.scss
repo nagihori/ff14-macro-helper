@@ -53,3 +53,10 @@
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+
+// ログインは、投稿フォームへ進む時に求める想定なので、一覧ではページ最下部に置く。
+.footer {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1.5rem 3rem;
+}

@@ -1,7 +1,7 @@
 import type { CommandDefinition, HighlightLine, HighlightSegment, MacroLine } from './types'
 import { findCommand } from '../commands/dictionary'
 import { isCommandTokenSettled } from './parse'
-import { SE_BASE, TARGET_SHORTHANDS, WAIT_BASE } from './placeholder-tokens'
+import { SE_BASE, TARGET_SHORTHANDS, TEXT_PLACEHOLDER_DESCRIPTIONS, WAIT_BASE } from './placeholder-tokens'
 
 // 引数部分の見た目上の区切り。ゲーム側の実際の引数仕様を検証するものではない。
 const ARG_TOKEN = /"[^"]*"|<[^<>\s]+>|\b\d+(?:\.\d+)?\b/g
@@ -20,7 +20,7 @@ function classifyPlaceholder(token: string): 'arg-placeholder' | 'arg-placeholde
   if (content.startsWith(`${WAIT_BASE}.`) || content.startsWith(`${SE_BASE}.`)) {
     return 'arg-placeholder-wait'
   }
-  if (TARGET_SHORTHAND_SET.has(content)) return 'arg-placeholder'
+  if (TARGET_SHORTHAND_SET.has(content) || content in TEXT_PLACEHOLDER_DESCRIPTIONS) return 'arg-placeholder'
   return 'arg-placeholder-invalid'
 }
 

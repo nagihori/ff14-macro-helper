@@ -1,0 +1,45 @@
+@use '../styles/mixins' as *;
+
+.hero {
+  border-radius: var(--radius-3xl);
+  background: var(--surface-tint);
+  padding: 2.5rem 1.75rem;
+  color: var(--text-strong);
+
+  @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+}
+
+.eyebrow {
+  @include type(sm);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: tone(amber-800, amber-300);
+}
+
+.title {
+  margin-top: 0.75rem;
+  @include type(title);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+
+  @media (min-width: $bp-sm) { @include type(display); }
+}
+
+.lead {
+  max-width: 42rem;
+  margin-top: 0.75rem;
+  @include type(sm);
+  line-height: 1.5rem;
+  color: var(--text-secondary);
+}
+
+// 少しコンパクト：余白と見出しを一段小さく。
+.compact {
+  padding-block: 1.5rem;
+
+  .title {
+    margin-top: 0.5rem;
+    @include type(title);
+  }
+  .lead { margin-top: 0.5rem; }
+}

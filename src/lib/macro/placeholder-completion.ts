@@ -6,6 +6,7 @@ import {
   SE_BASE,
   TARGET_SHORTHAND_DESCRIPTIONS,
   TARGET_SHORTHANDS,
+  TEXT_PLACEHOLDER_DESCRIPTIONS,
   WAIT_BASE,
 } from './placeholder-tokens'
 
@@ -108,23 +109,27 @@ export function getPlaceholderCompletion(
     }
   }
 
-  if (!commandHasTargetArgument(raw, dictionary)) return null
-
-  const matches = TARGET_SHORTHANDS.filter((shorthand) => shorthand.startsWith(normalized))
+  // 対象の短縮記法は対象引数を持つコマンドだけ。値として展開される代名詞（<pos> 等）はコマンドを問わず出すが、
+  // チャット文の英単語に反応しすぎないよう 2 文字以上入力してから。
+  const targetMatches = commandHasTargetArgument(raw, dictionary)
+    ? TARGET_SHORTHANDS.filter((shorthand) => shorthand.startsWith(normalized)).map((shorthand) => ({ name: shorthand, description: TARGET_SHORTHAND_DESCRIPTIONS[shorthand] }))
+    : []
+  const textMatches =
+    normalized.length >= 2
+      ? Object.entries(TEXT_PLACEHOLDER_DESCRIPTIONS)
+          .filter(([name]) => name.startsWith(normalized))
+          .map(([name, description]) => ({ name, description }))
+      : []
+  const matches = [...targetMatches, ...textMatches]
   if (matches.length === 0) return null
 
   return {
     line: lineNumber,
     rangeStart: wordStart,
     rangeEnd: wordEnd,
-    candidates: matches.map((shorthand) => {
-      const insertText = `<${shorthand}>`
-      return {
-        insertText,
-        caretOffset: insertText.length,
-        label: insertText,
-        description: TARGET_SHORTHAND_DESCRIPTIONS[shorthand],
-      }
+    candidates: matches.map(({ name, description }) => {
+      const insertText = `<${name}>`
+      return { insertText, caretOffset: insertText.length, label: insertText, description }
     }),
   }
 }

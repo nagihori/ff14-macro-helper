@@ -1,7 +1,7 @@
 import type { MacroDocument } from '../macro/types'
 
 const QUERY_KEY = 'm'
-// アレンジ元の公開マクロの slug。公開済みの識別子だけなので共有 URL に載せてよい。
+// アレンジ元の公開マクロの slug。公開済みの識別子だけなので共有URLに載せてよい。
 const ORIGIN_KEY = 'from'
 
 // URL は共有の正本。個人情報・トークン等の不要なメタデータを含めない（AGENTS.md）。
@@ -53,7 +53,7 @@ export function readShareParam(search: string): string | null {
   return new URLSearchParams(search).get(QUERY_KEY)
 }
 
-// 貼り付けられた共有 URL から、アレンジ元の slug を取り出す（URL として不正・未指定なら null）。
+// 貼り付けられた共有URLから、アレンジ元の slug を取り出す（URL として不正・未指定なら null）。
 export function readOriginFromShareUrl(value: string): string | null {
   try {
     return new URL(value).searchParams.get(ORIGIN_KEY)
@@ -62,7 +62,7 @@ export function readOriginFromShareUrl(value: string): string | null {
   }
 }
 
-// 公開マクロの本文をエディタで開く URL。アレンジ元の slug を持ち回り、共有 URL にもそのまま引き継がれる。
+// 公開マクロの本文をエディタで開く URL。アレンジ元の slug を持ち回り、共有URLにもそのまま引き継がれる。
 export function buildEditorPath(document: MacroDocument, originSlug: string): string {
   return `/?${QUERY_KEY}=${encodeDocument(document)}&${ORIGIN_KEY}=${encodeURIComponent(originSlug)}`
 }

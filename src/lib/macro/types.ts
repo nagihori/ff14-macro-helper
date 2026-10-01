@@ -80,6 +80,8 @@ export type LogEntry = {
   // マクロ開始からこの行が実行されるまでの累積秒数（/wait 由来）。再生アニメーションの遅延に使う。
   delaySeconds: number
   isPreview: true
+  // このプレビューでは再現できない行。文言は載せず、表示側が警告アイコンで知らせる。
+  unreproducible?: true
 }
 
 // 解析入口が返す、行・トークン化された中間表現。

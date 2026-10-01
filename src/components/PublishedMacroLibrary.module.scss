@@ -10,40 +10,6 @@
   @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
 }
 
-.hero {
-  border-radius: var(--radius-3xl);
-  background: var(--surface-dark);
-  padding: 2.5rem 1.75rem;
-  color: var(--text-on-dark-strong);
-  box-shadow: var(--shadow-xl);
-
-  @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
-}
-
-.eyebrow {
-  @include type(sm);
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  color: var(--accent-on-dark);
-}
-
-.heroTitle {
-  margin-top: 0.75rem;
-  @include type(title);
-  font-weight: 600;
-  letter-spacing: -0.025em;
-
-  @media (min-width: $bp-sm) { @include type(display); }
-}
-
-.heroLead {
-  max-width: 42rem;
-  margin-top: 0.75rem;
-  @include type(sm);
-  line-height: 1.5rem;
-  color: var(--text-on-dark-muted);
-}
-
 .search { margin-top: 2.5rem; }
 
 .searchLabel {
@@ -162,6 +128,15 @@
   color: var(--text-secondary);
 }
 
+// 説明内のマクロへのリンク。カード全体リンクより手前に出す（タグと同じ）。
+.cardDescriptionLink {
+  position: relative;
+  z-index: 1;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  &:hover { color: var(--text-strong); }
+}
+
 .cardMeta {
   margin-top: 1rem;
   @include type(xs);
@@ -174,6 +149,9 @@
   z-index: 1;
   margin-top: auto;
   padding-top: 1.25rem;
+
+  // カードの右下へ寄せる（投票前のボタンも、投票後の記録も）。
+  > * { justify-content: flex-end; }
 }
 
 .empty {

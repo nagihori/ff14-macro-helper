@@ -1,9 +1,12 @@
+import type { DescriptionPart } from './description-links'
+
 // 公開ライブラリ用の最小モデル。URL 共有の本文データや将来のアカウントとは分離する。
 // authorHandle は公開用の名前で、OAuth 側の ID・表示名は含めない（プライバシーポリシーの約束）。
 export type PublishedMacro = {
   slug: string
   title: string
   description: string
+  descriptionParts?: DescriptionPart[] // 説明内の自サイトのマクロ URL をタイトルリンクへ展開した結果（resolve-descriptions.ts）。無ければ description をそのまま出す
   tags: string[]
   body: string
   authorHandle: string

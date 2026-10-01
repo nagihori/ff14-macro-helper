@@ -1,9 +1,9 @@
 import type { LogEntry, LogEntryKind, LogTextSegment, MacroLine } from './types'
 import { resolveLogText } from './log-placeholder'
 
-// このツールはプレイヤーの識別情報を持たないため、発言者名は他のプレースホルダ表記
-// （<t> <wait.s> 等）と同じ山括弧の記法でプレースホルダ表示する。
-const PLACEHOLDER_NAME = '<YourName>'
+// このツールはプレイヤーの識別情報を持たないため、発言者名は「値に置き換わる系」の表記
+// （docs/draft/placeholder-mapping.md の `**Label**`。<me> と同じ）でプレースホルダ表示する。
+const PLACEHOLDER_NAME = '**YourName**'
 
 // 実機の送信先チャンネルの表示形式。`prefix: null` は "名前 : 文章"、
 // prefix ありは "[prefix]<名前>文章" という実機ログの2パターンに対応する。
@@ -58,7 +58,7 @@ function buildChatSegments(
 ): { segments: LogTextSegment[]; extraWaitSeconds: number } {
   const { segments: bodySegments, extraWaitSeconds } = resolveLogText(argsText)
   const segments: LogTextSegment[] = prefix
-    ? [{ text: `[${prefix}]`, kind: 'text' }, nameSegment, ...bodySegments]
+    ? [{ text: `[${prefix}]<`, kind: 'text' }, nameSegment, { text: '>', kind: 'text' }, ...bodySegments] // 実機は名前を山括弧で囲む
     : [nameSegment, { text: ' : ', kind: 'text' }, ...bodySegments]
   return { segments, extraWaitSeconds }
 }
@@ -92,6 +92,15 @@ function toLogEntry(
     const { segments, extraWaitSeconds } = resolveLogText(line.argsText)
     return {
       entry: { line: line.line, kind: 'echo', segments, timestamp, delaySeconds: elapsedSeconds, isPreview: true },
+      extraWaitSeconds,
+    }
+  }
+  // カスタムエモート：打った文章の前に自分の名前が付き、システム色で出る
+  // （例：/emote は<t>に挨拶した。 → **YourName**は**TargetName**に挨拶した。）。文章が空なら再現しない。
+  if ((token === '/emote' || token === '/em') && line.argsText.trim()) {
+    const { segments, extraWaitSeconds } = resolveLogText(line.argsText)
+    return {
+      entry: { line: line.line, kind: 'system', segments: [nameSegment, ...segments], timestamp, delaySeconds: elapsedSeconds, isPreview: true },
       extraWaitSeconds,
     }
   }
@@ -157,10 +166,11 @@ function toLogEntry(
     entry: {
       line: line.line,
       kind: 'unknown',
-      segments: textSegments(`${line.raw}（このプレビューでは再現できません）`),
+      segments: textSegments(line.raw),
       timestamp,
       delaySeconds: elapsedSeconds,
       isPreview: true,
+      unreproducible: true,
     },
     extraWaitSeconds: 0,
   }

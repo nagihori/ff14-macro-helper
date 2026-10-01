@@ -1,0 +1,23 @@
+@use '../styles/mixins' as *;
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  svg { width: 1.125em; height: 1.125em; flex: none; display: inline-block; }
+  &:disabled { opacity: 0.5; cursor: default; }
+}
+
+.primary { @include pill-action; }
+.secondary { @include pill-action-secondary; }
+
+.ghost {
+  @include pill-action;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: background-color 0.15s, color 0.15s;
+  &:hover:not(:disabled) { background: var(--surface-hover); color: var(--text-strong); }
+}

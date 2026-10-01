@@ -12,36 +12,53 @@
 
 ## ページ
 
-- [`app/page.tsx`](src/app/page.tsx)（＋ `page.module.scss`）— トップ。ヘッダー（右肩に「公開マクロを探す」副・「公開する」主）を置き、`MacroWorkbench` を表示
-- [`app/macros/page.tsx`](src/app/macros/page.tsx) — 公開マクロ一覧。`?q=` を受け取り `PublishedMacroLibrary` へ初期検索語として渡す。右肩に「公開する」（主）と「エディタに戻る」（副）。ログイン中なら「公開停止中」のマクロへの入口も出す（管理者は全件、投稿者は自分の分）
-- [`app/macros/[slug]/page.tsx`](src/app/macros/%5Bslug%5D/page.tsx) — 公開マクロの詳細。本文・タグ・リアクション・投稿者・派生マクロ（このマクロをアレンジ元にした公開中のもの、`findDerivedMacros`）・似たマクロ（共通タグ順、`findRelatedMacros`）を表示し、「マクロテキストをコピー」（主）と「エディタで編集」（副）で本文を（アレンジ元の slug を `&from=` で持たせて） `?m=` に載せてトップへ送る。停止中のマクロは管理者と投稿者本人にだけ表示し（`findMacroForViewer`）、停止の知らせを出す。管理者にはさらに `AdminMacroControls`
+- [`app/page.tsx`](src/app/page.tsx)（＋ `page.module.scss`）— トップ。ヘッダー（左にブランド名、右肩に「公開マクロを探す」副・「公開する」主）、コンパクトな `PageHero`（マクロエディタ）、`MacroWorkbench` の順に表示
+- [`app/macros/page.tsx`](src/app/macros/page.tsx) — 公開マクロ一覧。`?q=` を受け取り `PublishedMacroLibrary` へ初期検索語として渡す。右肩に「自作マクロを投稿」（主）と「マクロエディタへ」（副）、ページ最下部のフッターに Discord ログイン／ログアウト。ログイン中なら「公開停止中」のマクロへの入口も出す（管理者は全件、投稿者は自分の分）
+- [`app/macros/[slug]/page.tsx`](src/app/macros/%5Bslug%5D/page.tsx) — 公開マクロの詳細。本文・タグ・リアクション・投稿者・派生マクロ（このマクロをアレンジ元にした公開中のもの、`findDerivedMacros`）・似たマクロ（共通タグ順、`findRelatedMacros`）を表示し、コードブロック上部に操作帯（`MacroCodeBar`：copy / edit / share）、下にアクションボタン群の「マクロテキストをコピー」（主）・「エディタで編集」・共有（副）で本文を（アレンジ元の slug を `&from=` で持たせて） `?m=` に載せてトップへ送る。停止中のマクロは管理者と投稿者本人にだけ表示し（`findMacroForViewer`）、停止の知らせを出す。管理者にはさらに `AdminMacroControls`
 - [`app/macros/[slug]/opengraph-image.tsx`](src/app/macros/%5Bslug%5D/opengraph-image.tsx) — 詳細ページの共有カード（1200×630）。公開中のマクロのタイトル・説明・タグ・投稿者名を描く。日本語フォントは描く文字だけを Google Fonts から取得。title / description / `og:*` は同階層の `page.tsx` の `generateMetadata`
 - [`app/macros/[slug]/actions.ts`](src/app/macros/%5Bslug%5D/actions.ts) — 公開停止／再公開のサーバーアクション。セッションの `isAdmin` は信用せず、`users` の Discord ID を `ADMIN_DISCORD_IDS` と毎回照合する
 - [`app/macros/[slug]/owner-actions.ts`](src/app/macros/%5Bslug%5D/owner-actions.ts) — 投稿者本人の編集（タイトル・説明・タグ）と削除のサーバーアクション。毎回 `author_id` と照合する。削除は本文などを空にして `status = 'deleted'`
 - [`app/macros/[slug]/edit/page.tsx`](src/app/macros/%5Bslug%5D/edit/page.tsx) — 編集ページ。本人の公開中のマクロ以外は 404
 - [`app/macros/submit/page.tsx`](src/app/macros/submit/page.tsx) — 公開投稿ページ。ログイン状態・保存済みの公開名・タグ候補・既存マクロ（アレンジ元の照合用）を取得して `PublishFromUrlForm` に渡す。未ログインならフォームの代わりに `AuthButton`（ログイン後にこのページへ戻る）
-- [`app/macros/submit/actions.ts`](src/app/macros/submit/actions.ts) — 公開フォームのサーバーアクション。ログイン必須。`validatePublish` で共有 URL の復号と lint を再検証し、通ったものだけ `store.ts` で保存して詳細ページへ移る
+- [`app/macros/submit/actions.ts`](src/app/macros/submit/actions.ts) — 公開フォームのサーバーアクション。ログイン必須。`validatePublish` で共有URL の復号と lint を再検証し、通ったものだけ `store.ts` で保存して詳細ページへ移る
 - [`app/api/auth/[...nextauth]/route.ts`](src/app/api/auth/%5B...nextauth%5D/route.ts) — Auth.js のハンドラ。設定は [`src/auth.ts`](src/auth.ts)（Discord・scope は identify のみ・JWT。アバター／表示名／メールはトークンに残さない。管理者は `ADMIN_DISCORD_IDS`）
 - [`app/terms/page.tsx`](src/app/terms/page.tsx) — 利用規約。非公式ツールである旨、無保証、投稿ルール、投稿内容のライセンス、公開停止、免責。Discord アプリの規約 URL に使う
 - [`app/privacy/page.tsx`](src/app/privacy/page.tsx) — プライバシーポリシー。取得するのは Discord のユーザー ID と表示名のみ（`identify` scope）。Cookie・localStorage の用途、外部サービス（Discord / Vercel / Neon）、削除依頼の窓口。Discord アプリのプライバシーポリシー URL に使う
 
 ## コンポーネント
 
-- [`components/MacroWorkbench.tsx`](src/components/MacroWorkbench.tsx) — マクロエディタ本体。解析・診断・ハイライト・コマンド補完・プレースホルダ補完・ログプレビュー・コマンド辞書検索・共有 URL の生成と復元。ロジックは `lib/` 側に置き、ここは表示と入力処理
+- [`components/icons.tsx`](src/components/icons.tsx) — 線画 SVG アイコン一式（警告・コピー・共有・プレビュー・編集・チェック・バツ・役に立った）。`label` を渡すと読み上げ可能、無ければ装飾扱い
+- [`components/PageHero.tsx`](src/components/PageHero.tsx)（＋ `.module.scss`）— ページ冒頭の暗いタイトルボックス（/macros と / で共通。`compact` で少し小さく）
+- [`lib/shortcuts.ts`](src/lib/shortcuts.ts) — エディタのショートカット（Ctrl+Alt+C / P / S、Mac は ⌃⌥）の判定と表示用の表記。`event.code` で判定
+- [`components/EditorGuide.tsx`](src/components/EditorGuide.tsx)（＋ `.module.scss`）— エディタページ下部の「エディタの使い方」アコーディオン（初期は閉）。基本操作・サジェスト・代名詞補完・Tab/Esc・ショートカット・プレビュー・文字色の凡例。凡例の色は `styles/_mixins.scss` の `$highlight-tones` を `MacroWorkbench` と共有
+- [`components/MacroDescription.tsx`](src/components/MacroDescription.tsx) — 説明文の表示。展開済みの `descriptionParts`（他マクロ URL → タイトルリンク／削除済み表記）で描く。設計は `docs/publish.md`
+- [`components/LogLegend.tsx`](src/components/LogLegend.tsx)（＋ `.module.scss`）— ログプレビューの下の凡例。いま出ている行の送信先の色、代名詞の表示（`**値**`／`<>` のまま）、再現できない行の警告。色は `styles/_mixins.scss` の `$log-tones` を `MacroWorkbench` と共有
+- [`components/DiscordLogo.tsx`](src/components/DiscordLogo.tsx) — Discord 公式シンボル（白）。変形・色変更はしない
+- [`lib/site-url.ts`](src/lib/site-url.ts) — サイトの絶対 URL の基準（`SITE_URL`）。共有カードの基準と、説明内のマクロ URL の判別で共用
+- [`lib/macro/double-slash.ts`](src/lib/macro/double-slash.ts) — 行頭「/」の直後の「/」（手癖の「//」）を「/」に戻す純粋な関数
+- [`components/ActionButton.tsx`](src/components/ActionButton.tsx)（＋ `.module.scss`）— 非エンジニア向けのアイコン付き丸ボタン（ボタン／リンク兼用）。`feedback` でコピー結果（チェック／バツ＋文言）に切り替わる
+- [`components/ActionGroup.tsx`](src/components/ActionGroup.tsx)（＋ `.module.scss`）— アクションボタン群の共通枠（エリア中央揃え・折り返し）
+- [`components/ActionBar.tsx`](src/components/ActionBar.tsx)（＋ `.module.scss`）— コードブロック上部の操作帯（小アイコン＋英小文字キャプション）。`onDark` で常時暗い面向けの配色
+- [`components/useCopyFeedback.ts`](src/components/useCopyFeedback.ts) — コピー結果（成功／失敗）を一定時間見せて戻すフック。操作帯・ボタン・共有で共通
+- [`lib/ui-text.ts`](src/lib/ui-text.ts) — ボタン文言の単一の定義。対応表は [`docs/ui-text.md`](docs/ui-text.md)
+- [`components/MacroWorkbench.tsx`](src/components/MacroWorkbench.tsx) — マクロエディタ本体。解析・診断・ハイライト・コマンド補完・プレースホルダ補完・ログプレビュー・コマンド辞書検索・共有URL の生成と復元。上部に操作帯、下部にアクションボタン群、検索欄の下に種類名の色の凡例（ログの凡例はプレビュー中だけ `LogLegend` が出す）、初期本文は「/」。Tab は常にエディタが奪い、候補が無い状態で Esc を押した直後の Tab だけフォーカス移動に譲る。ロジックは `lib/` 側に置き、ここは表示と入力処理
 - [`components/LegalDocument.tsx`](src/components/LegalDocument.tsx)（＋ `.module.scss`）— 利用規約・プライバシーポリシー共通の文書枠。見出し・段落・箇条書きの余白と、もう一方の文書へのリンク
 - [`components/ThemeToggle.tsx`](src/components/ThemeToggle.tsx) — 右肩に固定した線画アイコン（太陽・月）ひとつのライト/ダーク切り替え。`<html data-theme>` を切り替え、選択は localStorage（`lib/theme.ts`）に保存。未設定なら OS 設定に従う
 - [`components/PublishedMacroLibrary.tsx`](src/components/PublishedMacroLibrary.tsx) — 公開マクロ一覧の UI。タイトル・説明・`#タグ` を同じ検索欄で絞り込む（空白区切りの AND 検索。タグ例のクリックは検索語へ追加、カード内タグは置き換え。データは親ページが DB から取得して `allMacros` で渡す）
-- [`components/PublishedMacroReactions.tsx`](src/components/PublishedMacroReactions.tsx) — 「役に立った」「不具合あり」ボタン。件数はサーバー集計で、押した直後は先に表示を動かしてサーバーの返答で確定する。同一ブラウザの重複は Cookie で防ぎ、投票後も両件数を緑／赤で表示し、自分の側は太字＋取り消し ×
+- [`components/PublishedMacroReactions.tsx`](src/components/PublishedMacroReactions.tsx) — 「役に立った」「不具合あり」ボタン。件数はサーバー集計で、押した直後は先に表示を動かしてサーバーの返答で確定する。同一ブラウザの重複は Cookie で防ぎ、アイコン付き（役に立った＝親指／不具合あり＝警告）。投票後も両件数を緑／赤で表示し、自分の側は太字＋取り消し ×
 - [`app/macros/reactions.ts`](src/app/macros/reactions.ts) — 投票のサーバーアクション `setReaction`。Cookie の現在値との差分だけを `helpful_count` / `problem_count` に反映する（公開中のマクロのみ・件数は負にならない）。Cookie は書き換え可能なので厳密な不正対策ではない
-- [`components/ShareMacroButton.tsx`](src/components/ShareMacroButton.tsx)（＋ `.module.scss`）— 詳細ページのアイコンだけの共有ボタン。タッチ操作の端末で共有に対応していれば OS の共有シート、それ以外（PC など）はページ URL をコピー。停止中のマクロには出さない
-- [`components/CopyMacroButton.tsx`](src/components/CopyMacroButton.tsx) — 詳細ページの「マクロテキストをコピー」主ボタン。コピー結果をボタン文言で知らせる
-- [`components/useMacroCheck.tsx`](src/components/useMacroCheck.tsx) — コピー・共有 URL・公開の直前に本文を解析し、エラー／警告があれば `MacroCheckDialog` を挟む `guard()` を返すフック（打ちかけの最終行も確定扱いで解析）
+- [`components/ShareMacroButton.tsx`](src/components/ShareMacroButton.tsx)（＋ `.module.scss`）— 詳細ページの共有ボタン（アイコン＋「URLをコピー」、共有シートが使える端末では「URLを共有」）。判定とコピー処理は `useShareUrl`。停止中のマクロには出さない
+- [`components/useShareUrl.ts`](src/components/useShareUrl.ts) — 詳細ページの共有処理。タッチ端末で共有に対応していれば OS の共有シート、それ以外はページ URL をコピー（クエリは含めない）
+- [`components/MacroCodeBar.tsx`](src/components/MacroCodeBar.tsx) — 詳細ページのコードブロック上部の操作帯（copy / edit / share。暗い面向け配色）
+- [`components/CopyMacroButton.tsx`](src/components/CopyMacroButton.tsx) — 詳細ページの「マクロテキストをコピー」主ボタン（`ActionButton` ＋ `useCopyFeedback`）
+- [`components/useMacroCheck.tsx`](src/components/useMacroCheck.tsx) — コピー・共有URL・公開の直前に本文を解析し、エラー／警告があれば `MacroCheckDialog` を挟む `guard()` を返すフック（打ちかけの最終行も確定扱いで解析）
 - [`components/MacroCheckDialog.tsx`](src/components/MacroCheckDialog.tsx)（＋ `.module.scss`）— 問題の一覧（重大度・行番号・内容）を見せ、「エディタで修正する」か「このまま進む」を選ばせる確認ダイアログ
-- [`components/PublishButton.tsx`](src/components/PublishButton.tsx) — エディタ右肩の「公開する」。現在の本文から共有 URL を作り、`/macros/submit?url=` へ渡して遷移（本文は `lib/share/editor-draft.ts` の写しを読む。問題が見つかった本文もここ経由でエディタへ伝え、戻った時に波線を残す）
-- [`components/PublishFromUrlForm.tsx`](src/components/PublishFromUrlForm.tsx)（＋ `.module.scss`）— 共有 URL・タイトル・説明・タグ（初回のみ公開名）の公開フォーム（保存済みの公開名は「変更する」リンクで入力欄に切り替わる）。`?url=` で共有 URL を初期入力。タグ欄は既存タグを弱いリンクで下に並べ、入力中の語で絞り込む。URL に `from=`（アレンジ元）があれば元マクロを表示。送信は `submitMacro`（useActionState）で、サーバー側のエラーを文で一覧表示する。未ログインなら `loginSlot` を出す
-- [`components/AuthButton.tsx`](src/components/AuthButton.tsx)（＋ `.module.scss`）— Discord ログイン／ログアウト（サーバーコンポーネント。`redirectTo` でログイン後の戻り先を指定）
+- [`components/PublishButton.tsx`](src/components/PublishButton.tsx) — エディタ右肩の「公開する」。現在の本文から共有URL を作り、`/macros/submit?url=` へ渡して遷移（本文は `lib/share/editor-draft.ts` の写しを読む。問題が見つかった本文もここ経由でエディタへ伝え、戻った時に波線を残す）
+- [`components/PublishFromUrlForm.tsx`](src/components/PublishFromUrlForm.tsx)（＋ `.module.scss`）— 共有URL・タイトル・説明（複数行・5行まで・空行不可のテキストエリア）・タグ（初回のみ公開名）の投稿フォーム（連続マクロの案内は折りたたみ）（保存済みの公開名は「変更する」リンクで入力欄に切り替わる）。`?url=` で共有URL を初期入力。タグ欄は既存タグを弱いリンクで下に並べ、入力中の語で絞り込む。URL に `from=`（アレンジ元）があれば元マクロを表示。送信は `submitMacro`（useActionState）で、サーバー側のエラーを文で一覧表示する。未ログインなら `loginSlot` を出す
+- [`components/AuthButton.tsx`](src/components/AuthButton.tsx)（＋ `.module.scss`）— Discord ログイン（公式ガイドラインの Blurple ボタン・白ロゴ＝`DiscordLogo`）／ログアウト（サーバーコンポーネント。`redirectTo` でログイン後の戻り先を指定）
 - [`components/OwnerMacroControls.tsx`](src/components/OwnerMacroControls.tsx) — 詳細ページの投稿者向け操作欄（編集リンク・二段階確認つきの削除）。見た目は `AdminMacroControls.module.scss` を共用
-- [`components/EditMacroForm.tsx`](src/components/EditMacroForm.tsx) — 編集フォーム。本文は直せない旨を案内。見た目は `PublishFromUrlForm.module.scss` を共用
+- [`components/MacroMetaFields.tsx`](src/components/MacroMetaFields.tsx) — 投稿・編集フォーム共通の、タイトル・説明・タグ（既存タグの候補つき）の入力欄と案内、連続マクロの折りたたみ案内（`ContinuedMacroGuide`）。値は自前の state で持ち、エラーで入力が消えない
+- [`components/EditMacroForm.tsx`](src/components/EditMacroForm.tsx) — 編集フォーム。本文は直せない旨を案内。入力欄と案内は投稿フォームと共通（`MacroMetaFields`）。見た目は `PublishFromUrlForm.module.scss` を共用
 - [`components/AdminMacroControls.tsx`](src/components/AdminMacroControls.tsx)（＋ `.module.scss`）— 詳細ページの管理者向け操作欄（公開停止／再公開）。破線の枠で一般の操作と区別する
 
 ## メモ

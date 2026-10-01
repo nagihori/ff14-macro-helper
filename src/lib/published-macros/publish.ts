@@ -3,8 +3,8 @@ import { analyze } from '@/lib/macro/analyze'
 import { decodeDocument, readOriginFromShareUrl, readShareParam } from '@/lib/share/url'
 
 // 公開投稿の入力検証。UI や DB には依存しない（サーバーアクションと単体テストから使う）。
-// クライアント側のチェックは信用せず、共有 URL の復号と lint をここでもう一度行う。
-export const LIMITS = { title: 60, description: 200, handle: 20, tagLength: 20, tagCount: 5 } as const
+// クライアント側のチェックは信用せず、共有URLの復号と lint をここでもう一度行う。
+export const LIMITS = { title: 60, description: 200, descriptionLines: 5, handle: 20, tagLength: 20, tagCount: 5 } as const
 
 export type PublishInput = { shareUrl: string; title: string; description: string; tags: string; handle: string }
 export type ValidPublish = { body: string; originSlug: string | null; title: string; description: string; tags: string[]; handle: string }
@@ -26,8 +26,14 @@ export function validateMeta(input: MetaInput): ValidMeta {
   if (!title) errors.push('タイトルを入力してください。')
   else if (title.length > LIMITS.title) errors.push(`タイトルは ${LIMITS.title} 文字以内にしてください。`)
 
-  const description = input.description.trim()
+  // 説明は改行できる（最大 LIMITS.descriptionLines 行・空行は不可）。改行コードは \n にそろえる。
+  const description = input.description.replace(/\r\n?/g, '\n').trim()
   if (description.length > LIMITS.description) errors.push(`説明は ${LIMITS.description} 文字以内にしてください。`)
+  if (description) {
+    const lines = description.split('\n')
+    if (lines.length > LIMITS.descriptionLines) errors.push(`説明は ${LIMITS.descriptionLines} 行までです。`)
+    if (lines.some((line) => !line.trim())) errors.push('説明に空行は使えません。')
+  }
 
   const tags = parseTags(input.tags)
   if (tags.length > LIMITS.tagCount) errors.push(`タグは ${LIMITS.tagCount} 個までです。`)
@@ -48,13 +54,13 @@ export function validatePublish(input: PublishInput, { needsHandle }: { needsHan
     const url = new URL(input.shareUrl.trim())
     const decoded = decodeDocument(readShareParam(url.search) ?? '')
     if (!decoded.ok) {
-      errors.push(decoded.reason === 'empty' ? '共有 URL にマクロ本文が含まれていません。' : '共有 URL からマクロ本文を読み取れませんでした。')
+      errors.push(decoded.reason === 'empty' ? '共有URLにマクロ本文が含まれていません。' : '共有URLからマクロ本文を読み取れませんでした。')
     } else {
       body = decoded.document.body
       originSlug = readOriginFromShareUrl(url.toString())
     }
   } catch {
-    errors.push('共有 URL の形式が正しくありません。')
+    errors.push('共有URLの形式が正しくありません。')
   }
 
   if (body) {

@@ -105,3 +105,11 @@ export async function isMacroAuthor(slug: string, userId: string): Promise<boole
   const rows = await getSql().query(`select 1 from macros where slug = $1 and author_id = $2 and status <> 'deleted'`, [slug, userId])
   return rows.length > 0
 }
+
+// 説明内の他マクロへの URL をタイトルに展開するための引き当て。slug をまとめて 1 回で引く。
+// 停止中・存在しないものは返さない（展開せず、書かれた URL のまま見せる）。削除済みはタイトルだけ返す。
+export async function findMacroTitles(slugs: string[]): Promise<Map<string, { title: string; deleted: boolean }>> {
+  if (slugs.length === 0) return new Map()
+  const rows = await getSql().query(`select slug, title, status from macros where slug = any($1) and status in ('published', 'deleted')`, [slugs])
+  return new Map(rows.map((row) => [row.slug as string, { title: row.title as string, deleted: row.status === 'deleted' }]))
+}
