@@ -16,10 +16,13 @@
 - [`app/macros/page.tsx`](src/app/macros/page.tsx) — 公開マクロ一覧。`?q=` を受け取り `PublishedMacroLibrary` へ初期検索語として渡す。右肩に「公開する」（主）と「エディタに戻る」（副）
 - [`app/macros/[slug]/page.tsx`](src/app/macros/%5Bslug%5D/page.tsx) — 公開マクロの詳細。本文・タグ・リアクション・投稿者・似たマクロ（共通タグ順、`findRelatedMacros`）を表示し、「マクロテキストをコピー」（主）と「エディタで編集」（副）で本文を（アレンジ元の slug を `&from=` で持たせて） `?m=` に載せてトップへ送る
 - [`app/macros/submit/page.tsx`](src/app/macros/submit/page.tsx) — 公開投稿ページ。`PublishFromUrlForm` を置くだけの薄いラッパー
+- [`app/terms/page.tsx`](src/app/terms/page.tsx) — 利用規約。非公式ツールである旨、無保証、投稿ルール、投稿内容のライセンス、公開停止、免責。Discord アプリの規約 URL に使う
+- [`app/privacy/page.tsx`](src/app/privacy/page.tsx) — プライバシーポリシー。取得するのは Discord のユーザー ID と表示名のみ（`identify` scope）。Cookie・localStorage の用途、外部サービス（Discord / Vercel / Neon）、削除依頼の窓口。Discord アプリのプライバシーポリシー URL に使う
 
 ## コンポーネント
 
 - [`components/MacroWorkbench.tsx`](src/components/MacroWorkbench.tsx) — マクロエディタ本体。解析・診断・ハイライト・コマンド補完・プレースホルダ補完・ログプレビュー・コマンド辞書検索・共有 URL の生成と復元。ロジックは `lib/` 側に置き、ここは表示と入力処理
+- [`components/LegalDocument.tsx`](src/components/LegalDocument.tsx)（＋ `.module.scss`）— 利用規約・プライバシーポリシー共通の文書枠。見出し・段落・箇条書きの余白と、もう一方の文書へのリンク
 - [`components/ThemeToggle.tsx`](src/components/ThemeToggle.tsx) — 右肩に固定した線画アイコン（太陽・月）ひとつのライト/ダーク切り替え。`<html data-theme>` を切り替え、選択は localStorage（`lib/theme.ts`）に保存。未設定なら OS 設定に従う
 - [`components/PublishedMacroLibrary.tsx`](src/components/PublishedMacroLibrary.tsx) — 公開マクロ一覧の UI。タイトル・説明・`#タグ` を同じ検索欄で絞り込む（空白区切りの AND 検索。タグ例のクリックは検索語へ追加、カード内タグは置き換え。データはサンプル固定）
 - [`components/PublishedMacroReactions.tsx`](src/components/PublishedMacroReactions.tsx) — 「役に立った」「不具合あり」ボタン。Cookie で同一ブラウザの重複を防ぐ。投票後も両件数を緑／赤で表示し、自分の側は太字＋取り消し ×（件数はサーバー未連携）

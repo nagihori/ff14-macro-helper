@@ -1,0 +1,61 @@
+@use '../styles/mixins' as *;
+
+// 利用規約・プライバシーポリシー共通の文書レイアウト。
+.page {
+  @include page-shell;
+  padding: 1.5rem;
+
+  @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+}
+
+.container {
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+.backLink { @include back-link; }
+
+.article {
+  @include card;
+  margin-top: 2rem;
+  border-radius: var(--radius-3xl);
+  padding: 1.75rem;
+
+  @media (min-width: $bp-sm) { padding: 2.5rem; }
+}
+
+.title {
+  @include type(title);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.updated {
+  @include type(sm);
+  margin-top: 0.5rem;
+  color: var(--text-secondary);
+}
+
+// 本文。見出し・段落・箇条書きの余白だけ整える。
+.body {
+  margin-top: 1.5rem;
+  line-height: 1.75rem;
+
+  h2 {
+    @include type(lg);
+    margin-top: 2rem;
+    font-weight: 600;
+  }
+
+  p, ul { margin-top: 0.75rem; }
+  ul { padding-left: 1.25rem; list-style: disc; }
+  li + li { margin-top: 0.25rem; }
+  a { @include tag-link; }
+}
+
+.otherLink {
+  @include type(sm);
+  margin-top: 2rem;
+  color: var(--text-secondary);
+  a { @include tag-link; }
+}
