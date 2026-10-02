@@ -17,8 +17,8 @@ import { halfWidthLength } from '@/lib/macro/text-width'
 import { MAX_LINE_LENGTH, MAX_LINES } from '@/lib/macro/lint'
 import { getDictionary } from '@/lib/commands/dictionary'
 import { searchCommands } from '@/lib/commands/search'
-import { getCheckedBody, loadStoredDraft, saveStoredDraft, setEditorDraft, subscribeCheckedBody } from '@/lib/share/editor-draft'
-import { buildShareUrl, decodeDocument, readShareParam } from '@/lib/share/url'
+import { getCheckedBody, getEditorOrigin, loadStoredDraft, loadStoredOrigin, saveStoredDraft, saveStoredOrigin, setEditorDraft, setEditorOrigin, subscribeCheckedBody } from '@/lib/share/editor-draft'
+import { buildShareUrl, decodeDocument, readOriginFromShareUrl, readShareParam } from '@/lib/share/url'
 import type {
   CommandCategory,
   CommandDefinition,
@@ -164,6 +164,10 @@ export function MacroWorkbench() {
     if (result?.ok) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- URL という外部システムからのマウント時 1 回限りの復元
       setBody(result.document.body)
+      // アレンジ元（from）は URL にしか載らず、タブ移動で消えるので sessionStorage にも写す。
+      const origin = readOriginFromShareUrl(window.location.href)
+      setEditorOrigin(origin)
+      saveStoredOrigin(origin)
     } else {
       if (result) {
         setRestoreError(
@@ -174,6 +178,7 @@ export function MacroWorkbench() {
       }
       const stored = loadStoredDraft()
       if (stored !== null) setBody(stored)
+      setEditorOrigin(loadStoredOrigin())
     }
     setRestored(true)
   }, [])
@@ -535,7 +540,7 @@ export function MacroWorkbench() {
   }
 
   function copyShareUrl() {
-    const url = buildShareUrl(analysis.document, window.location.href)
+    const url = buildShareUrl(analysis.document, window.location.href, getEditorOrigin())
     return urlCopy.run(async () => {
       try {
         await navigator.clipboard.writeText(url)
@@ -556,7 +561,7 @@ export function MacroWorkbench() {
   function handlePublish() {
     if (!body.trim() || body.trim() === '/') return router.push('/macros/submit')
     guard(body, UI_TEXT.publish, () => {
-      const shareUrl = buildShareUrl({ version: 1, body }, window.location.href)
+      const shareUrl = buildShareUrl({ version: 1, body }, window.location.href, getEditorOrigin())
       router.push(`/macros/submit?url=${encodeURIComponent(shareUrl)}`)
     })
   }
