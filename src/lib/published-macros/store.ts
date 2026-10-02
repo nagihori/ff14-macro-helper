@@ -61,3 +61,13 @@ export async function deleteMacro(userId: string, slug: string): Promise<boolean
   )
   return rows.length > 0
 }
+
+// 管理者による削除：公開停止中のものに限り、本人による削除と同じく本文・説明・タグを消して status = 'deleted' にする。
+export async function deleteSuspendedMacro(slug: string): Promise<boolean> {
+  const rows = await getSql().query(
+    `update macros set status = 'deleted', deleted_at = now(), body = '', description = '', tags = '{}'
+     where slug = $1 and status = 'suspended' returning 1`,
+    [slug],
+  )
+  return rows.length > 0
+}
