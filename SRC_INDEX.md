@@ -64,7 +64,7 @@
 - [`components/OwnerMacroControls.tsx`](src/components/OwnerMacroControls.tsx) — 詳細ページの投稿者向け操作欄（編集リンク・二段階確認つきの削除）。見た目は `AdminMacroControls.module.scss` を共用
 - [`components/MacroMetaFields.tsx`](src/components/MacroMetaFields.tsx) — 投稿・編集フォーム共通の、タイトル・説明・タグ（既存タグの候補つき）の入力欄と案内、連続マクロの折りたたみ案内（`ContinuedMacroGuide`）。値は自前の state で持ち、エラーで入力が消えない
 - [`components/EditMacroForm.tsx`](src/components/EditMacroForm.tsx) — 編集フォーム。本文は直せない旨を案内。入力欄と案内は投稿フォームと共通（`MacroMetaFields`）。見た目は `PublishFromUrlForm.module.scss` を共用
-- [`components/AdminMacroControls.tsx`](src/components/AdminMacroControls.tsx)（＋ `.module.scss`）— 詳細ページの管理者向け操作欄（公開停止／再公開）。破線の枠で一般の操作と区別する
+- [`components/AdminMacroControls.tsx`](src/components/AdminMacroControls.tsx)（＋ `.module.scss`）— 詳細ページの管理者向け操作欄（公開停止／再公開。停止中は `AdminDeleteControl` の二段階確認つき削除も出す）。破線の枠で一般の操作と区別する
 
 ## メモ
 
