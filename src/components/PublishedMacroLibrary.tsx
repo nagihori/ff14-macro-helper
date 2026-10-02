@@ -6,6 +6,7 @@ import type { PublishedMacro } from '@/lib/published-macros/types'
 import { PublishedMacroReactions } from './PublishedMacroReactions'
 import { MacroDescription } from './MacroDescription'
 import { PageHero } from './PageHero'
+import { UI_TEXT } from '@/lib/ui-text'
 import styles from './PublishedMacroLibrary.module.scss'
 
 // 空白（全角含む）で区切った語をすべて含むものだけを残す（AND 検索）。
@@ -50,7 +51,10 @@ export function PublishedMacroLibrary({ allMacros, initialQuery = '' }: { allMac
         </div>
       </section>
 
-      <p className={styles.count}>{macros.length} 件の公開マクロ</p>
+      <div className={styles.listBar}>
+        <p className={styles.count}>{macros.length} 件の公開マクロ</p>
+        <Link href="/macros/submit" className={styles.submitAction}>{UI_TEXT.submitMacro}</Link>
+      </div>
       <section className={styles.grid}>
         {macros.map((macro) => <article key={macro.slug} className={styles.card}>
           <div className={styles.cardTags}>{macro.tags.map((tag) => <button key={tag} type="button" onClick={() => setQuery(`#${tag}`)} className={styles.cardTag}>#{tag}</button>)}</div>

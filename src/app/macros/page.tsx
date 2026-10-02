@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { BRAND_NAME } from '@/lib/site-config'
 import { auth } from '@/auth'
 import { AuthButton } from '@/components/AuthButton'
 import { PublishedMacroLibrary } from '@/components/PublishedMacroLibrary'
@@ -19,13 +18,6 @@ export default async function MacroLibraryPage({ searchParams }: PageProps<'/mac
   const allMacros = await withDescriptionParts(published)
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <Link href="/" className={styles.brand}>{BRAND_NAME}</Link>
-        <nav className={styles.actions} aria-label="ページ操作">
-          <Link href="/" className={styles.secondaryAction}>マクロエディタへ</Link>
-          <Link href="/macros/submit" className={styles.primaryAction}>自作マクロを投稿</Link>
-        </nav>
-      </header>
       <PublishedMacroLibrary allMacros={allMacros} initialQuery={initialQuery} />
       {suspended.length > 0 && (
         <section className={styles.suspended} aria-label="公開停止中のマクロ">

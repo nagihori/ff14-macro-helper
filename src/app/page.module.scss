@@ -3,35 +3,11 @@
 // エディタ（トップ）ページ。
 .page {
   display: flex;
-  min-height: 100vh;
+  flex: 1 0 auto;
   flex-direction: column;
   align-items: center;
   background: var(--surface-page-editor);
   font-family: var(--font-sans);
-}
-
-.header {
-  display: flex;
-  width: 100%;
-  max-width: 64rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  padding: 1.5rem 2rem 0;
-
-  // スマホ幅ではブランド名とボタンを二段に分け、ボタン行は幅いっぱいにする。
-  @include mobile {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-    padding: 1rem 1rem 0;
-  }
-}
-
-.brand {
-  @include type(sm);
-  font-weight: 700;
-  color: var(--text-strong);
 }
 
 // タイトルボックスはエディタと同じ幅・同じ左右の余白に揃える。
@@ -42,22 +18,6 @@
 
   @include mobile { padding: 1rem; }
 }
-
-.actions {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 0.5rem;
-  // 右肩に固定したテーマ切り替えと重ならないよう、少し内側に寄せる。
-  margin-right: 1.5rem;
-
-  @include mobile {
-    margin-right: 0;
-    > * { flex: 1; text-align: center; white-space: nowrap; }
-  }
-}
-
-.secondaryAction { @include pill-action-secondary; }
 
 // 使い方（アコーディオン）は、エディタと同じ幅・左右の余白に揃える。
 .guide {
