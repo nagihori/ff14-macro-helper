@@ -114,6 +114,44 @@ unset DATABASE_URL
 - `--dry-run` は何も書かない。適用済みは `_migrations` に記録されているので、再実行しても二重には流れない。
 - 各ファイルはトランザクションで流すので、途中で失敗したファイルは反映されない。
 
+## 削除依頼への対応（運営者の手作業）
+
+プライバシーポリシー 6 節のとおり、アカウント（ログイン情報）の削除と、停止中の投稿の取り下げは、依頼を受けて運営者が手で行う。接続のしかたは上の「本番 DB へのマイグレーション」と同じ（`DATABASE_URL` を `read -rs` でその場に渡す）。ここでは `psql` を使う例を書くが、Neon の SQL Editor でも同じ。
+
+**1. 依頼者を特定する。** 依頼は GitHub Issues に公開で来るので、本人確認の材料は公開名と投稿の slug。Discord の ID は聞かない。投稿の `slug` から `author_id` を引く。
+
+```sql
+select m.slug, m.title, m.status, m.author_handle, u.id as user_id
+from macros m join users u on u.id = m.author_id
+where m.slug = '<依頼にあった slug>';
+```
+
+**2. 投稿だけ取り下げる**（アカウントは残す）。画面の削除と同じ状態にする。停止中のものは、管理者が詳細ページの「削除…」からも消せる。
+
+```sql
+update macros set status = 'deleted', deleted_at = coalesce(deleted_at, now()),
+  body = '', description = '', tags = '{}'
+where slug = '<slug>' and status <> 'deleted';
+```
+
+**3. アカウントごと削除する。** `macros.author_id` が `users` を参照していて、そのままでは `users` の行を消せない。投稿を取り下げ、投稿者とのひもづけを外してから消す。1 つのトランザクションで行う。
+
+```sql
+begin;
+update macros set status = 'deleted', deleted_at = coalesce(deleted_at, now()),
+  body = '', description = '', tags = '{}',
+  author_handle = '（削除済み）', author_id = null
+where author_id = '<user_id>';
+delete from users where id = '<user_id>';
+commit;
+```
+
+- 投票は `macros` の件数だけで、ユーザーごとの記録は持っていない。消すものは上の 2 つのテーブルで全部。
+- タイトルとスラッグは、派生マクロの「アレンジ元：{タイトル}（削除済み）」のために残る。タイトルに個人が特定される語が入っていれば、依頼者に確認して `title` も書き換える。
+- 本人のブラウザに残るセッション（JWT）は期限まで有効。ただし `users` の行がないので、投稿は外部キー制約で失敗する。同じ Discord でログインし直すと、新しい `users` 行ができる（以前の投稿とはひもづかない）。
+- 実行前に `select` で対象の件数と `user_id` を必ず目で確かめる。取り消せない。
+- 対応したら、Issue に完了を書いて閉じる。DB のバックアップには削除前のデータが残る（保持期間は Neon のプランによる）。
+
 ## 本番公開チェックリスト
 
 - [ ] **Vercel プロジェクト**：リポジトリに `.vercel/project.json` がない（未リンク）。プロジェクトを作成して GitHub と接続する。
