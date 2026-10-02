@@ -99,12 +99,27 @@ npm test                       # 検証ロジックの単体テスト
 
 環境変数は `.env.example` を参照する。`.env.example` にはプレースホルダだけを書き、実値は必ず `.env.local` に置く。
 
+## 本番 DB へのマイグレーション
+
+`npm run db:migrate` は `.env.local` の `DATABASE_URL`（開発 DB）に流す。本番には `.env.local` を使わず、接続文字列をその場のシェルにだけ渡す。
+
+```bash
+read -rs DATABASE_URL && export DATABASE_URL     # 本番の接続文字列を貼って Enter（画面にも履歴にも残らない）
+node scripts/migrate.mjs --dry-run               # 「対象:」のホストが本番か確かめ、未適用の一覧を見る
+node scripts/migrate.mjs                         # 問題なければ適用
+unset DATABASE_URL
+```
+
+- 実行すると最初に `対象: <ホスト>/<DB 名>` が出る。開発 DB と本番 DB のホストが違うことを目で確かめてから流す。
+- `--dry-run` は何も書かない。適用済みは `_migrations` に記録されているので、再実行しても二重には流れない。
+- 各ファイルはトランザクションで流すので、途中で失敗したファイルは反映されない。
+
 ## 本番公開チェックリスト
 
 - [ ] **Vercel プロジェクト**：リポジトリに `.vercel/project.json` がない（未リンク）。プロジェクトを作成して GitHub と接続する。
 - [ ] **環境変数**（Vercel の Environment Variables）：`DATABASE_URL` / `AUTH_SECRET` / `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` / `ADMIN_DISCORD_IDS`。ローカルと同じ値を流用せず、`AUTH_SECRET` は本番用に生成し直す。
 - [ ] **SITE_URL**：共有カード（og:image など）の絶対 URL の基準。独自ドメインを使うなら `https://<本番ドメイン>`（末尾スラッシュなし）を設定する。未設定でも Vercel 上では自動で補われる。
-- [ ] **DB を分ける**：ローカルと本番で同じ Neon DB を共有しない（Neon のブランチ機能で開発用を分けると楽）。本番 DB に `npm run db:migrate` を適用する。
+- [ ] **DB を分ける**：ローカルと本番で同じ Neon DB を共有しない（Neon のブランチ機能で開発用を分けると楽）。本番 DB へのマイグレーションは、上の「本番 DB へのマイグレーション」の手順で行う。
 - [ ] **サンプルの扱い**：`seed-samples.mjs` のサンプル 3 件を本番に入れるか決める（入れない、または公開後に管理者から停止する）。
 - [ ] **Discord アプリ**：OAuth2 の Redirects に `https://<本番ドメイン>/api/auth/callback/discord` を追加。General Information の利用規約 URL に `/terms`、プライバシーポリシー URL に `/privacy` を設定。
 - [ ] **ホストの信頼**：Vercel では通常 `AUTH_URL` は不要。ログインに失敗する場合は `AUTH_TRUST_HOST=true` を確認する。
