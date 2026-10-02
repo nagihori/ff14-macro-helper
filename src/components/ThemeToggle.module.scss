@@ -1,22 +1,21 @@
-// 右肩に固定する控えめな切り替えボタン。線だけのアイコン。普段は薄く、触れた時だけ濃くする。
+// ヘッダーの中に置く切り替えボタン。線だけのアイコン。位置と大きさは SiteHeader 側の枠が決め、ここは枠いっぱいに広げる。
+// 普段は少し薄く、触れた時だけ濃くする。
 .toggle {
-  position: fixed;
-  top: 0.5rem;
-  right: 0.5rem;
-  z-index: 10;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 9999px;
   color: var(--text-muted);
-  opacity: 0.45;
-  transition: opacity 0.15s;
+  opacity: 0.75;
+  transition: opacity 0.15s, background-color 0.15s;
+
+  svg { width: 1.125rem; height: 1.125rem; }
 
   &:hover,
   &:focus-visible {
     opacity: 1;
     color: var(--text-strong);
+    background: var(--surface-hover);
   }
 }

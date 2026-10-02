@@ -5,9 +5,11 @@
   width: 100%;
   max-width: 72rem;
   margin-inline: auto;
-  padding: 3rem 1.5rem;
+  // 上の余白とヒーローの厚みはエディタ（トップ）と揃える。タブを切り替えても、タイトルブロックの上下位置がずれないように。
+  padding: 1.5rem 1.5rem 3rem;
 
   @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+  @include mobile { padding-block-start: 1rem; padding-inline: 1rem; }
 }
 
 .search { margin-top: 2.5rem; }
@@ -65,11 +67,23 @@
   }
 }
 
-.count {
+// 件数と、新規投稿の入口（主操作）。編集中のマクロを公開する場合はエディタの「公開する」を使う。
+.listBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   margin-top: 2rem;
+
+  @include mobile { flex-wrap: wrap; }
+}
+
+.count {
   @include type(sm);
   color: var(--text-muted);
 }
+
+.submitAction { @include pill-action-publish; }
 
 .grid {
   display: grid;

@@ -36,6 +36,7 @@ export default function PrivacyPage() {
         <li>ログインの状態を保つためのセッション Cookie（ログイン時のみ）</li>
         <li>リアクションの重複を防ぐための Cookie（<code>ff14-macro-reaction-</code> で始まる名前。有効期間は 1 年）</li>
         <li>ライト／ダーク表示の設定（ブラウザの localStorage。サーバーには送りません）</li>
+        <li>エディタで編集中のマクロ本文（ブラウザの sessionStorage。ページを移動しても消えないための写しで、ブラウザのタブを閉じると消えます。サーバーには送りません）</li>
       </ul>
       <p>広告や、行動を追跡するための分析ツールは使っていません。</p>
 

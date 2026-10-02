@@ -34,7 +34,7 @@ $bp-xl: 1280px;
   @media (pointer: coarse) { font-size: 1rem; }
 }
 
-// #タグ の琥珀色リンク。一覧・詳細・フォームで共通。
+// #タグ のリンク（差し色に追従：ライトは赤、ダークは琥珀）。一覧・詳細・フォームで共通。
 @mixin tag-link {
   color: var(--link-tag);
   text-decoration: underline;
@@ -70,6 +70,15 @@ $bp-xl: 1280px;
   &:hover { background: var(--surface-hover); }
 }
 
+// 公開／投稿系の丸ボタン（差し色。ライトは赤、ダークは黄色）。「ここから先は公開マクロ側」という意味を色で持たせる。
+@mixin pill-action-publish {
+  @include pill-action;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
+  transition: background-color 0.15s;
+  &:hover:not(:disabled) { background: var(--accent-fill-hover); }
+}
+
 // 入力欄。
 @mixin text-field {
   width: 100%;
@@ -90,8 +99,9 @@ $bp-xl: 1280px;
 }
 
 // 公開マクロ系ページ共通の外枠（ページ全体の背景と文字色）。
+// 全ページ共通のヘッダー／フッターに挟まれ、body（縦フレックス）の余りの高さを埋める。
 @mixin page-shell {
-  min-height: 100vh;
+  flex: 1 0 auto;
   background: var(--surface-page);
   color: var(--text-strong);
 }

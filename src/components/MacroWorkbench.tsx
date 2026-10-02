@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { analyze } from '@/lib/macro/analyze'
 import { toLogPreview } from '@/lib/macro/log-preview'
@@ -16,7 +17,7 @@ import { halfWidthLength } from '@/lib/macro/text-width'
 import { MAX_LINE_LENGTH, MAX_LINES } from '@/lib/macro/lint'
 import { getDictionary } from '@/lib/commands/dictionary'
 import { searchCommands } from '@/lib/commands/search'
-import { getCheckedBody, setEditorDraft, subscribeCheckedBody } from '@/lib/share/editor-draft'
+import { getCheckedBody, loadStoredDraft, saveStoredDraft, setEditorDraft, subscribeCheckedBody } from '@/lib/share/editor-draft'
 import { buildShareUrl, decodeDocument, readShareParam } from '@/lib/share/url'
 import type {
   CommandCategory,
@@ -30,7 +31,7 @@ import { LogLegend } from './LogLegend'
 import { LogList } from './LogList'
 import { ActionButton } from './ActionButton'
 import { ActionGroup } from './ActionGroup'
-import { CopyIcon, PreviewIcon, ShareIcon, WarningIcon } from './icons'
+import { CopyIcon, PreviewIcon, PublishIcon, ShareIcon, WarningIcon } from './icons'
 import { useCopyFeedback } from './useCopyFeedback'
 import { collapseDoubleSlash } from '@/lib/macro/double-slash'
 import { ariaShortcut, formatShortcut, matchShortcut } from '@/lib/shortcuts'
@@ -104,6 +105,7 @@ export function MacroWorkbench() {
   // ボタン押下時のチェックで問題が見つかった本文。同じ本文のあいだは最終行も確定扱いで表示し、編集すると通常に戻る。
   const checkedBody = useSyncExternalStore(subscribeCheckedBody, getCheckedBody, () => null)
   const { guard, dialog: checkDialog } = useMacroCheck()
+  const router = useRouter()
   const [commandSearchQuery, setCommandSearchQuery] = useState('')
   const [selection, setSelection] = useState<{ key: string | null; index: number }>({
     key: null,
@@ -152,26 +154,36 @@ export function MacroWorkbench() {
   const mirrorRef = useRef<HTMLDivElement>(null)
   const ghostLayerRef = useRef<HTMLDivElement>(null)
 
-  // 静的プリレンダーとの hydration 不一致を避けるため、URL 復元はマウント後の
-  // 1 回だけ実行する（外部システム = URL との同期という effect の正当な用途）。
+  // 静的プリレンダーとの hydration 不一致を避けるため、本文の復元はマウント後の
+  // 1 回だけ実行する（外部システム = URL・sessionStorage との同期という effect の正当な用途）。
+  // 優先順は ?m=（共有URL）→ タブ移動前の本文（sessionStorage）→ 初期値の「/」。
+  const [restored, setRestored] = useState(false)
   useEffect(() => {
     const param = readShareParam(window.location.search)
-    if (!param) return
-    const result = decodeDocument(param)
-    if (result.ok) {
+    const result = param ? decodeDocument(param) : null
+    if (result?.ok) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- URL という外部システムからのマウント時 1 回限りの復元
       setBody(result.document.body)
     } else {
-      setRestoreError(
-        result.reason === 'unsupported-version'
-          ? '共有データが未対応のバージョンです。'
-          : '共有データを読み込めませんでした。',
-      )
+      if (result) {
+        setRestoreError(
+          result.reason === 'unsupported-version'
+            ? '共有データが未対応のバージョンです。'
+            : '共有データを読み込めませんでした。',
+        )
+      }
+      const stored = loadStoredDraft()
+      if (stored !== null) setBody(stored)
     }
+    setRestored(true)
   }, [])
 
   // 「公開する」ボタンが最新の本文を読めるよう、写しを置いておく。
-  useEffect(() => { setEditorDraft(body) }, [body])
+  // sessionStorage へは復元が済んでから書く（復元前に初期値の「/」で上書きしないため）。
+  useEffect(() => {
+    setEditorDraft(body)
+    if (restored) saveStoredDraft(body)
+  }, [body, restored])
 
   const analysis = useMemo(() => analyze(body, dictionary, { complete: checkedBody === body }), [body, checkedBody])
   const highlightLines = useMemo(
@@ -539,6 +551,16 @@ export function MacroWorkbench() {
   function handleCopy() { guard(body, UI_TEXT.copyMacro, copyBody) }
   function handleShare() { guard(body, UI_TEXT.copyShareUrl, copyShareUrl) }
 
+  // 編集中の本文から共有URLを作り、公開フォームの URL 欄へ入れた状態で遷移する。
+  // 現在の URL に `from`（アレンジ元）があれば、共有URLにもそのまま引き継がれる。
+  function handlePublish() {
+    if (!body.trim() || body.trim() === '/') return router.push('/macros/submit')
+    guard(body, UI_TEXT.publish, () => {
+      const shareUrl = buildShareUrl({ version: 1, body }, window.location.href)
+      router.push(`/macros/submit?url=${encodeURIComponent(shareUrl)}`)
+    })
+  }
+
   // クリック時点のスナップショットを、行ごとの delaySeconds（/wait の累積）だけ
   // 遅らせながら1行ずつ出す。実行中に再クリックされたら前回分のタイマーは破棄する。
   function handlePlayLog() {
@@ -743,6 +765,11 @@ export function MacroWorkbench() {
               </ActionButton>
               <ActionButton icon={<ShareIcon />} variant="secondary" feedback={urlCopy.state} onClick={handleShare} title={formatShortcut('share', isMac)}>
                 {UI_TEXT.copyShareUrl}
+              </ActionButton>
+            </ActionGroup>
+            <ActionGroup fill>
+              <ActionButton icon={<PublishIcon />} variant="publish" onClick={handlePublish}>
+                {UI_TEXT.publish}
               </ActionButton>
             </ActionGroup>
           </div>

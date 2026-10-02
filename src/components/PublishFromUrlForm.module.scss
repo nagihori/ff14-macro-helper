@@ -74,7 +74,7 @@
 }
 
 .submit {
-  @include pill-action;
+  @include pill-action-publish;
   align-self: flex-start;
 }
 

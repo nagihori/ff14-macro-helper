@@ -49,6 +49,15 @@ export function ShareIcon(props: IconProps) {
   )
 }
 
+// 公開マクロ（ライブラリ）側へ送り出す、枠の中へ入る矢印。
+export function PublishIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M10 17l5-5-5-5M15 12H3M15 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
+    </Icon>
+  )
+}
+
 export function PreviewIcon(props: IconProps) {
   return (
     <Icon {...props}>
