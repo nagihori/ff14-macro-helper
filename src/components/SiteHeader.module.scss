@@ -1,0 +1,66 @@
+@use '../styles/mixins' as *;
+
+// 全ページ共通のヘッダー。ページごとに背景色が違うので、帯としては独立した面にして境界線で区切る。
+.header {
+  width: 100%;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-card);
+}
+
+.inner {
+  display: flex;
+  max-width: 72rem;
+  align-items: flex-end;
+  gap: 2rem;
+  margin-inline: auto;
+  padding: 1rem 2.5rem 0;
+
+  // スマホ幅ではブランド名の下にタブを置く。
+  @include mobile {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding-inline: 1rem;
+  }
+}
+
+.brand {
+  @include type(sm);
+  padding-bottom: 0.625rem;
+  font-weight: 700;
+  color: var(--text-strong);
+
+  @include mobile { padding-bottom: 0; }
+}
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  @include mobile { li { flex: 1; } }
+}
+
+// 下線式。選択中は太い下線＋濃い文字。帯の境界線に重ねて「帯から生えている」ように見せる。
+.tab {
+  @include type(sm);
+  display: block;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  padding: 0.625rem 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: color 0.15s;
+
+  &:hover { color: var(--text-strong); }
+
+  &[aria-current='page'] {
+    border-bottom-color: var(--text-strong);
+    color: var(--text-strong);
+  }
+
+  // スマホ幅ではタブを等分にして押しやすくする。
+  @include mobile { flex: 1; text-align: center; }
+}

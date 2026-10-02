@@ -8,6 +8,12 @@ export const UI_TEXT = {
   share: 'URLを共有',
   editInEditor: 'エディタで編集',
   preview: '動作プレビュー',
+  // サイト全体のタブ（全ページ共通ヘッダー）。
+  tabEditor: 'エディタ',
+  tabLibrary: 'ライブラリ',
+  // 編集中のマクロを公開する（エディタ）／新たにマクロを投稿する（ライブラリ）。
+  publish: '公開する',
+  submitMacro: '自作マクロを投稿',
   copied: 'コピーしました',
   copyFailed: 'コピーできませんでした',
 } as const

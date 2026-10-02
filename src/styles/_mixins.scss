@@ -90,8 +90,9 @@ $bp-xl: 1280px;
 }
 
 // 公開マクロ系ページ共通の外枠（ページ全体の背景と文字色）。
+// 全ページ共通のヘッダー／フッターに挟まれ、body（縦フレックス）の余りの高さを埋める。
 @mixin page-shell {
-  min-height: 100vh;
+  flex: 1 0 auto;
   background: var(--surface-page);
   color: var(--text-strong);
 }

@@ -1,0 +1,24 @@
+@use '../styles/mixins' as *;
+
+.footer {
+  width: 100%;
+  border-top: 1px solid var(--border-subtle);
+  padding: 1.5rem 1rem;
+}
+
+.links {
+  @include type(xs);
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--text-muted);
+
+  a {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    &:hover { color: var(--text-strong); }
+  }
+}
