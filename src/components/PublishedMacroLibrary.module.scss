@@ -9,7 +9,7 @@
   padding: 1.5rem 1.5rem 3rem;
 
   @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
-  @include mobile { padding-top: 1rem; }
+  @include mobile { padding-block-start: 1rem; padding-inline: 1rem; }
 }
 
 .search { margin-top: 2.5rem; }

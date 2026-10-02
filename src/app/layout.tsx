@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { BRAND_NAME, DEFAULT_DESCRIPTION, DEFAULT_TITLE } from "@/lib/site-config";
 import { getSiteUrl } from "@/lib/site-url";
 import { themeInitScript } from "@/lib/theme";
@@ -22,7 +21,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
-        <ThemeToggle />
         <SiteHeader brandName={BRAND_NAME} />
         {children}
         <SiteFooter />

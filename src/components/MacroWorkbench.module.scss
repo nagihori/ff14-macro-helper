@@ -50,8 +50,9 @@ $severity-wave: (
 
 .workbench {
   width: 100%;
-  max-width: 64rem;
-  padding: 0 2rem 2rem;
+  // 幅はライブラリと共通の 72rem。エディタ側は従来のコンパクトさを保ち、広げた分は右（検索・候補）に回す。
+  max-width: 72rem;
+  padding: 0 2.5rem 2rem;
 
   @include mobile { padding-inline: 1rem; }
 }
@@ -67,7 +68,7 @@ $severity-wave: (
   grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
 
-  @media (min-width: $bp-md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: $bp-md) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); }
 }
 
 // ---- 左：エディタ ---------------------------------------------------------

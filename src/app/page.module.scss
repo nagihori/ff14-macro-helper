@@ -10,11 +10,11 @@
   font-family: var(--font-sans);
 }
 
-// タイトルボックスはエディタと同じ幅・同じ左右の余白に揃える。
+// タイトルボックスはエディタと同じ幅（ライブラリと共通の 72rem）・同じ左右の余白に揃える。
 .hero {
   width: 100%;
-  max-width: 64rem;
-  padding: 1.5rem 2rem;
+  max-width: 72rem;
+  padding: 1.5rem 2.5rem;
 
   @include mobile { padding: 1rem; }
 }
@@ -22,8 +22,8 @@
 // 使い方（アコーディオン）は、エディタと同じ幅・左右の余白に揃える。
 .guide {
   width: 100%;
-  max-width: 64rem;
-  padding: 0 2rem 3rem;
+  max-width: 72rem;
+  padding: 0 2.5rem 3rem;
 
   @include mobile { padding-inline: 1rem; }
 }

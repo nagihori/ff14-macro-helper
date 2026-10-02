@@ -56,7 +56,7 @@ function MoonIcon() {
   )
 }
 
-// 右肩に置く目立たない切り替えボタン。サーバー描画ではテーマが分からないので、
+// ヘッダーに置く切り替えボタン。サーバー描画ではテーマが分からないので、
 // マウントするまではアイコンを出さず、場所だけ確保する（hydration の不一致を避ける）。
 export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribe, getTheme, () => null)

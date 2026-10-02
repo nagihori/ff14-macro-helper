@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UI_TEXT } from '@/lib/ui-text'
+import { ThemeToggle } from './ThemeToggle'
 import styles from './SiteHeader.module.scss'
 
-// 全ページ共通のヘッダー。ブランド名と、サイトの 2 つのモード（エディタ／ライブラリ）のタブ。
+// 全ページ共通のヘッダー。ブランド名と、サイトの 2 つのモード（エディタ／ライブラリ）のタブ、ライト/ダークの切り替え。
 // タブはページ内の切り替えではなくルート遷移（/ と /macros 配下）。現在地は aria-current で示し、
 // 規約など、どちらにも属さないページではどちらも選ばれない。
 // 「ライブラリ」は /macros 配下（詳細・投稿・編集）すべて。
@@ -33,6 +34,7 @@ export function SiteHeader({ brandName }: { brandName: string }) {
             })}
           </ul>
         </nav>
+        <div className={styles.theme}><ThemeToggle /></div>
       </div>
     </header>
   )
