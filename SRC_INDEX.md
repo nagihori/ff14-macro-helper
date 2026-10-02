@@ -44,7 +44,7 @@
 - [`lib/ui-text.ts`](src/lib/ui-text.ts) — ボタン文言の単一の定義。対応表は [`docs/ui-text.md`](docs/ui-text.md)
 - [`components/MacroWorkbench.tsx`](src/components/MacroWorkbench.tsx) — マクロエディタ本体。解析・診断・ハイライト・コマンド補完・プレースホルダ補完・ログプレビュー・コマンド辞書検索・共有URL の生成と復元。上部に操作帯、下部にアクションボタン群、検索欄の下に種類名の色の凡例（ログの凡例はプレビュー中だけ `LogLegend` が出す）、初期本文は「/」。本文は sessionStorage にも写し、タブ移動で戻ったときに復元する（優先順は `?m=` → 保存済み → 「/」。復元が済む前に初期値で上書きしない）。「公開する」（`handlePublish`）もここ：現在の本文から共有URL を作り `/macros/submit?url=` へ遷移する。Tab は常にエディタが奪い、候補が無い状態で Esc を押した直後の Tab だけフォーカス移動に譲る。行番号は折り返した行の高さに追従（ハイライト層の各行の高さを測る）。ロジックは `lib/` 側に置き、ここは表示と入力処理
 - [`components/LegalDocument.tsx`](src/components/LegalDocument.tsx)（＋ `.module.scss`）— 利用規約・プライバシーポリシー共通の文書枠。見出し・段落・箇条書きの余白と、もう一方の文書へのリンク
-- [`components/SiteHeader.tsx`](src/components/SiteHeader.tsx)（＋ `.module.scss`）— 全ページ共通のヘッダー。ブランド名（環境変数で変わるため layout から props）と「エディタ」「ライブラリ」のタブ。タブはルート遷移で、現在地は `aria-current`（ライブラリは `/macros` 配下すべて、規約などではどちらも選ばない）。PC 幅はブランド名の横、スマホ幅は下に等分で並べる
+- [`components/SiteHeader.tsx`](src/components/SiteHeader.tsx)（＋ `.module.scss`）— 全ページ共通のヘッダー。ブランド名（環境変数で変わるため layout から props）と「エディタ」「ライブラリ」のタブ。タブはルート遷移で、現在地は `aria-current`（ライブラリは `/macros` 配下すべて、規約などではどちらも選ばない）。PC 幅は「ブランド名｜タブ×2」で帯の幅いっぱいにタブを等分、スマホ幅はブランド名の下に等分
 - [`components/SiteFooter.tsx`](src/components/SiteFooter.tsx)（＋ `.module.scss`）— 全ページ共通のフッター（利用規約・プライバシーポリシー）。ログインはセッションを読むので、共通側には置かない（`/` を静的なままにするため）
 - [`components/ThemeToggle.tsx`](src/components/ThemeToggle.tsx) — 右肩に固定した線画アイコン（太陽・月）ひとつのライト/ダーク切り替え。`<html data-theme>` を切り替え、選択は localStorage（`lib/theme.ts`）に保存。未設定なら OS 設定に従う
 - [`components/PublishedMacroLibrary.tsx`](src/components/PublishedMacroLibrary.tsx) — 公開マクロ一覧の UI。タイトル・説明・`#タグ` を同じ検索欄で絞り込む（空白区切りの AND 検索。タグ例のクリックは検索語へ追加、カード内タグは置き換え。データは親ページが DB から取得して `allMacros` で渡す）
