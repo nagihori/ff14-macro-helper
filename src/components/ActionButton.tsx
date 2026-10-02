@@ -8,7 +8,8 @@ type Props = {
   icon: React.ReactNode
   children: React.ReactNode
   // ghost：枠も塗りも無い目立たない表示（主役にしたくない機能向け）。
-  variant?: 'primary' | 'secondary' | 'ghost'
+  // publish：公開／投稿系（黄色の差し色）。
+  variant?: 'primary' | 'secondary' | 'ghost' | 'publish'
   // コピー結果。copied / failed の間は、アイコンと文言がチェック／バツ＋結果文言に置き換わる。
   feedback?: CopyState
   title?: string

@@ -83,7 +83,7 @@
   color: var(--text-muted);
 }
 
-.submitAction { @include pill-action; }
+.submitAction { @include pill-action-publish; }
 
 .grid {
   display: grid;

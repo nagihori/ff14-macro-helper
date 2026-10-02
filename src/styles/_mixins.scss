@@ -70,6 +70,15 @@ $bp-xl: 1280px;
   &:hover { background: var(--surface-hover); }
 }
 
+// 公開／投稿系の丸ボタン（黄色の差し色）。「ここから先は公開マクロ側」という意味を色で持たせる。
+@mixin pill-action-publish {
+  @include pill-action;
+  background: var(--surface-publish);
+  color: var(--text-on-publish);
+  transition: background-color 0.15s;
+  &:hover:not(:disabled) { background: var(--surface-publish-hover); }
+}
+
 // 入力欄。
 @mixin text-field {
   width: 100%;

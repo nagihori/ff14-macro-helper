@@ -80,7 +80,12 @@
   --surface-page: light-dark(var(--stone-50), var(--zinc-950));
   --surface-page-editor: light-dark(var(--zinc-50), #000);
   --surface-card: light-dark(#fff, var(--zinc-900));
-  --surface-tint: light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.08)); /* ページ背景に重ねる薄いグレー（タイトルボックス） */
+  /* タイトルボックス。エディタ（zinc-50 / #000）の上に薄いグレーを重ねた色を不透明で持つ。ページ背景が違うライブラリでも同じ色になる */
+  --surface-tint: light-dark(color-mix(in srgb, var(--zinc-50) 94%, #000), color-mix(in srgb, #000 92%, #fff));
+  /* 公開／投稿系ボタンの差し色。ライト/ダークで同じ黄色、文字は暗色 */
+  --surface-publish: var(--amber-400);
+  --surface-publish-hover: var(--amber-300);
+  --text-on-publish: var(--zinc-900);
   --surface-input-inset: light-dark(#fff, var(--zinc-950));
   --surface-sunken: light-dark(var(--zinc-50), var(--zinc-900));
   --surface-hover: light-dark(var(--zinc-100), var(--zinc-800));

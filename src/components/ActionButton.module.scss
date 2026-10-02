@@ -12,6 +12,7 @@
 
 .primary { @include pill-action; }
 .secondary { @include pill-action-secondary; }
+.publish { @include pill-action-publish; }
 
 .ghost {
   @include pill-action;

@@ -4,7 +4,7 @@
 
 ## 全体の枠
 
-- [`app/globals.css`](src/app/globals.css) — デザイントークン（パレット＋意味名トークン。ライト/ダークは `light-dark()` で1行）、`html` / `body` の基本スタイル。リセットを読み込む
+- [`app/globals.css`](src/app/globals.css) — デザイントークン（パレット＋意味名トークン。タイトルボックスの色 `--surface-tint` は不透明で、ページ背景が違っても同じ色。公開／投稿系の差し色 `--surface-publish`。ライト/ダークは `light-dark()` で1行）、`html` / `body` の基本スタイル。リセットを読み込む
 - [`styles/reset.css`](src/styles/reset.css) — 最小限のリセット（Tailwind の preflight から必要分だけ引き継ぎ）
 - [`styles/_mixins.scss`](src/styles/_mixins.scss) — 各 `*.module.scss` から `@use` する共通部品（文字サイズ `type()`、ブレークポイント、スマホ幅 `mobile`、タッチ端末の入力欄 16px `touch-input-size`（iOS のフォーカス時ズーム対策）、タグリンク・カード・ピルボタン等、`tone()`）
 - [`app/layout.tsx`](src/app/layout.tsx) — ルートレイアウト。`lang="ja"`、metadata、globals.css の読み込み、`SiteHeader`（中に `ThemeToggle`）・`SiteFooter` の配置（ヘッダー／フッターは全ページ共通。body は縦フレックスで、各ページの外枠が余りの高さを埋める）、保存済みテーマを描画前に反映する小スクリプト
@@ -37,7 +37,7 @@
 - [`lib/site-url.ts`](src/lib/site-url.ts) — サイトの絶対 URL の基準（`SITE_URL`）。共有カードの基準と、説明内のマクロ URL の判別で共用
 - [`lib/site-config.ts`](src/lib/site-config.ts) — サイト名・既定の title / description（`BRAND_NAME` `DEFAULT_TITLE` `DEFAULT_DESCRIPTION`）。layout・各ページ・OGP 画像が参照
 - [`lib/macro/double-slash.ts`](src/lib/macro/double-slash.ts) — 行頭「/」の直後の「/」（手癖の「//」）を「/」に戻す純粋な関数
-- [`components/ActionButton.tsx`](src/components/ActionButton.tsx)（＋ `.module.scss`）— 非エンジニア向けのアイコン付き丸ボタン（ボタン／リンク兼用）。`feedback` でコピー結果（チェック／バツ＋文言）に切り替わる
+- [`components/ActionButton.tsx`](src/components/ActionButton.tsx)（＋ `.module.scss`）— 非エンジニア向けのアイコン付き丸ボタン（ボタン／リンク兼用）。`publish` は公開／投稿系の黄色の差し色（`pill-action-publish`。ライブラリの「自作マクロを投稿」・投稿フォームの送信も同じ）。`feedback` でコピー結果（チェック／バツ＋文言）に切り替わる
 - [`components/ActionGroup.tsx`](src/components/ActionGroup.tsx)（＋ `.module.scss`）— アクションボタン群の共通枠（エリア中央揃え・折り返し。スマホ幅では縦積み・幅いっぱい）
 - [`components/ActionBar.tsx`](src/components/ActionBar.tsx)（＋ `.module.scss`）— コードブロック上部の操作帯（小アイコン＋英小文字キャプション）。`onDark` で常時暗い面向けの配色
 - [`components/useCopyFeedback.ts`](src/components/useCopyFeedback.ts) — コピー結果（成功／失敗）を一定時間見せて戻すフック。操作帯・ボタン・共有で共通

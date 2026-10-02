@@ -768,7 +768,7 @@ export function MacroWorkbench() {
               </ActionButton>
             </ActionGroup>
             <ActionGroup fill>
-              <ActionButton icon={<PublishIcon />} variant="secondary" onClick={handlePublish}>
+              <ActionButton icon={<PublishIcon />} variant="publish" onClick={handlePublish}>
                 {UI_TEXT.publish}
               </ActionButton>
             </ActionGroup>
