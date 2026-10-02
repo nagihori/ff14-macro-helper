@@ -25,11 +25,18 @@
   display: flex;
   flex-shrink: 0;
   align-items: center;
+  gap: 0.5rem;
   padding: 0 2rem;
   font-weight: 700;
   color: var(--accent-text);
 
   @include mobile { padding: 0.75rem 1rem 0; }
+}
+
+.logo {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-sm);
 }
 
 // タブは残りの幅を等分する。ブランド名との間、タブどうしの間は細い縦線で区切る。

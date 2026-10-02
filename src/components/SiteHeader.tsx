@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UI_TEXT } from '@/lib/ui-text'
@@ -21,7 +22,11 @@ export function SiteHeader({ brandName }: { brandName: string }) {
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
-        <Link href="/" className={styles.brand}>{brandName}</Link>
+        <Link href="/" className={styles.brand}>
+          {/* アイコンは飾り（隣にブランド名があるので読み上げない）。public/favicon.png を next/image が小さく変換して配る */}
+          <Image src="/favicon.png" alt="" width={24} height={24} className={styles.logo} />
+          {brandName}
+        </Link>
         <nav aria-label="サイトの切り替え" className={styles.nav}>
           <ul className={styles.tabs}>
             {TABS.map((tab) => {
