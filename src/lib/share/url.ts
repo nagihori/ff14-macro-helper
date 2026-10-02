@@ -43,9 +43,12 @@ export function decodeDocument(encoded: string): DecodeResult {
   }
 }
 
-export function buildShareUrl(document: MacroDocument, baseUrl: string): string {
+// originSlug: 省略なら baseUrl の from をそのまま残す／null なら外す／文字列ならその slug にする。
+export function buildShareUrl(document: MacroDocument, baseUrl: string, originSlug?: string | null): string {
   const url = new URL(baseUrl)
   url.searchParams.set(QUERY_KEY, encodeDocument(document))
+  if (originSlug === null) url.searchParams.delete(ORIGIN_KEY)
+  else if (originSlug !== undefined) url.searchParams.set(ORIGIN_KEY, originSlug)
   return url.toString()
 }
 
@@ -59,6 +62,17 @@ export function readOriginFromShareUrl(value: string): string | null {
     return new URL(value).searchParams.get(ORIGIN_KEY)
   } catch {
     return null
+  }
+}
+
+// 貼り付けられた共有URLから、アレンジ元（from）だけを外す。URL として不正ならそのまま返す。
+export function removeOriginFromShareUrl(value: string): string {
+  try {
+    const url = new URL(value)
+    url.searchParams.delete(ORIGIN_KEY)
+    return url.toString()
+  } catch {
+    return value
   }
 }
 
