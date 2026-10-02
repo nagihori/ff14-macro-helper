@@ -73,10 +73,11 @@
   --indigo-400: oklch(67.3% 0.182 276.935);
   --indigo-600: oklch(51.1% 0.262 276.966);
   --amber-100: oklch(96.2% 0.059 95.617);
-  --red-300: oklch(80.8% 0.114 19.571);
-  --red-500: oklch(63.7% 0.237 25.331);
-  --red-600: oklch(57.7% 0.245 27.325);
-  --red-700: oklch(50.5% 0.213 27.518);
+  /* 独自色：青みを足したショッキングピンク寄りの赤（ライトの差し色）。#eb0949 を基準に明暗を振る */
+  --crimson-300: #f58aa4;
+  --crimson-500: #eb0949;
+  --crimson-600: #c4073d;
+  --crimson-700: #a30633;
 
   /* ---- 2. 意味名トークン ---- */
 
@@ -87,8 +88,8 @@
   /* タイトルボックス。エディタ（zinc-50 / #000）の上に薄いグレーを重ねた色を不透明で持つ。ページ背景が違うライブラリでも同じ色になる */
   --surface-tint: light-dark(color-mix(in srgb, var(--zinc-50) 94%, #000), color-mix(in srgb, #000 92%, #fff));
   /* 差し色（アクセント）。ライトは赤×白、ダークは黄色×暗色。公開／投稿系ボタンの塗りと、その上の文字 */
-  --accent-fill: light-dark(var(--red-600), var(--amber-400));
-  --accent-fill-hover: light-dark(var(--red-700), var(--amber-300));
+  --accent-fill: light-dark(var(--crimson-500), var(--amber-400));
+  --accent-fill-hover: light-dark(var(--crimson-600), var(--amber-300));
   --text-on-accent: light-dark(#fff, var(--zinc-900));
   --surface-input-inset: light-dark(#fff, var(--zinc-950));
   --surface-sunken: light-dark(var(--zinc-50), var(--zinc-900));
@@ -115,12 +116,12 @@
   --border-on-dark: var(--zinc-500);
 
   /* 差し色の文字（見出し上の英字ラベルなど）。ライトは暗い赤、ダークは黄色 */
-  --accent-text: light-dark(var(--red-700), var(--amber-300));
+  --accent-text: light-dark(var(--crimson-600), var(--amber-300));
 
   /* リンク・タグ（#タグ）。差し色に合わせて、ライトは赤、ダークは琥珀 */
-  --link-tag: light-dark(var(--red-700), var(--amber-200));
-  --link-tag-hover: light-dark(var(--red-500), var(--amber-600));
-  --link-tag-underline: light-dark(var(--red-300), var(--amber-400));
+  --link-tag: light-dark(var(--crimson-600), var(--amber-200));
+  --link-tag-hover: light-dark(var(--crimson-500), var(--amber-600));
+  --link-tag-underline: light-dark(var(--crimson-300), var(--amber-400));
 
   /* 形・影・書体 */
   --radius-xs: 0.125rem;
