@@ -38,7 +38,7 @@ export function PublishedMacroLibrary({ allMacros, initialQuery = '' }: { allMac
 
   return (
     <main className={styles.library}>
-      <PageHero eyebrow="MACRO LIBRARY" title="公開マクロを探す" lead="実用的なマクロを見つけ、エディタで自分用に調整できます。" />
+      <PageHero compact eyebrow="MACRO LIBRARY" title="公開マクロを探す" lead="実用的なマクロを見つけ、エディタで自分用に調整できます。" />
 
       <section className={styles.search} aria-label="マクロを絞り込む">
         <label htmlFor="macro-search" className={styles.searchLabel}>キーワードで探す</label>

@@ -21,7 +21,7 @@ export function SiteHeader({ brandName }: { brandName: string }) {
     <header className={styles.header}>
       <div className={styles.inner}>
         <Link href="/" className={styles.brand}>{brandName}</Link>
-        <nav aria-label="サイトの切り替え">
+        <nav aria-label="サイトの切り替え" className={styles.nav}>
           <ul className={styles.tabs}>
             {TABS.map((tab) => {
               const current = tab.isCurrent(pathname)

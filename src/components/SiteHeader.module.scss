@@ -1,6 +1,7 @@
 @use '../styles/mixins' as *;
 
 // 全ページ共通のヘッダー。ページごとに背景色が違うので、帯としては独立した面にして境界線で区切る。
+// 「ブランド名｜タブ×2」で帯の幅いっぱいを使い、タブを見落とされにくくする。
 .header {
   width: 100%;
   border-bottom: 1px solid var(--border-subtle);
@@ -9,39 +10,40 @@
 
 .inner {
   display: flex;
-  max-width: 72rem;
-  align-items: flex-end;
-  gap: 2rem;
-  margin-inline: auto;
-  padding: 1rem 2.5rem 0;
+  align-items: stretch;
 
   // スマホ幅ではブランド名の下にタブを置く。
   @include mobile {
     flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-    padding-inline: 1rem;
+    gap: 0.25rem;
   }
 }
 
 .brand {
   @include type(sm);
-  padding-bottom: 0.625rem;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0 2rem;
   font-weight: 700;
   color: var(--text-strong);
 
-  @include mobile { padding-bottom: 0; }
+  @include mobile { padding: 0.75rem 1rem 0; }
 }
 
+// タブは残りの幅を等分する。ブランド名との間、タブどうしの間は細い縦線で区切る。
 .tabs {
   display: flex;
-  gap: 0.25rem;
+  flex: 1;
   list-style: none;
   margin: 0;
   padding: 0;
 
-  @include mobile { li { flex: 1; } }
+  li { flex: 1; border-left: 1px solid var(--border-subtle); }
+  @include mobile { li:first-child { border-left: 0; } }
 }
+
+.nav { display: flex; flex: 1; }
 
 // 下線式。選択中は太い下線＋濃い文字。帯の境界線に重ねて「帯から生えている」ように見せる。
 .tab {
@@ -49,18 +51,16 @@
   display: block;
   margin-bottom: -1px;
   border-bottom: 2px solid transparent;
-  padding: 0.625rem 0.875rem;
+  padding: 0.875rem 1rem;
+  text-align: center;
   font-weight: 600;
   color: var(--text-muted);
-  transition: color 0.15s;
+  transition: color 0.15s, background-color 0.15s;
 
-  &:hover { color: var(--text-strong); }
+  &:hover { color: var(--text-strong); background: var(--surface-hover); }
 
   &[aria-current='page'] {
     border-bottom-color: var(--text-strong);
     color: var(--text-strong);
   }
-
-  // スマホ幅ではタブを等分にして押しやすくする。
-  @include mobile { flex: 1; text-align: center; }
 }

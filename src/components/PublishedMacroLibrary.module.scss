@@ -5,9 +5,11 @@
   width: 100%;
   max-width: 72rem;
   margin-inline: auto;
-  padding: 3rem 1.5rem;
+  // 上の余白とヒーローの厚みはエディタ（トップ）と揃える。タブを切り替えても、タイトルブロックの上下位置がずれないように。
+  padding: 1.5rem 1.5rem 3rem;
 
   @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+  @include mobile { padding-top: 1rem; }
 }
 
 .search { margin-top: 2.5rem; }
