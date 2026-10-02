@@ -13,7 +13,7 @@
   @include type(sm);
   font-weight: 600;
   letter-spacing: 0.18em;
-  color: tone(amber-800, amber-300);
+  color: var(--accent-text);
 }
 
 .title {
