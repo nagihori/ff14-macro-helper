@@ -6,6 +6,19 @@ const base = 'https://example.test/'
 const url = (body: string, from?: string) => buildShareUrl({ version: 1, body }, base) + (from ? `&from=${from}` : '')
 const input = (over: Partial<Parameters<typeof validatePublish>[0]> = {}) => ({ shareUrl: url('/p こんにちは'), title: 'タイトル', description: '', tags: 'パーティ, チャット', handle: 'Moco', ...over })
 
+describe('タイトルの URL', () => {
+  const errorsFor = (title: string) => validateMeta({ title, description: '', tags: '' }).errors
+
+  it('http(s):// や www. を含むタイトルは弾く（全角も）', () => {
+    expect(errorsFor('見て https://example.com')).toEqual(['タイトルに URL は使えません。説明に書いてください。'])
+    expect(errorsFor('www.example.com')).toHaveLength(1)
+    expect(errorsFor('ｈｔｔｐｓ：／／ｅｘａｍｐｌｅ．ｃｏｍ')).toHaveLength(1)
+  })
+  it('説明には URL を書ける', () => {
+    expect(validateMeta({ title: 't', description: 'https://example.com', tags: '' }).errors).toEqual([])
+  })
+})
+
 describe('parseTags', () => {
   it('区切り・先頭の # ・重複を整える', () => {
     expect(parseTags('#パーティ, チャット、パーティ，')).toEqual(['パーティ', 'チャット'])
