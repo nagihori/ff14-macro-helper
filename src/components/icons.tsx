@@ -41,6 +41,14 @@ export function CopyIcon(props: IconProps) {
   )
 }
 
+export function ChevronDownIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m6 9 6 6 6-6" />
+    </Icon>
+  )
+}
+
 export function ShareIcon(props: IconProps) {
   return (
     <Icon {...props}>

@@ -18,8 +18,11 @@ import { withDescriptionParts } from '@/lib/published-macros/resolve-description
 import { descriptionToPlainText } from '@/lib/published-macros/description-links'
 import { MacroDescription } from '@/components/MacroDescription'
 import { findDerivedMacros, findMacroForViewer, findPublishedMacro, findRelatedMacros, isMacroAuthor } from '@/lib/published-macros/repository'
+import { getDictionary } from '@/lib/commands/dictionary'
+import { toLodestoneBBCode } from '@/lib/share/lodestone'
 import { buildEditorPath } from '@/lib/share/url'
 import { BRAND_NAME } from '@/lib/site-config'
+import { getSiteUrl } from '@/lib/site-url'
 import { UI_TEXT } from '@/lib/ui-text'
 import styles from './page.module.scss'
 
@@ -52,9 +55,12 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
   if (!macro) notFound()
   const origin = macro.arrangedFrom
   const editHref = buildEditorPath({ version: 1, body: macro.body }, macro.slug)
+
   const [relatedRaw, derivedRaw, mine] = await Promise.all([findRelatedMacros(slug), findDerivedMacros(slug), user ? isMacroAuthor(slug, user.id) : false])
   // 説明内の他マクロの URL をタイトルへ展開する（URL が無ければ DB には触らない）。似た・派生マクロのカードは全体がリンクなので、タイトルだけの文字にする。
   const [[described], related, derived] = await Promise.all([withDescriptionParts([macro]), withDescriptionParts(relatedRaw), withDescriptionParts(derivedRaw)])
+  const siteUrl = getSiteUrl()
+  const lodestoneBBCode = macro.status === 'published' ? toLodestoneBBCode({ title: macro.title, description: descriptionToPlainText(described.descriptionParts ?? []), body: macro.body, url: `${siteUrl}/macros/${macro.slug}`, siteUrl, brand: BRAND_NAME }, getDictionary()) : null
 
   return (
     <main className={styles.page}>
@@ -81,7 +87,7 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
           <ActionGroup className={styles.actions}>
             <CopyMacroButton text={macro.body} />
             <ActionButton icon={<EditIcon />} variant="secondary" href={editHref}>{UI_TEXT.editInEditor}</ActionButton>
-            {macro.status === 'published' && <ShareMacroButton title={macro.title} path={`/macros/${macro.slug}`} />}
+            {macro.status === 'published' && <ShareMacroButton title={macro.title} path={`/macros/${macro.slug}`} lodestoneBBCode={lodestoneBBCode ?? undefined} />}
           </ActionGroup>
           <section className={styles.reactions}>
             <PublishedMacroReactions macroSlug={macro.slug} initialHelpful={macro.reactions.helpful} initialProblem={macro.reactions.problem} />
