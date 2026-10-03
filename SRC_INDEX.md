@@ -20,6 +20,10 @@
 - [`lib/feed/atom.ts`](src/lib/feed/atom.ts) — Atom 1.0 の組み立て（純粋な関数。XML のエスケープ・制御文字の除去・単体テスト `atom.test.ts`）
 - [`app/macros/tag/[tag]/page.tsx`](src/app/macros/tag/%5Btag%5D/page.tsx)（＋ `.module.scss`）— タグ別一覧（`/macros/tag/タグ名`）。そのタグの公開マクロを新しい順に、一覧と同じカード（`PublishedMacroCardList`）で出し。「公開マクロ一覧へ」はセカンダリボタン、一緒に付いているタグへ内部リンクを張る。戻るボタンの横に「このタグのフィード」の小さなリンク。0 件は 404。`MIN_INDEXABLE_TAG_MACROS` 件未満は noindex（`lib/published-macros/tags.ts`）
 - [`app/macros/[slug]/page.tsx`](src/app/macros/%5Bslug%5D/page.tsx) — 公開マクロの詳細。本文・タグ・リアクション・投稿者・派生マクロ（このマクロをアレンジ元にした公開中のもの、`findDerivedMacros`）・似たマクロ（共通タグ順、`findRelatedMacros`）を表示し、コードブロック上部に操作帯（`MacroCodeBar`：copy / edit / share）、本文は `MacroCodeView` で色分け、直下に `MacroPreviewAccordion`（動作プレビュー）、その下にアクションボタン群の「マクロテキストをコピー」（主）・「エディタで編集」・共有（副）で本文を（アレンジ元の slug を `&from=` で持たせて） `?m=` に載せてトップへ送る。停止中のマクロは管理者と投稿者本人にだけ表示し（`findMacroForViewer`）、停止の知らせを出す。管理者にはさらに `AdminMacroControls`
+- [`app/s/[id]/page.tsx`](src/app/s/%5Bid%5D/page.tsx)（＋ `not-found.tsx`）— 短縮共有 URL（`/s/{id}`）。保存した本文を `/?m=…` へ 307 で転送する。期限切れ・存在しない ID は `not-found.tsx`（404）。設計は `docs/publish.md` の「短縮共有 URL」
+- [`app/share-actions.ts`](src/app/share-actions.ts) — サーバーアクション `createShareId`。エディタの共有 URL を短縮するため本文を保存し ID を返す。失敗・上限・DB 障害のときは null（呼び出し側が長い URL にする）。作成者は Cookie `ff14-macro-creator` で区別
+- [`lib/share/short-links.ts`](src/lib/share/short-links.ts) / [`short-link-store.ts`](src/lib/share/short-link-store.ts) — 短縮共有 URL の取り決め（180 日・100 件・1 時間 300 件）と ID・ハッシュ（純粋・単体テストあり）／保存と参照（`shared_macros`）
+- [`lib/clipboard.ts`](src/lib/clipboard.ts) — 非同期に決まる文字列のコピー（Safari 対策で ClipboardItem に Promise を渡す）
 - [`app/og/share/route.tsx`](src/app/og/share/route.tsx) — 共有 URL の共有カード画像（`/og/share?m=…`）。`m` のマクロをその場で描く（DB は読まない）。壊れた・長すぎる `m` は名前と羽ペンだけのカード。同じ `m` は同じ画像なので CDN に長く持たせる
 - [`lib/og/macro-card.tsx`](src/lib/og/macro-card.tsx) — マクロの共有カードの描画（詳細ページの `opengraph-image` と共有 URL のカードで共通）
 - [`lib/og/font.ts`](src/lib/og/font.ts) — OGP 画像用の日本語フォント（描く文字だけの部分集合を Google Fonts から取得。失敗したら null）
