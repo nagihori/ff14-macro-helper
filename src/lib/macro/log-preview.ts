@@ -105,25 +105,25 @@ function toLogEntry(
     }
   }
   if (token === '/action' || token === '/ac') {
+    // 「アクション名 [対象]」。最初の <...> より前をアクション名（スペースを含んでもよい）、以降を対象とする。
+    // 対象は <t> なら **TargetName**、<2> など対象が確定しないものは <> のまま「→ 対象」と添える
+    // （実機のログ表現までは追わない方針）。
+    const [, actionName = '', targetText = ''] = line.argsText.match(/^([^<]*?)\s*(<.*)?$/) ?? []
+    const { segments: targetSegments, extraWaitSeconds } = resolveLogText(targetText)
+    const segments = textSegments(`スキル：${actionName.replace(/^"|"$/g, '')}を発動`)
+    if (targetSegments.length > 0) segments.push({ text: ' → ', kind: 'text' }, ...targetSegments)
     return {
-      entry: {
-        line: line.line,
-        kind: 'action',
-        segments: textSegments(`スキル：${line.argsText.replace(/^"|"$/g, '')}を発動`),
-        timestamp,
-        delaySeconds: elapsedSeconds,
-        isPreview: true,
-      },
-      extraWaitSeconds: 0,
+      entry: { line: line.line, kind: 'action', segments, timestamp, delaySeconds: elapsedSeconds, isPreview: true },
+      extraWaitSeconds,
     }
   }
   if (token === '/wait') {
     return {
       entry: {
         line: line.line,
-        kind: 'system',
-        segments: textSegments(`待機（${line.argsText || '?'} 秒）`),
-        timestamp,
+        kind: 'wait',
+        segments: textSegments(`${line.argsText || '?'}秒待機`),
+        timestamp: '',
         delaySeconds: elapsedSeconds,
         isPreview: true,
       },
@@ -178,8 +178,20 @@ function toLogEntry(
 
 export function toLogPreview(lines: MacroLine[], now: Date = new Date()): LogEntry[] {
   let elapsedSeconds = 0
-  return lines.map((line) => {
+  return lines.flatMap((line) => {
     const { entry, extraWaitSeconds } = toLogEntry(line, now, elapsedSeconds)
+    const entries: LogEntry[] = [entry]
+    // 行内の <wait.秒数> は、短い待ちだとアニメーションでは見落とすため「N秒待機」を別行で出す。
+    if (extraWaitSeconds > 0) {
+      entries.push({
+        line: line.line,
+        kind: 'wait',
+        segments: textSegments(`${extraWaitSeconds}秒待機`),
+        timestamp: '',
+        delaySeconds: elapsedSeconds,
+        isPreview: true,
+      })
+    }
     elapsedSeconds += extraWaitSeconds
     if (line.commandToken?.toLowerCase() === '/wait') {
       const waitSeconds = Number(line.argsText)
@@ -187,6 +199,6 @@ export function toLogPreview(lines: MacroLine[], now: Date = new Date()): LogEnt
         elapsedSeconds += waitSeconds
       }
     }
-    return entry
+    return entries
   })
 }

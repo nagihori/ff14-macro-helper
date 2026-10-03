@@ -32,7 +32,7 @@
 - [`lib/shortcuts.ts`](src/lib/shortcuts.ts) — エディタのショートカット（Ctrl+Alt+C / P / S、Mac は ⌃⌥）の判定と表示用の表記。`event.code` で判定
 - [`components/EditorGuide.tsx`](src/components/EditorGuide.tsx)（＋ `.module.scss`）— エディタページ下部の「エディタの使い方」アコーディオン（初期は閉）。基本操作・サジェスト・代名詞補完・Tab/Esc・ショートカット・プレビュー・文字色の凡例。凡例の色は `styles/_mixins.scss` の `$highlight-tones` を `MacroWorkbench` と共有
 - [`components/MacroDescription.tsx`](src/components/MacroDescription.tsx) — 説明文の表示。展開済みの `descriptionParts`（他マクロ URL → タイトルリンク／削除済み表記）で描く。設計は `docs/publish.md`
-- [`components/LogLegend.tsx`](src/components/LogLegend.tsx)（＋ `.module.scss`）— ログプレビューの下の凡例。いま出ている行の送信先の色、代名詞の表示（`**値**`／`<>` のまま）、再現できない行の警告。色は `styles/_mixins.scss` の `$log-tones` を `LogList` と共有
+- [`components/LogLegend.tsx`](src/components/LogLegend.tsx)（＋ `.module.scss`）— ログプレビューの下の凡例。いま出ている行の送信先の色、代名詞の表示（`**値**`／`<>` のまま）、再現できない行の警告、`<wait.N>` の「N秒待機」行の注記。色は `styles/_mixins.scss` の `$log-tones` を `LogList` と共有
 - [`components/DiscordLogo.tsx`](src/components/DiscordLogo.tsx) — Discord 公式シンボル（白）。変形・色変更はしない
 - [`app/not-found.tsx`](src/app/not-found.tsx) —  404 の共通表示（未知の URL・削除済み・公開停止中）。公開マクロから「役に立った」順のおすすめを添える（`listRecommendedMacros`）。リクエストごとに作る（`connection()`）。DB に届かないときはおすすめだけ省く
 - [`app/error.tsx`](src/app/error.tsx) — 想定外のエラー（DB に届かないなど）の共通表示。「もう一度読み込む」（このバージョンの Next では `retry`）とエディタへの導線、運営のログと突き合わせる digest（エラー ID）を出す。Client Component で、エラーの中身は本番では伏せられる
@@ -62,7 +62,7 @@
 - [`components/MacroCodeBar.tsx`](src/components/MacroCodeBar.tsx) — 詳細ページのコードブロック上部の操作帯（copy / edit / share。暗い面向け配色）
 - [`components/MacroCodeView.tsx`](src/components/MacroCodeView.tsx)（＋ `.module.scss`）— 詳細ページのコード本文。エディタと同じ `buildHighlight` で色分けする読み取り専用の表示（サーバーコンポーネント。波線・背景の警告は付けない。常に暗い面なので色は `$highlight-tones` のダーク側）
 - [`components/MacroPreviewAccordion.tsx`](src/components/MacroPreviewAccordion.tsx)（＋ `.module.scss`）— 詳細ページの「動作プレビュー」アコーディオン（初期は閉、サーバーコンポーネント）。`toLogPreview` の結果を全行一括で表示し、時刻は実時刻に展開せず `[HH:mm]` の文字列のまま。`LogList` と `LogLegend` を使う
-- [`components/LogList.tsx`](src/components/LogList.tsx)（＋ `.module.scss`）— ログプレビューの行の一覧。エディタの動作プレビューと詳細ページで共有。色は `$log-tones`
+- [`components/LogList.tsx`](src/components/LogList.tsx)（＋ `.module.scss`）— ログプレビューの行の一覧。エディタの動作プレビューと詳細ページで共有。色は `$log-tones`。`kind: 'wait'`（行内 `<wait.N>` の注釈）は時刻なしで淡色
 - [`components/CopyMacroButton.tsx`](src/components/CopyMacroButton.tsx) — 詳細ページの「マクロテキストをコピー」主ボタン（`ActionButton` ＋ `useCopyFeedback`）
 - [`components/useMacroCheck.tsx`](src/components/useMacroCheck.tsx) — コピー・共有URL・公開の直前に本文を解析し、エラー／警告があれば `MacroCheckDialog` を挟む `guard()` を返すフック（打ちかけの最終行も確定扱いで解析）
 - [`components/MacroCheckDialog.tsx`](src/components/MacroCheckDialog.tsx)（＋ `.module.scss`）— 問題の一覧（重大度・行番号・内容）を見せ、「エディタで修正する」か「このまま進む」を選ばせる確認ダイアログ

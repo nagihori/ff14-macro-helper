@@ -16,6 +16,9 @@
   @each $kind, $pair in $log-tones {
     &[data-kind='#{$kind}'] { color: tone(list.nth($pair, 1), list.nth($pair, 2)); }
   }
+
+  // <wait.秒数> の注釈行。時刻を持たず、ログ本体より控えめに出す。
+  &[data-kind='wait'] { color: var(--text-faint); }
 }
 
 .logTime { color: var(--text-faint); }
