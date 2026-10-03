@@ -1,10 +1,10 @@
 // 埋め込み（iframe）のコードと高さ。表示側（components/EmbedViewer の CSS）と、この高さの計算をそろえておく。
-// 高さ＝上のバー 44 + コード（上下の余白 24 + 1 行 21 × 見せる行数）+ 下のバー 40 + iframe の枠線 2 + 余裕 6。
-// 見せる行数は 5〜12 行に収める（高さを抑えるため。12 行を超えるマクロは、コードの中でスクロールする）。
-const EMBED_CHROME_HEIGHT = 44 + 24 + 40 + 2 + 6
+// 高さ＝上のバー 44 + コード（上下の余白 24 + 1 行 21 × 見せる行数）+ 下のバー 40 + iframe の枠線 2。
+// 見せる行数は 5〜15 行（マクロの上限の 15 行が収まる 425px。15 行を超えることはない）。
+const EMBED_CHROME_HEIGHT = 44 + 24 + 40 + 2
 const EMBED_LINE_HEIGHT = 21
 const EMBED_MIN_LINES = 5
-const EMBED_MAX_LINES = 12
+const EMBED_MAX_LINES = 15
 
 export const embedHeight = (lineCount: number) => EMBED_CHROME_HEIGHT + EMBED_LINE_HEIGHT * Math.min(EMBED_MAX_LINES, Math.max(EMBED_MIN_LINES, lineCount))
 

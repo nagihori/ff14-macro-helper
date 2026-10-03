@@ -18,7 +18,7 @@
 - [`lib/feed/macro-feed.ts`](src/lib/feed/macro-feed.ts) — 新着フィードの Response を作る（全体用とタグ別で共通。DB 読み取りと説明内 URL の展開を含む）
 - [`app/macros/feed.xml/route.ts`](src/app/macros/feed.xml/route.ts) — 新着公開マクロの Atom フィード（`/macros/feed.xml`、最新 30 件、1 時間ごとに再生成）。本文は載せない。`/macros` の `<link rel="alternate">` から見つけられる。DB に届かなければ 503
 - [`lib/feed/atom.ts`](src/lib/feed/atom.ts) — Atom 1.0 の組み立て（純粋な関数。XML のエスケープ・制御文字の除去・単体テスト `atom.test.ts`）
-- [`app/embed/[slug]/page.tsx`](src/app/embed/%5Bslug%5D/page.tsx)（＋ `.module.scss`・`not-found.tsx`）— ほかのサイトに iframe で貼る、CodePen 風のマクロ表示（`/embed/{slug}`）。サーバー側でコードの色付け・プレビューの行・エディタへの URL を作り、`EmbedViewer` に渡す。公開中のみ・noindex。`?theme=light|dark` は `<html>` の `data-theme` を書き換えて固定（トークンの `light-dark()` は定義した要素の color-scheme で決まるため、枠への指定では効かない）。このルートだけ `frame-ancestors *`（`next.config.ts`）。高さは `lib/share/embed.ts` の計算と対応
+- [`app/embed/[slug]/page.tsx`](src/app/embed/%5Bslug%5D/page.tsx)（＋ `.module.scss`・`not-found.tsx`）— ほかのサイトに iframe で貼る、CodePen 風のマクロ表示（`/embed/{slug}`）。サーバー側でコードの色付け・プレビューの行・エディタへの URL を作り、`EmbedViewer` に渡す。公開中のみ・noindex。`?theme=` は `<html>` の `data-theme` を書き換えて固定（既定はダーク、`light` で明るく、`auto` で OS に従う）（トークンの `light-dark()` は定義した要素の color-scheme で決まるため、枠への指定では効かない）。このルートだけ `frame-ancestors *`（`next.config.ts`）。高さは `lib/share/embed.ts` の計算と対応
 - [`components/EmbedViewer.tsx`](src/components/EmbedViewer.tsx)（＋ `.module.scss`）— 埋め込み表示の本体（クライアント）。上のバー（左：マクロ名＝詳細ページへのリンク／右：「プレビュー」の切り替え・「EDIT ON {サイト名}」。コードとプレビューの 2 列に合わせて分ける）、コード（左）とログプレビュー（右）、下のバー（コピー・再生）。プレビューは初期は表示、押すと隠れる。再生は /wait の秒数どおりに 1 行ずつ。狭い幅（560px 未満）は並べず、コードを見せ、「プレビュー」か「再生」を押したあいだだけ切り替わる
 - [`components/HideInEmbed.tsx`](src/components/HideInEmbed.tsx) — `/embed/` ではヘッダー・フッター・アクセス解析を出さないための包み（`layout.tsx` が使う）
 - [`components/EmbedCopyButton.tsx`](src/components/EmbedCopyButton.tsx)（＋ `.module.scss`）— 埋め込み表示の下のバーの「マクロテキストをコピー」（小さめの ghost）。別オリジンの iframe で navigator.clipboard が拒まれたら execCommand に切り替える
@@ -66,7 +66,7 @@
 - [`lib/macro/double-slash.ts`](src/lib/macro/double-slash.ts) — 行頭「/」の直後の「/」（手癖の「//」）を「/」に戻す純粋な関数
 - [`components/ActionButton.tsx`](src/components/ActionButton.tsx)（＋ `.module.scss`）— 非エンジニア向けのアイコン付き丸ボタン（ボタン／リンク兼用）。`publish` は公開／投稿系の差し色（`pill-action-publish`。ライブラリの「自作マクロを投稿」・投稿フォームの送信も同じ）。`feedback` でコピー結果（チェック／バツ＋文言）に切り替わる
 - [`components/ActionGroup.tsx`](src/components/ActionGroup.tsx)（＋ `.module.scss`）— アクションボタン群の共通枠（エリア中央揃え・折り返し。スマホ幅では縦積み・幅いっぱい）
-- [`components/ActionBar.tsx`](src/components/ActionBar.tsx)（＋ `.module.scss`）— コードブロック上部の操作帯（小アイコン＋英小文字キャプション）。`onDark` で常時暗い面向けの配色
+- [`components/ActionBar.tsx`](src/components/ActionBar.tsx)（＋ `.module.scss`）— コードブロック上部の操作帯（小アイコン＋英小文字キャプション）。色はテーマに追従
 - [`components/useCopyFeedback.ts`](src/components/useCopyFeedback.ts) — コピー結果（成功／失敗）を一定時間見せて戻すフック。操作帯・ボタン・共有で共通
 - [`lib/ui-text.ts`](src/lib/ui-text.ts) — ボタン文言の単一の定義。対応表は [`docs/ui-text.md`](docs/ui-text.md)
 - [`components/MacroWorkbench.tsx`](src/components/MacroWorkbench.tsx) — マクロエディタ本体。解析・診断・ハイライト・コマンド補完・プレースホルダ補完・ログプレビュー・コマンド辞書検索・共有URL の生成と復元。上部に操作帯、下部にアクションボタン群、検索欄の下に種類名の色の凡例（ログの凡例はプレビュー中だけ `LogLegend` が出す）、初期本文は「/」。本文は sessionStorage にも写し、タブ移動で戻ったときに復元する（優先順は `?m=` → 保存済み → 「/」。復元が済む前に初期値で上書きしない）。「公開する」（`handlePublish`）もここ：現在の本文から共有URL を作り `/macros/submit?url=` へ遷移する。Tab は常にエディタが奪い、候補が無い状態で Esc を押した直後の Tab だけフォーカス移動に譲る。行番号は折り返した行の高さに追従（ハイライト層の各行の高さを測る）。幅は全ページ共通の 72rem で、エディタ側は従来のコンパクトさのまま、広げた分は右の検索・候補（列比 1:1.25）に回す。ロジックは `lib/` 側に置き、ここは表示と入力処理
@@ -82,8 +82,8 @@
 - [`app/macros/reactions.ts`](src/app/macros/reactions.ts) — 投票のサーバーアクション `setReaction`。Cookie の現在値との差分だけを `helpful_count` / `problem_count` に反映する（公開中のマクロのみ・件数は負にならない）。Cookie は書き換え可能なので厳密な不正対策ではない
 - [`components/ShareMacroButton.tsx`](src/components/ShareMacroButton.tsx)（＋ `.module.scss`）— 詳細ページの共有ボタン。本体はアイコン＋「URLをコピー」（共有シートが使える端末では「URLを共有」）で、右端の ▼ で「ほかの共有方法」（「Lodestone用にコピー」「埋め込みコードをコピー」）のパネルが開く。BB コードはサーバーで作って props で受ける。判定とコピー処理は `useShareUrl`。停止中のマクロには出さない
 - [`components/useShareUrl.ts`](src/components/useShareUrl.ts) — 詳細ページの共有処理。タッチ端末で共有に対応していれば OS の共有シート、それ以外はページ URL をコピー（クエリは含めない）
-- [`components/MacroCodeBar.tsx`](src/components/MacroCodeBar.tsx) — 詳細ページのコードブロック上部の操作帯（copy / edit / share。暗い面向け配色）
-- [`components/MacroCodeView.tsx`](src/components/MacroCodeView.tsx)（＋ `.module.scss`）— 詳細ページのコード本文。エディタと同じ `buildHighlight` で色分けする読み取り専用の表示（サーバーコンポーネント。波線・背景の警告は付けない。常に暗い面なので色は `$highlight-tones` のダーク側）
+- [`components/MacroCodeBar.tsx`](src/components/MacroCodeBar.tsx) — 詳細ページのコードブロック上部の操作帯（copy / edit / share）
+- [`components/MacroCodeView.tsx`](src/components/MacroCodeView.tsx)（＋ `.module.scss`）— 詳細ページのコード本文。エディタと同じ `buildHighlight` で色分けする読み取り専用の表示（サーバーコンポーネント。波線・背景の警告は付けない。面はエディタと同じ（ライトは薄い灰色・ダークは黒）で、色もテーマに追従（`$highlight-tones` の tone））
 - [`components/MacroPreviewAccordion.tsx`](src/components/MacroPreviewAccordion.tsx)（＋ `.module.scss`）— 詳細ページの「動作プレビュー」アコーディオン（初期は閉、サーバーコンポーネント）。`toLogPreview` の結果を全行一括で表示し、時刻は実時刻に展開せず `[HH:mm]` の文字列のまま。`LogList` と `LogLegend` を使う
 - [`components/LogList.tsx`](src/components/LogList.tsx)（＋ `.module.scss`）— ログプレビューの行の一覧。エディタの動作プレビューと詳細ページで共有。色は `$log-tones`。`kind: 'wait'`（行内 `<wait.N>` の注釈）は時刻なしで淡色
 - [`components/CopyMacroButton.tsx`](src/components/CopyMacroButton.tsx) — 詳細ページの「マクロテキストをコピー」主ボタン（`ActionButton` ＋ `useCopyFeedback`）

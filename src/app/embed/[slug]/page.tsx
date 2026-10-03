@@ -12,7 +12,7 @@ import styles from './page.module.scss'
 
 // ほかのサイト（ブログ・攻略サイト）に iframe で貼るための、CodePen 風のコンパクトなマクロ表示（EmbedViewer）。
 // 公開中のマクロだけ。ヘッダー・フッター・アクセス解析は出さない（HideInEmbed）。検索には載せない（本体の詳細ページと重複するため）。
-// このルートだけ frame-ancestors を開けてある（next.config.ts）。?theme=light|dark で、貼り先に合わせて明暗を固定できる。
+// このルートだけ frame-ancestors を開けてある（next.config.ts）。既定はダークで、?theme=light（明るく）・?theme=auto（OS に従う）で変えられる。
 export const metadata: Metadata = { robots: { index: false, follow: false } }
 
 export default async function EmbedPage({ params, searchParams }: PageProps<'/embed/[slug]'>) {
@@ -20,7 +20,8 @@ export default async function EmbedPage({ params, searchParams }: PageProps<'/em
   const { theme } = await searchParams
   const macro = await findPublishedMacro(slug)
   if (!macro) notFound()
-  const forced = theme === 'light' || theme === 'dark' ? theme : null
+  // 既定はダーク。light で明るく、auto で貼り先（OS）の設定に従う。
+  const forced = theme === 'light' ? 'light' : theme === 'auto' ? null : 'dark'
   // 時刻は実時刻に展開せず [HH:mm] のまま見せる（サーバーで作れて、表示のずれも起きない）。
   const entries = toLogPreview(analyze(macro.body, getDictionary(), { complete: true }).lines).map((entry) => ({ ...entry, timestamp: 'HH:mm' }))
 

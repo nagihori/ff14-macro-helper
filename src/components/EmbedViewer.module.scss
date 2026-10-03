@@ -73,8 +73,8 @@ button.tab[aria-pressed='true'], .active {
 .panes { display: grid; flex: 1; min-height: 0; grid-template-columns: 1fr; }
 .viewer[data-preview='on'] .panes { grid-template-columns: 1fr 1fr; }
 
-// コードは常に暗い面。1 行 21px 固定（高さの計算に使う）。長い行は折り返さず横にスクロール。
-.codePane { min-width: 0; min-height: 0; overflow: auto; background: var(--surface-dark); }
+// コードは、エディタと同じ面（ライトは薄い灰色・ダークは黒）。1 行 21px 固定（高さの計算に使う）。長い行は折り返さず横にスクロール。
+.codePane { min-width: 0; min-height: 0; overflow: auto; background: var(--surface-page-editor); }
 .codePane > pre { margin: 0; padding: 12px 1rem; font-size: 13px; line-height: 21px; }
 
 .previewPane {
