@@ -17,7 +17,7 @@
 
 - 投稿者が、停止された自分の投稿を削除できる（管理者は再公開できなくなり、停止の記録も本文ごと消える）。削除は `status <> 'deleted'` で通る（`store.ts` の `deleteMacro`）。
 - ログイン時の `users` 書き込みが DB 必須（`src/auth.ts` の jwt コールバック）。DB 障害中はログインできない。
-- `error.tsx` / `not-found.tsx` がなく、DB 障害時は Next 標準のエラー画面。
+- `error.tsx` がなく、DB 障害時は Next 標準のエラー画面（404 は `not-found.tsx` で対応済み）。
 - セキュリティヘッダ（CSP など）の設定なし。React のエスケープに頼っている。
 - ログは `console.error` のみ。通知・アラートなし。
 - Neon は米国リージョン。Vercel 関数側のリージョンと揃っているか未確認（日本からのレイテンシに関わる）。
