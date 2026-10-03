@@ -115,6 +115,19 @@
 }
 
 // 文中に置く、リンク風の小さな操作ボタン（変更する／変更をやめる）。
+// アレンジ元を外す ×（投票の取り消しボタンと同じ見た目）。
+.cancel {
+  margin-left: 0.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  vertical-align: middle;
+  @include type(xs);
+  color: var(--text-muted);
+
+  &:hover { background: var(--surface-hover); color: var(--text-strong); }
+}
+
 .linkButton {
   margin-left: 0.25rem;
   color: var(--text-secondary);

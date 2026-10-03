@@ -9,7 +9,7 @@
 - リアクション（「役に立った」「不具合あり」）。同一ブラウザの重複は Cookie で防ぐ。
 - 説明は最大 200 文字・5 行まで（改行可・空行不可）。検証は `validateMeta`（サーバー側）。詳細ページでは改行を表示に反映する。
 - 投稿者本人による編集（タイトル・説明・タグのみ。本文は直せない）と削除。
-- 管理者による公開停止／再公開。停止中は管理者と投稿者本人にだけ見える。
+- 管理者による公開停止／再公開／削除（削除は停止中のものだけ。本文を消す）。停止中は管理者と投稿者本人にだけ見える。
 - 利用規約（`/terms`）とプライバシーポリシー（`/privacy`）。Discord アプリの登録に使う。
 
 小規模（不特定多数が触らない）運用を前提にしている。濫用対策などは「ぜいたく機能」へ後回しにした（末尾）。
@@ -99,16 +99,69 @@ npm test                       # 検証ロジックの単体テスト
 
 環境変数は `.env.example` を参照する。`.env.example` にはプレースホルダだけを書き、実値は必ず `.env.local` に置く。
 
+## 本番 DB へのマイグレーション
+
+`npm run db:migrate` は `.env.local` の `DATABASE_URL`（開発 DB）に流す。本番には `.env.local` を使わず、接続文字列をその場のシェルにだけ渡す。
+
+```bash
+read -rs DATABASE_URL && export DATABASE_URL     # 本番の接続文字列を貼って Enter（画面にも履歴にも残らない）
+node scripts/migrate.mjs --dry-run               # 「対象:」のホストが本番か確かめ、未適用の一覧を見る
+node scripts/migrate.mjs                         # 問題なければ適用
+unset DATABASE_URL
+```
+
+- 実行すると最初に `対象: <ホスト>/<DB 名>` が出る。開発 DB と本番 DB のホストが違うことを目で確かめてから流す。
+- `--dry-run` は何も書かない。適用済みは `_migrations` に記録されているので、再実行しても二重には流れない。
+- 各ファイルはトランザクションで流すので、途中で失敗したファイルは反映されない。
+
+## 削除依頼への対応（運営者の手作業）
+
+プライバシーポリシー 6 節のとおり、アカウント（ログイン情報）の削除と、停止中の投稿の取り下げは、依頼を受けて運営者が手で行う。接続のしかたは上の「本番 DB へのマイグレーション」と同じ（`DATABASE_URL` を `read -rs` でその場に渡す）。ここでは `psql` を使う例を書くが、Neon の SQL Editor でも同じ。
+
+**1. 依頼者を特定する。** 依頼は X（利用規約・ポリシーに載せた連絡先のポストへのリプライ）に公開で来るので、本人確認の材料は公開名と投稿の slug。Discord の ID は聞かない。投稿の `slug` から `author_id` を引く。
+
+```sql
+select m.slug, m.title, m.status, m.author_handle, u.id as user_id
+from macros m join users u on u.id = m.author_id
+where m.slug = '<依頼にあった slug>';
+```
+
+**2. 投稿だけ取り下げる**（アカウントは残す）。画面の削除と同じ状態にする。停止中のものは、管理者が詳細ページの「削除…」からも消せる。
+
+```sql
+update macros set status = 'deleted', deleted_at = coalesce(deleted_at, now()),
+  body = '', description = '', tags = '{}'
+where slug = '<slug>' and status <> 'deleted';
+```
+
+**3. アカウントごと削除する。** `macros.author_id` が `users` を参照していて、そのままでは `users` の行を消せない。投稿を取り下げ、投稿者とのひもづけを外してから消す。1 つのトランザクションで行う。
+
+```sql
+begin;
+update macros set status = 'deleted', deleted_at = coalesce(deleted_at, now()),
+  body = '', description = '', tags = '{}',
+  author_handle = '（削除済み）', author_id = null
+where author_id = '<user_id>';
+delete from users where id = '<user_id>';
+commit;
+```
+
+- 投票は `macros` の件数だけで、ユーザーごとの記録は持っていない。消すものは上の 2 つのテーブルで全部。
+- タイトルとスラッグは、派生マクロの「アレンジ元：{タイトル}（削除済み）」のために残る。タイトルに個人が特定される語が入っていれば、依頼者に確認して `title` も書き換える。
+- 本人のブラウザに残るセッション（JWT）は期限まで有効。ただし `users` の行がないので、投稿は外部キー制約で失敗する。同じ Discord でログインし直すと、新しい `users` 行ができる（以前の投稿とはひもづかない）。
+- 実行前に `select` で対象の件数と `user_id` を必ず目で確かめる。取り消せない。
+- 対応したら、Issue に完了を書いて閉じる。DB のバックアップには削除前のデータが残る（保持期間は Neon のプランによる）。
+
 ## 本番公開チェックリスト
 
-- [ ] **Vercel プロジェクト**：リポジトリに `.vercel/project.json` がない（未リンク）。プロジェクトを作成して GitHub と接続する。
-- [ ] **環境変数**（Vercel の Environment Variables）：`DATABASE_URL` / `AUTH_SECRET` / `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` / `ADMIN_DISCORD_IDS`。ローカルと同じ値を流用せず、`AUTH_SECRET` は本番用に生成し直す。
-- [ ] **SITE_URL**：共有カード（og:image など）の絶対 URL の基準。独自ドメインを使うなら `https://<本番ドメイン>`（末尾スラッシュなし）を設定する。未設定でも Vercel 上では自動で補われる。
-- [ ] **DB を分ける**：ローカルと本番で同じ Neon DB を共有しない（Neon のブランチ機能で開発用を分けると楽）。本番 DB に `npm run db:migrate` を適用する。
-- [ ] **サンプルの扱い**：`seed-samples.mjs` のサンプル 3 件を本番に入れるか決める（入れない、または公開後に管理者から停止する）。
-- [ ] **Discord アプリ**：OAuth2 の Redirects に `https://<本番ドメイン>/api/auth/callback/discord` を追加。General Information の利用規約 URL に `/terms`、プライバシーポリシー URL に `/privacy` を設定。
+- [x] **Vercel プロジェクト**：GitHub と接続済み（`.vercel/repo.json` でリンク。`project.json` はない形式で、`.vercel` は git 管理外）。デプロイ確認済み。
+- [x] **環境変数**（Vercel の Environment Variables）：`DATABASE_URL` / `AUTH_SECRET` / `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` / `ADMIN_DISCORD_IDS`。ローカルと同じ値を流用せず、`AUTH_SECRET` は本番用に生成し直す。
+- [x] **SITE_URL**：共有カード（og:image など）の絶対 URL の基準。独自ドメインを使うなら `https://<本番ドメイン>`（末尾スラッシュなし）を設定する。未設定でも Vercel 上では自動で補われる。
+- [x] **DB を分ける**：ローカルと本番で同じ Neon DB を共有しない（Neon のブランチ機能で開発用を分けると楽）。本番 DB へのマイグレーションは、上の「本番 DB へのマイグレーション」の手順で行う。
+- [x] **サンプルの扱い**：`seed-samples.mjs` のサンプル 3 件を本番に入れるか決める（入れない、または公開後に管理者から停止する）。→ 入れない。
+- [x] **Discord アプリ**：OAuth2 の Redirects に `https://<本番ドメイン>/api/auth/callback/discord` を追加。General Information の利用規約 URL に `/terms`、プライバシーポリシー URL に `/privacy` を設定。
 - [ ] **ホストの信頼**：Vercel では通常 `AUTH_URL` は不要。ログインに失敗する場合は `AUTH_TRUST_HOST=true` を確認する。
-- [ ] **規約・ポリシーの確認**：一般的な雛形なので、公開前に内容を通読する。連絡先は現在 GitHub Issues（メールや SNS にするなら `terms` / `privacy` の `ISSUES_URL` を差し替える）。
+- [x] **規約・ポリシーの確認**：一般的な雛形なので、公開前に内容を通読する。連絡先は X のポストのリプライ欄（`terms` / `privacy` の `X_POST_URL`）。通読済み。
 - [ ] **管理者の動作確認**：本番で自分の Discord ID が管理者になり、公開停止／再公開ができる。
 - [ ] **通しの確認**：ログイン → 投稿 → 一覧・詳細に出る → 投票 → 停止 → 本人に停止の知らせが出る。
 
@@ -119,7 +172,7 @@ npm test                       # 検証ロジックの単体テスト
 **濫用対策・運用**
 - NG ワード確認（タイトル・説明・タグ・本文）
 - レート制限、連投・重複投稿の歯止め
-- 通報の受付窓口（現状は GitHub Issues）
+- 通報の受付窓口（現状は X のポストのリプライ欄）
 - 停止の理由・実行者・日時の記録（現状は `suspended_at` のみ）と、本人への理由の通知
 - リアクションの不正対策（Cookie は利用者が書き換えられる。IP やアカウントとの併用など）
 - X OAuth の追加（`.env.example` に枠だけある）

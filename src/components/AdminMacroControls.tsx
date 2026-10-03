@@ -1,4 +1,5 @@
 import { setMacroStatus } from '@/app/macros/[slug]/actions'
+import { AdminDeleteControl } from './AdminDeleteControl'
 import styles from './AdminMacroControls.module.scss'
 
 // 詳細ページの管理者向け操作（公開停止／再公開）。表示は isAdmin で出し分けるが、実行可否はサーバーアクション側で再判定する。
@@ -12,6 +13,7 @@ export function AdminMacroControls({ slug, status }: { slug: string; status: 'pu
         <form action={setMacroStatus.bind(null, slug, suspended ? 'published' : 'suspended')}>
           <button type="submit" className={styles.button}>{suspended ? '再公開する' : '公開を停止する'}</button>
         </form>
+        {suspended && <AdminDeleteControl slug={slug} />}
       </div>
     </section>
   )

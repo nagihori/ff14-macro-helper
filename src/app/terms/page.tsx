@@ -2,7 +2,7 @@ import { LegalDocument } from '@/components/LegalDocument'
 
 export const metadata = { title: '利用規約' }
 
-const ISSUES_URL = 'https://github.com/nagihori/ff14-macro-helper/issues'
+const X_POST_URL = 'https://x.com/variekirk/status/2105880487671792044'
 
 export default function TermsPage() {
   return (
@@ -39,9 +39,9 @@ export default function TermsPage() {
       </ul>
 
       <h2>5. 公開停止・削除</h2>
-      <p>運営者は、規約に反する、または不適切と判断した投稿を、事前の通知なく公開停止または削除できます。繰り返し問題のある場合は、ログインしての投稿をお断りすることがあります。</p>
+      <p>運営者は、規約に反する、または不適切と判断した投稿を、事前の通知なく公開停止にできます。停止した投稿は、運営者の記録として保管されることがあります。繰り返し問題のある場合は、ログインしての投稿をお断りすることがあります。</p>
       <p>公開停止にした投稿は、投稿者本人がログインしたときに、公開マクロ一覧と詳細ページで停止中であることを確認できます。理由の個別の通知はしていません。</p>
-      <p>自分の投稿を取り下げたい場合は、下記の連絡先からご依頼ください。</p>
+      <p>自分の投稿は、詳細ページの操作でいつでも削除できます。停止中の投稿や、アカウントごとの削除は、下記の連絡先からご依頼ください。</p>
 
       <h2>6. 免責</h2>
       <p>本サービスの利用や、公開マクロを使ったことによって生じた損害（ゲーム内の不利益を含む）について、運営者は責任を負いません。ただし、運営者に故意または重大な過失がある場合はこの限りではありません。</p>
@@ -53,7 +53,7 @@ export default function TermsPage() {
       <p>この規約は日本法に従って解釈されます。</p>
 
       <h2 id="contact">9. 連絡先</h2>
-      <p>本サービスに関するお問い合わせは <a href={ISSUES_URL}>GitHub の Issues</a> へお願いします。公開の場なので、個人情報は書き込まないでください。</p>
+      <p>本サービスに関するお問い合わせは <a href={X_POST_URL}>X(@variekirk)の該当ポストリプライ欄</a> へお願いします。公開の場なので、個人情報は書き込まないでください。</p>
     </LegalDocument>
   )
 }

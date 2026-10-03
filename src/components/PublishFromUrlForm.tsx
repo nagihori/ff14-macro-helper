@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useActionState, useState, type ReactNode } from 'react'
-import { readOriginFromShareUrl } from '@/lib/share/url'
+import { readOriginFromShareUrl, removeOriginFromShareUrl } from '@/lib/share/url'
 import { LIMITS } from '@/lib/published-macros/publish'
 import { submitMacro, type PublishState } from '@/app/macros/submit/actions'
 import { ContinuedMacroGuide, MacroMetaFields } from './MacroMetaFields'
@@ -33,7 +33,13 @@ export function PublishFromUrlForm({ initialShareUrl = '', tagSuggestions, known
         <form action={formAction} className={styles.form}>
           <label className={styles.field}>共有URL<input required type="url" name="shareUrl" value={shareUrl} onChange={(event) => setShareUrl(event.target.value)} placeholder="https://…" className={styles.input} /></label>
           {!origin && <ContinuedMacroGuide />}
-          {origin && <p role="status" className={styles.origin}>アレンジ元：<Link href={`/macros/${origin.slug}`} className={styles.leadLink}>{origin.title}</Link>。公開するとこのマクロへのリンクが付きます。</p>}
+          {origin && (
+            <p role="status" className={styles.origin}>
+              アレンジ元：<Link href={`/macros/${origin.slug}`} className={styles.leadLink}>{origin.title}</Link>
+              <button type="button" onClick={() => setShareUrl(removeOriginFromShareUrl(shareUrl))} title="アレンジ元を外す" aria-label="アレンジ元を外す" className={styles.cancel}>×</button>
+              <br />公開するとこのマクロへのリンクが付きます。
+            </p>
+          )}
           <MacroMetaFields tagSuggestions={tagSuggestions} />
           {savedHandle === null || changingHandle ? (
             <label className={styles.field}>{savedHandle === null ? '公開名（初回のみ）' : '公開名'}<input required name="handle" maxLength={LIMITS.handle} value={handle} onChange={(event) => setHandle(event.target.value)} placeholder="例：Moco" className={styles.input} />
