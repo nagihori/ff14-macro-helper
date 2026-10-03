@@ -38,5 +38,6 @@ export function toLodestoneBBCode(
     }
     return runs.map((run) => (run.color ? `[color=${run.color}]${run.text}[/color]` : run.text)).join('')
   })
-  return [`[b]${sanitizeTitle(title)}[/b]`, '[hb]', ...colored, '[/hb]', `[url=${url}]${brand}で作成[/url]`].join('\n')
+  // [hb] の直後・[/hb] の直前に改行を入れると、折り畳みの中に空行ができる（実機確認済み）ので、本文に直接つなぐ。
+  return [`[b]${sanitizeTitle(title)}[/b]`, `[hb]${colored.join('\n')}[/hb]`, `[url=${url}]${brand}で作成[/url]`].join('\n')
 }
