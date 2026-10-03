@@ -14,11 +14,12 @@ type Props = {
   feedback?: CopyState
   title?: string
   disabled?: boolean
+  className?: string
 } & ({ href: string; onClick?: never } | { href?: never; onClick: () => void })
 
 // 非エンジニア向けの、アイコン付きの丸ボタン（ボタン／リンク兼用）。
-export function ActionButton({ icon, children, variant = 'primary', feedback = 'idle', title, disabled, href, onClick }: Props) {
-  const className = `${styles.button} ${styles[variant]}`
+export function ActionButton({ icon, children, variant = 'primary', feedback = 'idle', title, disabled, className: extraClassName, href, onClick }: Props) {
+  const className = [styles.button, styles[variant], extraClassName].filter(Boolean).join(' ')
   const content =
     feedback === 'copied' ? (
       <>

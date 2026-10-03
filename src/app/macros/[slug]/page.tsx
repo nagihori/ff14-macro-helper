@@ -5,7 +5,6 @@ import { auth } from '@/auth'
 import { AdminMacroControls } from '@/components/AdminMacroControls'
 import { ActionButton } from '@/components/ActionButton'
 import { ActionGroup } from '@/components/ActionGroup'
-import { CopyLodestoneButton } from '@/components/CopyLodestoneButton'
 import { CopyMacroButton } from '@/components/CopyMacroButton'
 import { EditIcon } from '@/components/icons'
 import { MacroCardSection } from '@/components/MacroCardSection'
@@ -86,8 +85,7 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
           <ActionGroup className={styles.actions}>
             <CopyMacroButton text={macro.body} />
             <ActionButton icon={<EditIcon />} variant="secondary" href={editHref}>{UI_TEXT.editInEditor}</ActionButton>
-            {macro.status === 'published' && <ShareMacroButton title={macro.title} path={`/macros/${macro.slug}`} />}
-            {lodestoneBBCode && <CopyLodestoneButton bbcode={lodestoneBBCode} />}
+            {macro.status === 'published' && <ShareMacroButton title={macro.title} path={`/macros/${macro.slug}`} lodestoneBBCode={lodestoneBBCode ?? undefined} />}
           </ActionGroup>
           <section className={styles.reactions}>
             <PublishedMacroReactions macroSlug={macro.slug} initialHelpful={macro.reactions.helpful} initialProblem={macro.reactions.problem} />
