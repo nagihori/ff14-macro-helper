@@ -56,7 +56,7 @@
 - [`components/GoogleAnalytics.tsx`](src/components/GoogleAnalytics.tsx) — Google アナリティクス 4。`GA_MEASUREMENT_ID` があるとき本番だけ layout が描画。ページビューはクエリを落とした URL で自前送信。設計は `docs/publish.md`
 - [`components/SiteFooter.tsx`](src/components/SiteFooter.tsx)（＋ `.module.scss`）— 全ページ共通のフッター（利用規約・プライバシーポリシー）。ログインはセッションを読むので、共通側には置かない（`/` を静的なままにするため）
 - [`components/ThemeToggle.tsx`](src/components/ThemeToggle.tsx) — ヘッダー内（`SiteHeader`）に置いた線画アイコン（太陽・月）ひとつのライト/ダーク切り替え。`<html data-theme>` を切り替え、選択は localStorage（`lib/theme.ts`）に保存。未設定なら OS 設定に従う
-- [`components/PublishedMacroLibrary.tsx`](src/components/PublishedMacroLibrary.tsx) — 公開マクロ一覧の UI。タイトル・説明・`#タグ` を同じ検索欄で絞り込む（空白区切りの AND 検索。タグ例のクリックは検索語へ追加、カード内タグは置き換え。データは親ページが DB から取得して `allMacros` で渡す）
+- [`components/PublishedMacroLibrary.tsx`](src/components/PublishedMacroLibrary.tsx) — 公開マクロ一覧の UI。タイトル・説明・`#タグ` を同じ検索欄で絞り込む（空白区切りの AND 検索。上のタグ一覧のクリックは検索語へ追加、カード内タグはタグ別一覧ページ `/macros/tag/…` へのリンク。データは親ページが DB から取得して `allMacros` で渡す）
 - [`components/PublishedMacroReactions.tsx`](src/components/PublishedMacroReactions.tsx) — 「役に立った」「不具合あり」ボタン。件数はサーバー集計で、押した直後は先に表示を動かしてサーバーの返答で確定する。同一ブラウザの重複は Cookie で防ぎ、アイコン付き（役に立った＝親指／不具合あり＝警告）。投票後も両件数を緑／赤で表示し、自分の側は太字＋取り消し ×
 - [`app/macros/reactions.ts`](src/app/macros/reactions.ts) — 投票のサーバーアクション `setReaction`。Cookie の現在値との差分だけを `helpful_count` / `problem_count` に反映する（公開中のマクロのみ・件数は負にならない）。Cookie は書き換え可能なので厳密な不正対策ではない
 - [`components/ShareMacroButton.tsx`](src/components/ShareMacroButton.tsx)（＋ `.module.scss`）— 詳細ページの共有ボタン。本体はアイコン＋「URLをコピー」（共有シートが使える端末では「URLを共有」）で、右端の ▼ で「ほかの共有方法」（いまは「Lodestone用にコピー」）のパネルが開く。BB コードはサーバーで作って props で受ける。判定とコピー処理は `useShareUrl`。停止中のマクロには出さない
