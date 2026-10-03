@@ -6,10 +6,16 @@ import styles from './PublishFromUrlForm.module.scss'
 
 // 投稿フォームと編集フォームで共通の、タイトル・説明・タグの入力欄と案内（プレースホルダ・改行の説明・既存タグの候補）。
 // 値は自分で持つ（React 19 のフォームアクションは、送信後に未制御の入力欄を初期値へ戻してしまうため。エラー時に入力が消えない）。
-export function MacroMetaFields({ initial, tagSuggestions }: { initial?: { title: string; description: string; tags: string[] }; tagSuggestions: string[] }) {
-  const [title, setTitle] = useState(initial?.title ?? '')
-  const [description, setDescription] = useState(initial?.description ?? '')
-  const [tags, setTags] = useState(initial?.tags.join(', ') ?? '')
+// controlled を渡すと、値は親が持つ（公開フォームが、入力途中の写しを保存・復元するため）。渡さなければ自分で持つ。
+export type MetaValues = { title: string; description: string; tags: string }
+
+export function MacroMetaFields({ initial, tagSuggestions, controlled }: { initial?: { title: string; description: string; tags: string[] }; tagSuggestions: string[]; controlled?: { value: MetaValues; onChange: (next: MetaValues) => void } }) {
+  const [local, setLocal] = useState<MetaValues>({ title: initial?.title ?? '', description: initial?.description ?? '', tags: initial?.tags.join(', ') ?? '' })
+  const { title, description, tags } = controlled?.value ?? local
+  const update = (patch: Partial<MetaValues>) => (controlled ? controlled.onChange({ ...controlled.value, ...patch }) : setLocal((prev) => ({ ...prev, ...patch })))
+  const setTitle = (value: string) => update({ title: value })
+  const setDescription = (value: string) => update({ description: value })
+  const setTags = (value: string) => update({ tags: value })
 
   // タグ欄は「確定済み（カンマの手前）」と「入力中の最後の語」に分けて扱う。
   const parts = tags.split(',')
