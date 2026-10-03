@@ -21,4 +21,7 @@
     text-underline-offset: 4px;
     &:hover { color: var(--text-strong); }
   }
+
+  // フィードのリンクはアイコン付き。
+  .feed { display: inline-flex; align-items: center; gap: 0.375rem; }
 }

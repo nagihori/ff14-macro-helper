@@ -43,6 +43,15 @@ export async function listPublishedMacros(): Promise<PublishedMacro[]> {
   return (rows as Row[]).map(toMacro)
 }
 
+// フィード用。新しい順の公開マクロと、公開日時（ISO 8601・UTC）。tag を渡すと、そのタグが付いたものだけ。
+export async function listFeedMacros(limit: number, tag?: string): Promise<{ macro: PublishedMacro; publishedIso: string }[]> {
+  const rows = await getSql().query(
+    `select ${columns}, to_char(m.published_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as published_iso ${from} where m.status = 'published' and ($2::text is null or $2 = any(m.tags)) order by m.published_at desc limit $1`,
+    [limit, tag ?? null],
+  )
+  return (rows as (Row & { published_iso: string })[]).map((row) => ({ macro: toMacro(row), publishedIso: row.published_iso }))
+}
+
 // 404 などで勧める公開マクロ。「役に立った」が多い順、同数なら新しい順。
 export async function listRecommendedMacros(limit = 3): Promise<PublishedMacro[]> {
   const rows = await getSql().query(`select ${columns} ${from} where m.status = 'published' order by m.helpful_count desc, m.published_at desc limit $1`, [limit])

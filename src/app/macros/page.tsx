@@ -6,7 +6,8 @@ import { listPublishedMacros, listSuspendedMacros } from '@/lib/published-macros
 import { withDescriptionParts } from '@/lib/published-macros/resolve-descriptions'
 import styles from './page.module.scss'
 
-export const metadata = { title: '公開マクロ' }
+// フィードリーダーが /macros から新着フィードを見つけられるよう、<link rel="alternate"> を付ける。
+export const metadata = { title: '公開マクロ', alternates: { types: { 'application/atom+xml': '/macros/feed.xml' } } }
 
 export default async function MacroLibraryPage({ searchParams }: PageProps<'/macros'>) {
   const { q } = await searchParams

@@ -41,6 +41,16 @@ export function CopyIcon(props: IconProps) {
   )
 }
 
+// フィード（RSS）のよくある形：点と、そこから広がる 2 本の電波。点だけは塗る。
+export function FeedIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="5" cy="19" r="1.4" fill="currentColor" stroke="none" />
+      <path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16" />
+    </Icon>
+  )
+}
+
 export function ArrowLeftIcon(props: IconProps) {
   return (
     <Icon {...props}>
