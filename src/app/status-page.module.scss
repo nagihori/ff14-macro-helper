@@ -1,0 +1,23 @@
+@use '../styles/mixins' as *;
+
+// 404・エラーなど、状態を知らせるページの共通レイアウト（not-found.tsx / error.tsx）。
+.page {
+  @include page-shell;
+  padding: 1.5rem;
+
+  @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+}
+
+.container {
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+.links { margin-top: 1.5rem; }
+
+// エラー ID。目立たせず、コピーしやすく。
+.digest {
+  margin-top: 1.5rem;
+  @include type(xs);
+  color: var(--text-muted);
+}

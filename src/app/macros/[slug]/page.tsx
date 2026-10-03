@@ -6,7 +6,8 @@ import { AdminMacroControls } from '@/components/AdminMacroControls'
 import { ActionButton } from '@/components/ActionButton'
 import { ActionGroup } from '@/components/ActionGroup'
 import { CopyMacroButton } from '@/components/CopyMacroButton'
-import { EditIcon, ThumbIcon, WarningIcon } from '@/components/icons'
+import { EditIcon } from '@/components/icons'
+import { MacroCardSection } from '@/components/MacroCardSection'
 import { MacroCodeBar } from '@/components/MacroCodeBar'
 import { MacroCodeView } from '@/components/MacroCodeView'
 import { MacroPreviewAccordion } from '@/components/MacroPreviewAccordion'
@@ -17,7 +18,6 @@ import { withDescriptionParts } from '@/lib/published-macros/resolve-description
 import { descriptionToPlainText } from '@/lib/published-macros/description-links'
 import { MacroDescription } from '@/components/MacroDescription'
 import { findDerivedMacros, findMacroForViewer, findPublishedMacro, findRelatedMacros, isMacroAuthor } from '@/lib/published-macros/repository'
-import type { PublishedMacro } from '@/lib/published-macros/types'
 import { buildEditorPath } from '@/lib/share/url'
 import { BRAND_NAME } from '@/lib/site-config'
 import { UI_TEXT } from '@/lib/ui-text'
@@ -41,29 +41,6 @@ export async function generateMetadata({ params }: PageProps<'/macros/[slug]'>):
     openGraph: { type: 'article', siteName: BRAND_NAME, locale: 'ja_JP', title, description, url: `/macros/${slug}` },
     twitter: { card: 'summary_large_image', title, description },
   }
-}
-
-// 「似たマクロ」「派生マクロ」共通のカード一覧。
-function MacroCardSection({ id, heading, items }: { id: string; heading: string; items: PublishedMacro[] }) {
-  if (items.length === 0) return null
-  return (
-    <section className={styles.related} aria-labelledby={id}>
-      <h2 id={id} className={styles.relatedHeading}>{heading}</h2>
-      <div className={styles.relatedList}>
-        {items.map((item) => (
-          <Link key={item.slug} href={`/macros/${item.slug}`} className={styles.relatedCard}>
-            <span className={styles.relatedTags}>{item.tags.map((tag) => `#${tag}`).join(' ')}</span>
-            <span className={styles.relatedTitle}>{item.title}</span>
-            <span className={styles.relatedDescription}>{descriptionToPlainText(item.descriptionParts ?? [{ type: 'text', text: item.description }])}</span>
-            <span className={styles.relatedReactions}>
-              <span className={styles.helpfulCount} title="役に立った"><ThumbIcon />{item.reactions.helpful}<span className={styles.srOnly}>件が役に立った</span></span>
-              <span className={styles.problemCount} title="不具合あり"><WarningIcon />{item.reactions.problem}<span className={styles.srOnly}>件が不具合あり</span></span>
-            </span>
-          </Link>
-        ))}
-      </div>
-    </section>
-  )
 }
 
 export default async function PublishedMacroPage({ params }: PageProps<'/macros/[slug]'>) {
