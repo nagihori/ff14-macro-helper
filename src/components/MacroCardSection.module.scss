@@ -1,0 +1,70 @@
+@use '../styles/mixins' as *;
+
+// 「似たマクロ」「派生マクロ」「おすすめ」などのカード一覧。
+.related { margin-top: 2.5rem; }
+
+.relatedHeading {
+  @include type(sm);
+  font-weight: 600;
+}
+
+.relatedList {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+
+  @media (min-width: $bp-sm) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.relatedCard {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  border-radius: var(--radius-2xl);
+  padding: 1rem;
+
+  &:hover { border-color: var(--border-default); }
+}
+
+.relatedTags {
+  @include type(xs);
+  color: var(--text-muted);
+}
+
+.relatedTitle {
+  @include type(sm);
+  font-weight: 600;
+}
+
+.relatedDescription {
+  @include type(xs);
+  color: var(--text-secondary);
+}
+
+.relatedReactions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  @include type(xs);
+}
+
+.helpfulCount,
+.problemCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.helpfulCount { color: light-dark(var(--emerald-800), var(--emerald-200)); }
+.problemCount { color: light-dark(var(--rose-800), var(--rose-200)); }
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

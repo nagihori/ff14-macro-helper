@@ -43,6 +43,12 @@ export async function listPublishedMacros(): Promise<PublishedMacro[]> {
   return (rows as Row[]).map(toMacro)
 }
 
+// 404 などで勧める公開マクロ。「役に立った」が多い順、同数なら新しい順。
+export async function listRecommendedMacros(limit = 3): Promise<PublishedMacro[]> {
+  const rows = await getSql().query(`select ${columns} ${from} where m.status = 'published' order by m.helpful_count desc, m.published_at desc limit $1`, [limit])
+  return (rows as Row[]).map(toMacro)
+}
+
 // sitemap 用。公開中のマクロの slug と公開日時（ISO 8601）だけを新しい順に返す（本文などは読まない）。
 export async function listSitemapEntries(): Promise<{ slug: string; publishedAt: string }[]> {
   const rows = await getSql().query(`select slug, to_char(published_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as published_at from macros where status = 'published' order by published_at desc`)
