@@ -1,0 +1,4 @@
+@use '../styles/mixins' as *;
+
+// 下のバー（40px）に収まる小さめのボタン。
+.copy { padding: 0.25rem 0.75rem; @include type(xs); font-weight: 600; }

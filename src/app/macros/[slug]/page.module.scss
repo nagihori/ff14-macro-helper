@@ -58,12 +58,13 @@
   font-weight: 600;
 }
 
-// 暗い面の上に、操作帯とコード本文を重ねる。
+// エディタと同じ面（ライトは薄い灰色・ダークは黒）の上に、操作帯とコード本文を重ねる。
 .codeBlock {
   margin-top: 0.75rem;
   overflow: hidden;
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
-  background: var(--surface-dark);
+  background: var(--surface-page-editor);
 }
 
 .descriptionLink {

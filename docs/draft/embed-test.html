@@ -1,0 +1,18 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>埋め込みテスト（別オリジン）</title>
+<style>body{font:16px/1.7 sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem}code{background:#eee;padding:0 .25em}textarea{width:100%;height:6rem}</style>
+<h1>埋め込みテスト</h1>
+<p>別のポートで配ることで、本物の外部サイトと同じ「別オリジン」で iframe を試せます。<code>python3 -m http.server 8000 -d docs/draft</code> のあと <code>http://localhost:8000/embed-test.html</code> を開きます。</p>
+<p>詳細ページの ▼ →「埋め込みコードをコピー」の内容を、下に貼って「表示」を押します（空なら、サンプルの slug を使います）。</p>
+<textarea id="code" placeholder='<iframe src="http://localhost:3000/embed/…" …></iframe>'></textarea>
+<p><button id="show">表示</button>　<label>slug <input id="slug" value="tmvecmtx"></label></p>
+<div id="out"></div>
+<script>
+  document.getElementById('show').onclick = () => {
+    const code = document.getElementById('code').value.trim()
+    document.getElementById('out').innerHTML = code || `<iframe src="http://localhost:3000/embed/${document.getElementById('slug').value}" width="100%" height="425" style="border:1px solid #d4d4d8;border-radius:8px" allow="clipboard-write"></iframe>`
+  }
+  document.getElementById('show').click()
+</script>
+<p>本文のつづき：ここに記事の文章が続く想定です。</p>

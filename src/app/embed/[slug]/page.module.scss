@@ -1,0 +1,11 @@
+@use '../../../styles/mixins' as *;
+
+// 埋め込み表示の外枠。中身（バー・コード・プレビュー）は components/EmbedViewer.module.scss。
+// 色はトークンのまま（light-dark）。?theme= の固定は、page.tsx が <html> の data-theme を書き換えて行う。
+.embed {
+  height: 100vh;
+  background: var(--surface-page);
+  color: var(--text-strong);
+}
+
+.missing { padding: 1rem; @include type(sm); color: var(--text-muted); a { text-decoration: underline; } }

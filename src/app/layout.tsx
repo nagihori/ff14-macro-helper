@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { HideInEmbed } from "@/components/HideInEmbed";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BRAND_NAME, DEFAULT_DESCRIPTION, DEFAULT_TITLE, GA_MEASUREMENT_ID } from "@/lib/site-config";
@@ -22,10 +23,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
-        <SiteHeader brandName={BRAND_NAME} />
+        <HideInEmbed><SiteHeader brandName={BRAND_NAME} /></HideInEmbed>
         {children}
-        <SiteFooter />
-        {GA_MEASUREMENT_ID && process.env.NODE_ENV === "production" && <GoogleAnalytics measurementId={GA_MEASUREMENT_ID} />}
+        <HideInEmbed><SiteFooter /></HideInEmbed>
+        {GA_MEASUREMENT_ID && process.env.NODE_ENV === "production" && <HideInEmbed><GoogleAnalytics measurementId={GA_MEASUREMENT_ID} /></HideInEmbed>}
       </body>
     </html>
   );

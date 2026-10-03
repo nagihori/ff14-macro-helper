@@ -19,6 +19,7 @@ import { descriptionToPlainText } from '@/lib/published-macros/description-links
 import { MacroDescription } from '@/components/MacroDescription'
 import { findDerivedMacros, findMacroForViewer, findPublishedMacro, findRelatedMacros, isMacroAuthor } from '@/lib/published-macros/repository'
 import { getDictionary } from '@/lib/commands/dictionary'
+import { buildEmbedCode } from '@/lib/share/embed'
 import { toLodestoneBBCode } from '@/lib/share/lodestone'
 import { tagPath } from '@/lib/published-macros/tags'
 import { buildEditorPath } from '@/lib/share/url'
@@ -62,6 +63,7 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
   const [[described], related, derived] = await Promise.all([withDescriptionParts([macro]), withDescriptionParts(relatedRaw), withDescriptionParts(derivedRaw)])
   const siteUrl = getSiteUrl()
   const lodestoneBBCode = macro.status === 'published' ? toLodestoneBBCode({ title: macro.title, description: descriptionToPlainText(described.descriptionParts ?? []), body: macro.body, url: `${siteUrl}/macros/${macro.slug}`, siteUrl, brand: BRAND_NAME }, getDictionary()) : null
+  const embedCode = macro.status === 'published' ? buildEmbedCode({ siteUrl, slug: macro.slug, title: macro.title, lineCount: macro.body.split('\n').length }) : null
 
   return (
     <main className={styles.page}>
@@ -88,7 +90,7 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
           <ActionGroup className={styles.actions}>
             <CopyMacroButton text={macro.body} />
             <ActionButton icon={<EditIcon />} variant="secondary" href={editHref}>{UI_TEXT.editInEditor}</ActionButton>
-            {macro.status === 'published' && <ShareMacroButton title={macro.title} path={`/macros/${macro.slug}`} lodestoneBBCode={lodestoneBBCode ?? undefined} />}
+            {macro.status === 'published' && <ShareMacroButton title={macro.title} path={`/macros/${macro.slug}`} lodestoneBBCode={lodestoneBBCode ?? undefined} embedCode={embedCode ?? undefined} />}
           </ActionGroup>
           <section className={styles.reactions}>
             <PublishedMacroReactions macroSlug={macro.slug} initialHelpful={macro.reactions.helpful} initialProblem={macro.reactions.problem} />
