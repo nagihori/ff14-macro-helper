@@ -278,6 +278,11 @@ $severity-wave: (
   border: 1px solid var(--border-default);
 }
 
+// 検索結果（コマンドと雛形を並べる）。両方に当たったときは、コマンドの窓を半分の高さにする。
+.results { display: flex; flex-direction: column; gap: 0.75rem; }
+.resultHeading { padding-inline: 0.25rem; margin-bottom: 0.25rem; @include type(xs); font-weight: 700; color: var(--text-muted); }
+.halfList { max-height: 9.5rem; }
+
 .placeholderList {
   overflow: hidden;
   border-radius: var(--radius-sm);

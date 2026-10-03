@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { EditorGuide } from '@/components/EditorGuide'
 import { PageHero } from '@/components/PageHero'
 import { MacroWorkbench } from '@/components/MacroWorkbench'
+import { loadTemplates } from '@/lib/published-macros/templates'
 import { decodeDocument } from '@/lib/share/url'
 import { BRAND_NAME } from '@/lib/site-config'
 import styles from './page.module.scss'
@@ -34,7 +35,9 @@ export async function generateMetadata({ searchParams }: PageProps<'/'>): Promis
   }
 }
 
-export default function Home() {
+export default async function Home() {
+  // 雛形（タグ「雛形」の公開マクロ）は、サーバーが 1 時間ごとに取り直して渡す。DB に届かなければ空で、雛形なしで動く。
+  const templates = await loadTemplates()
   return (
     <div className={styles.page}>
       <div className={styles.hero}>
@@ -45,7 +48,7 @@ export default function Home() {
           lead="FFXIVのゲーム内マクロを編集・診断。コマンドの検索とヘルプ表示もできます。"
         />
       </div>
-      <MacroWorkbench />
+      <MacroWorkbench templates={templates} />
       <div className={styles.guide}>
         <EditorGuide />
       </div>

@@ -17,6 +17,9 @@ import { halfWidthLength } from '@/lib/macro/text-width'
 import { MAX_LINE_LENGTH, MAX_LINES } from '@/lib/macro/lint'
 import { getDictionary } from '@/lib/commands/dictionary'
 import { searchCommands } from '@/lib/commands/search'
+import { insertTemplate, isEditorEmpty } from '@/lib/templates/apply'
+import { searchTemplates, type TemplateMacro } from '@/lib/templates/search'
+import { TemplateList, type TemplateUse } from './TemplateList'
 import { getCheckedBody, getEditorOrigin, loadStoredDraft, loadStoredOrigin, saveStoredDraft, saveStoredOrigin, setEditorDraft, setEditorOrigin, subscribeCheckedBody } from '@/lib/share/editor-draft'
 import { createShareId } from '@/app/share-actions'
 import { copyTextAsync } from '@/lib/clipboard'
@@ -98,7 +101,7 @@ const WHOLE_LINE_DIAGNOSTIC_CODES = new Set(['line-length-exceeded', 'line-count
 const subscribeNothing = () => () => {}
 
 // UI はここでモデルを表示するだけ。文字数・構文・コマンドの意味は lib/macro が判断する（AGENTS.md）。
-export function MacroWorkbench() {
+export function MacroWorkbench({ templates }: { templates: TemplateMacro[] }) {
   // マクロは必ず「/」から書き始めるので、1行目に「/」を入れておく（?m= の共有URLやペーストで上書きされる）。
   // 触る前はコマンド補完を出さず、右側の検索の案内を読めるようにする（editorTouched）。
   const [body, setBody] = useState('/')
@@ -209,6 +212,8 @@ export function MacroWorkbench() {
     () => searchCommands(commandSearchQuery, dictionary),
     [commandSearchQuery],
   )
+  const templateResults = useMemo(() => searchTemplates(commandSearchQuery, templates), [commandSearchQuery, templates])
+  const editorEmpty = isEditorEmpty(body)
   const placeholderCompletion = useMemo(
     () => getPlaceholderCompletion(body, cursor, dictionary),
     [body, cursor],
@@ -327,6 +332,33 @@ export function MacroWorkbench() {
     }
 
     const nextCursor = cursor + name.length + separator.length
+    setBody(newBody)
+    setCursor(nextCursor)
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus()
+      textareaRef.current?.setSelectionRange(nextCursor, nextCursor)
+    })
+  }
+
+  // 雛形を使う。置き換えは、その雛形をアレンジ元として記録する（公開するときの「アレンジ元」になる）。
+  // 挿入（先頭／カーソルの下）は断片の使い方なので、アレンジ元は変えない。行数の上限を超えるときは入れない。
+  function applyTemplate(template: TemplateMacro, how: TemplateUse) {
+    let newBody = template.body
+    let nextCursor = template.body.length
+    if (how === 'replace') {
+      setEditorOrigin(template.slug)
+      saveStoredOrigin(template.slug)
+    } else {
+      const result = insertTemplate(body, cursor, template.body, how)
+      if (!result.ok) {
+        setNotice(`挿入するとマクロの行数の上限（${MAX_LINES} 行）を超えます。`)
+        return
+      }
+      newBody = result.body
+      nextCursor = result.cursor
+    }
+    setNotice(null)
+    setEditorTouched(true)
     setBody(newBody)
     setCursor(nextCursor)
     requestAnimationFrame(() => {
@@ -796,8 +828,8 @@ export function MacroWorkbench() {
             type="search"
             value={commandSearchQuery}
             onChange={handleCommandSearchChange}
-            placeholder="コマンドを検索（例: ac、パーティ、ターゲット）"
-            aria-label="コマンドを検索"
+            placeholder="コマンド・雛形を検索（例: ac、パーティ、製作）"
+            aria-label="コマンドと雛形を検索"
             className={styles.searchInput}
           />
           {!logPlayback && (
@@ -806,8 +838,12 @@ export function MacroWorkbench() {
             </p>
           )}
           {commandSearchQuery.trim() ? (
-            commandSearchResults.length > 0 ? (
-              <ul className={styles.suggestionList}>
+            <div className={styles.results}>
+            {commandSearchResults.length > 0 && (
+              <section>
+              {templateResults.length > 0 && <h3 className={styles.resultHeading}>コマンド（{commandSearchResults.length}）</h3>}
+              {/* コマンドと雛形の両方に当たったときは、結果の窓を半分ずつにして、雛形も見えるようにする。 */}
+              <ul className={templateResults.length > 0 ? `${styles.suggestionList} ${styles.halfList}` : styles.suggestionList}>
                 {commandSearchResults.map((command) => {
                   const isExpanded = expandedSearchCommandId === command.id
                   const sentences = splitSentences(command.description)
@@ -867,9 +903,18 @@ export function MacroWorkbench() {
                   )
                 })}
               </ul>
-            ) : (
-              <p className={styles.hint}>一致するコマンドがありません。</p>
-            )
+              </section>
+            )}
+            {templateResults.length > 0 && (
+              <section>
+                <h3 className={styles.resultHeading}>雛形（{templateResults.length}）</h3>
+                <TemplateList items={templateResults} editorEmpty={editorEmpty} onUse={applyTemplate} compact={commandSearchResults.length > 0} />
+              </section>
+            )}
+            {commandSearchResults.length === 0 && templateResults.length === 0 && (
+              <p className={styles.hint}>一致するコマンド・雛形がありません。</p>
+            )}
+            </div>
           ) : logPlayback ? (
             <>
             <LogList entries={logPlayback.entries.slice(0, logPlayback.revealedCount)} />
@@ -878,8 +923,15 @@ export function MacroWorkbench() {
           ) : (
             <>
               <p className={styles.hint}>
-                コマンド名・短縮名・説明から検索できます。先頭の「/」は省略できます。エディタに直接「/」を入力しても候補が表示されます。
+                コマンド名・短縮名・説明、公開マクロの雛形から検索できます。先頭の「/」は省略できます。エディタに直接「/」を入力しても候補が表示されます。
               </p>
+              {/* 何も書いていないあいだは、雛形のおすすめを出して、空のエディタで固まらないようにする。 */}
+              {editorEmpty && templates.length > 0 && (
+                <section>
+                  <h3 className={styles.resultHeading}>雛形から始める</h3>
+                  <TemplateList items={templates.slice(0, 4)} editorEmpty onUse={applyTemplate} compact />
+                </section>
+              )}
               {visibleCompletion ? (
                 <ul className={styles.suggestionList}>
                   {visibleCompletion.candidates.map((command, index) => {
