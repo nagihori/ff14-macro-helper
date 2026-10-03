@@ -15,10 +15,12 @@ type Props = {
   title?: string
   disabled?: boolean
   className?: string
+  // 別タブで開くリンク（href と一緒に使う）。
+  external?: boolean
 } & ({ href: string; onClick?: never } | { href?: never; onClick: () => void })
 
 // 非エンジニア向けの、アイコン付きの丸ボタン（ボタン／リンク兼用）。
-export function ActionButton({ icon, children, variant = 'primary', feedback = 'idle', title, disabled, className: extraClassName, href, onClick }: Props) {
+export function ActionButton({ icon, children, variant = 'primary', feedback = 'idle', title, disabled, className: extraClassName, external, href, onClick }: Props) {
   const className = [styles.button, styles[variant], extraClassName].filter(Boolean).join(' ')
   const content =
     feedback === 'copied' ? (
@@ -40,7 +42,7 @@ export function ActionButton({ icon, children, variant = 'primary', feedback = '
 
   if (href !== undefined) {
     return (
-      <Link href={href} className={className} title={title}>
+      <Link href={href} className={className} title={title} {...(external ? { target: '_blank', rel: 'noopener' } : {})}>
         {content}
       </Link>
     )

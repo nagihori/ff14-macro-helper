@@ -51,6 +51,15 @@ export function FeedIcon(props: IconProps) {
   )
 }
 
+// X（旧 Twitter）のロゴ。ほかのアイコンと違い、塗りで描く。
+export function XIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path fill="currentColor" stroke="none" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </Icon>
+  )
+}
+
 // 別タブで開くリンクの印（枠から右上へ出る矢印）。
 export function ExternalLinkIcon(props: IconProps) {
   return (

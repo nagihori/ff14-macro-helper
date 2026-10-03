@@ -69,6 +69,7 @@
 - [`lib/templates/search.ts`](src/lib/templates/search.ts) / [`apply.ts`](src/lib/templates/apply.ts) — 雛形（タグ「雛形」の公開マクロ）の検索（空白区切りの AND・全角半角と先頭の `/` `#` を無視・タイトル＞タグ＞説明＞本文の順位）と、本文への差し込み（先頭／カーソルの下／空なら置き換え・行数の上限を超えるなら入れない）。純粋・単体テストあり
 - [`lib/published-macros/templates.ts`](src/lib/published-macros/templates.ts) — 雛形一覧の読み込み（30 件・役に立った順）。サーバーのメモリに 1 時間持つ（DB に届かないときは空を 1 分だけ覚える）。トップの `page.tsx` が `MacroWorkbench` に渡す
 - [`components/TemplateList.tsx`](src/components/TemplateList.tsx)（＋ `.module.scss`）— 雛形の一覧。エディタの検索結果と、空のエディタでの「雛形から始める」で共通。「使う」は、空なら読み込み、書いてあるなら「先頭に挿入／カーソルの下に挿入／本文を置き換える」を選ばせる。ダブルクリックはコマンド候補と同じ操作感で、選ばずにすぐ入れる（空なら読み込み、書いてあるならカーソルの下に挿入）
+- [`lib/share/x.ts`](src/lib/share/x.ts) — X（旧 Twitter）の投稿画面を開く URL（intent）。文面は「マクロ名 URL #タグ…」で、説明文は入れない（純粋・単体テストあり）。ハッシュタグは `site-config.ts` の `SHARE_HASHTAGS`（環境変数、既定 `FF14,マクロ工房`）
 - [`lib/share/lodestone.ts`](src/lib/share/lodestone.ts) — マクロを Lodestone 掲示板の BB コード（タイトルのリンク行、`[hb]` で畳んだ説明文と色付き本文、末尾にサイトへのリンク。形は `docs/for_marketing.md` の sample）へ書き出す純粋な関数。色は `[hb]` の明るい背景用に固定（単体テスト `lodestone.test.ts`）
 - [`lib/macro/double-slash.ts`](src/lib/macro/double-slash.ts) — 行頭「/」の直後の「/」（手癖の「//」）を「/」に戻す純粋な関数
 - [`components/ActionButton.tsx`](src/components/ActionButton.tsx)（＋ `.module.scss`）— 非エンジニア向けのアイコン付き丸ボタン（ボタン／リンク兼用）。`publish` は公開／投稿系の差し色（`pill-action-publish`。ライブラリの「自作マクロを投稿」・投稿フォームの送信も同じ）。`feedback` でコピー結果（チェック／バツ＋文言）に切り替わる
@@ -87,7 +88,7 @@
 - [`components/PublishedMacroLibrary.tsx`](src/components/PublishedMacroLibrary.tsx) — 公開マクロ一覧の UI。タイトル・説明・`#タグ` を同じ検索欄で絞り込む（空白区切りの AND 検索。上のタグ一覧のクリックは検索語へ追加、カード内タグはタグ別一覧ページ `/macros/tag/…` へのリンク。データは親ページが DB から取得して `allMacros` で渡す）
 - [`components/PublishedMacroReactions.tsx`](src/components/PublishedMacroReactions.tsx) — 「役に立った」「不具合あり」ボタン。件数はサーバー集計で、押した直後は先に表示を動かしてサーバーの返答で確定する。同一ブラウザの重複は Cookie で防ぎ、アイコン付き（役に立った＝親指／不具合あり＝警告）。投票後も両件数を緑／赤で表示し、自分の側は太字＋取り消し ×
 - [`app/macros/reactions.ts`](src/app/macros/reactions.ts) — 投票のサーバーアクション `setReaction`。Cookie の現在値との差分だけを `helpful_count` / `problem_count` に反映する（公開中のマクロのみ・件数は負にならない）。Cookie は書き換え可能なので厳密な不正対策ではない
-- [`components/ShareMacroButton.tsx`](src/components/ShareMacroButton.tsx)（＋ `.module.scss`）— 詳細ページの共有ボタン。本体はアイコン＋「URLをコピー」（共有シートが使える端末では「URLを共有」）で、右端の ▼ で「ほかの共有方法」（「Lodestone用にコピー」「埋め込みコードをコピー」）のパネルが開く。BB コードはサーバーで作って props で受ける。判定とコピー処理は `useShareUrl`。停止中のマクロには出さない
+- [`components/ShareMacroButton.tsx`](src/components/ShareMacroButton.tsx)（＋ `.module.scss`）— 詳細ページの共有ボタン。本体はアイコン＋「URLをコピー」（共有シートが使える端末では「URLを共有」）で、右端の ▼ で「ほかの共有方法」（「Xで共有」「Lodestone用にコピー」「埋め込みコードをコピー」）のパネルが開く。BB コードはサーバーで作って props で受ける。判定とコピー処理は `useShareUrl`。停止中のマクロには出さない
 - [`components/useShareUrl.ts`](src/components/useShareUrl.ts) — 詳細ページの共有処理。タッチ端末で共有に対応していれば OS の共有シート、それ以外はページ URL をコピー（クエリは含めない）
 - [`components/MacroCodeBar.tsx`](src/components/MacroCodeBar.tsx) — 詳細ページのコードブロック上部の操作帯（copy / edit / share）
 - [`components/MacroCodeView.tsx`](src/components/MacroCodeView.tsx)（＋ `.module.scss`）— 詳細ページのコード本文。エディタと同じ `buildHighlight` で色分けする読み取り専用の表示（サーバーコンポーネント。波線・背景の警告は付けない。面はエディタと同じ（ライトは薄い灰色・ダークは黒）で、色もテーマに追従（`$highlight-tones` の tone））

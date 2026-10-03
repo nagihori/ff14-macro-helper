@@ -20,10 +20,11 @@ import { MacroDescription } from '@/components/MacroDescription'
 import { findDerivedMacros, findMacroForViewer, findPublishedMacro, findRelatedMacros, isMacroAuthor } from '@/lib/published-macros/repository'
 import { getDictionary } from '@/lib/commands/dictionary'
 import { buildEmbedCode } from '@/lib/share/embed'
+import { buildXShareUrl } from '@/lib/share/x'
 import { toLodestoneBBCode } from '@/lib/share/lodestone'
 import { tagPath } from '@/lib/published-macros/tags'
 import { buildEditorPath } from '@/lib/share/url'
-import { BRAND_NAME } from '@/lib/site-config'
+import { BRAND_NAME, SHARE_HASHTAGS } from '@/lib/site-config'
 import { getSiteUrl } from '@/lib/site-url'
 import { UI_TEXT } from '@/lib/ui-text'
 import styles from './page.module.scss'
@@ -63,6 +64,7 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
   const [[described], related, derived] = await Promise.all([withDescriptionParts([macro]), withDescriptionParts(relatedRaw), withDescriptionParts(derivedRaw)])
   const siteUrl = getSiteUrl()
   const lodestoneBBCode = macro.status === 'published' ? toLodestoneBBCode({ title: macro.title, description: descriptionToPlainText(described.descriptionParts ?? []), body: macro.body, url: `${siteUrl}/macros/${macro.slug}`, siteUrl, brand: BRAND_NAME }, getDictionary()) : null
+  const xShareUrl = macro.status === 'published' ? buildXShareUrl({ title: macro.title, url: `${siteUrl}/macros/${macro.slug}`, hashtags: SHARE_HASHTAGS }) : null
   const embedCode = macro.status === 'published' ? buildEmbedCode({ siteUrl, slug: macro.slug, title: macro.title, lineCount: macro.body.split('\n').length }) : null
 
   return (
@@ -90,7 +92,7 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
           <ActionGroup className={styles.actions}>
             <CopyMacroButton text={macro.body} />
             <ActionButton icon={<EditIcon />} variant="secondary" href={editHref}>{UI_TEXT.editInEditor}</ActionButton>
-            {macro.status === 'published' && <ShareMacroButton title={macro.title} path={`/macros/${macro.slug}`} lodestoneBBCode={lodestoneBBCode ?? undefined} embedCode={embedCode ?? undefined} />}
+            {macro.status === 'published' && <ShareMacroButton title={macro.title} path={`/macros/${macro.slug}`} xShareUrl={xShareUrl ?? undefined} lodestoneBBCode={lodestoneBBCode ?? undefined} embedCode={embedCode ?? undefined} />}
           </ActionGroup>
           <section className={styles.reactions}>
             <PublishedMacroReactions macroSlug={macro.slug} initialHelpful={macro.reactions.helpful} initialProblem={macro.reactions.problem} />
