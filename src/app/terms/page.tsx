@@ -2,7 +2,7 @@ import { LegalDocument } from '@/components/LegalDocument'
 
 export const metadata = { title: '利用規約' }
 
-const ISSUES_URL = 'https://github.com/nagihori/ff14-macro-helper/issues'
+const X_POST_URL = 'https://x.com/variekirk/status/2105880487671792044'
 
 export default function TermsPage() {
   return (
@@ -53,7 +53,7 @@ export default function TermsPage() {
       <p>この規約は日本法に従って解釈されます。</p>
 
       <h2 id="contact">9. 連絡先</h2>
-      <p>本サービスに関するお問い合わせは <a href={ISSUES_URL}>GitHub の Issues</a> へお願いします。公開の場なので、個人情報は書き込まないでください。</p>
+      <p>本サービスに関するお問い合わせは <a href={X_POST_URL}>X(@variekirk)の該当ポストリプライ欄</a> へお願いします。公開の場なので、個人情報は書き込まないでください。</p>
     </LegalDocument>
   )
 }

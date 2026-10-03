@@ -2,7 +2,7 @@ import { LegalDocument } from '@/components/LegalDocument'
 
 export const metadata = { title: 'プライバシーポリシー' }
 
-const ISSUES_URL = 'https://github.com/nagihori/ff14-macro-helper/issues'
+const X_POST_URL = 'https://x.com/variekirk/status/2105880487671792044'
 
 export default function PrivacyPage() {
   return (
@@ -63,7 +63,7 @@ export default function PrivacyPage() {
       <p>必要に応じてこのポリシーを改定することがあります。内容を変更したときは、このページで知らせます。</p>
 
       <h2>9. 連絡先</h2>
-      <p>情報の削除のご依頼や、お問い合わせは <a href={ISSUES_URL}>GitHub の Issues</a> へお願いします。公開の場なので、個人情報は書き込まないでください。</p>
+      <p>情報の削除のご依頼や、お問い合わせは <a href={X_POST_URL}>X(@variekirk)の該当ポストリプライ欄</a> へお願いします。公開の場なので、個人情報は書き込まないでください。</p>
     </LegalDocument>
   )
 }
