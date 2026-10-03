@@ -168,3 +168,12 @@
 }
 
 .accordion[open] > .accordionSummary::before { transform: rotate(90deg); }
+
+// 「投稿されるマクロ」（共有 URL の本文）。エディタと同じ面の上にコードを出す。
+.macroPreview {
+  overflow: hidden;
+  margin-top: 0.5rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--surface-page-editor);
+}

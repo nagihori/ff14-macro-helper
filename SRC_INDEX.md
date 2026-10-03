@@ -28,6 +28,8 @@
 - [`app/s/[id]/page.tsx`](src/app/s/%5Bid%5D/page.tsx)（＋ `not-found.tsx`）— 短縮共有 URL（`/s/{id}`）。保存した本文を `/?m=…` へ 307 で転送する。期限切れ・存在しない ID は `not-found.tsx`（404）。設計は `docs/publish.md` の「短縮共有 URL」
 - [`app/share-actions.ts`](src/app/share-actions.ts) — サーバーアクション `createShareId`。エディタの共有 URL を短縮するため本文を保存し ID を返す。失敗・上限・DB 障害のときは null（呼び出し側が長い URL にする）。作成者は Cookie `ff14-macro-creator` で区別
 - [`lib/share/short-links.ts`](src/lib/share/short-links.ts) / [`short-link-store.ts`](src/lib/share/short-link-store.ts) — 短縮共有 URL の取り決め（180 日・100 件・1 時間 300 件）と ID・ハッシュ（純粋・単体テストあり）／保存と参照（`shared_macros`）
+- [`lib/share/submit-draft.ts`](src/lib/share/submit-draft.ts) — 公開フォームの入力途中（共有 URL・タイトル・説明・タグ・公開名）の写し。sessionStorage（エディタの本文の写しと同じ理由。ブラウザのタブを閉じると消える）。投稿に成功したら消す。単体テストあり
+- [`components/SharedMacroPreview.tsx`](src/components/SharedMacroPreview.tsx) — 公開フォームの「投稿されるマクロ」（共有 URL の本文をコード表示。エディタに切り替えて見比べなくてよいように）。長い URL はクライアントで読み、短縮 URL は `previewSharedMacro`（サーバーアクション）で本文を引く
 - [`lib/share/short-link-expand.ts`](src/lib/share/short-link-expand.ts) — 公開フォームに貼られた短縮 URL（このサイトの `/s/{id}` だけ）の判別と、サーバーでの展開（長い共有 URL に直す）。単体テストは判別のみ
 - [`lib/clipboard.ts`](src/lib/clipboard.ts) — 非同期に決まる文字列のコピー（Safari 対策で ClipboardItem に Promise を渡す）
 - [`app/og/share/route.tsx`](src/app/og/share/route.tsx) — 共有 URL の共有カード画像（`/og/share?m=…`）。`m` のマクロをその場で描く（DB は読まない）。壊れた・長すぎる `m` は名前と羽ペンだけのカード。同じ `m` は同じ画像なので CDN に長く持たせる
@@ -93,7 +95,7 @@
 - [`components/CopyMacroButton.tsx`](src/components/CopyMacroButton.tsx) — 詳細ページの「マクロテキストをコピー」主ボタン（`ActionButton` ＋ `useCopyFeedback`）
 - [`components/useMacroCheck.tsx`](src/components/useMacroCheck.tsx) — コピー・共有URL・公開の直前に本文を解析し、エラー／警告があれば `MacroCheckDialog` を挟む `guard()` を返すフック（打ちかけの最終行も確定扱いで解析）
 - [`components/MacroCheckDialog.tsx`](src/components/MacroCheckDialog.tsx)（＋ `.module.scss`）— 問題の一覧（重大度・行番号・内容）を見せ、「エディタで修正する」か「このまま進む」を選ばせる確認ダイアログ
-- [`components/PublishFromUrlForm.tsx`](src/components/PublishFromUrlForm.tsx)（＋ `.module.scss`）— 共有URL・タイトル・説明（複数行・5行まで・空行不可のテキストエリア）・タグ（初回のみ公開名）の投稿フォーム（連続マクロの案内は折りたたみ）（保存済みの公開名は「変更する」リンクで入力欄に切り替わる）。`?url=` で共有URL を初期入力。タグ欄は既存タグを弱いリンクで下に並べ、入力中の語で絞り込む。URL に `from=`（アレンジ元）があれば元マクロを表示。送信は `submitMacro`（useActionState）で、サーバー側のエラーを文で一覧表示する。未ログインなら `loginSlot` を出す
+- [`components/PublishFromUrlForm.tsx`](src/components/PublishFromUrlForm.tsx)（＋ `.module.scss`）— 共有URL・タイトル・説明（複数行・5行まで・空行不可のテキストエリア）・タグ（初回のみ公開名）の投稿フォーム（連続マクロの案内は折りたたみ）（保存済みの公開名は「変更する」リンクで入力欄に切り替わる）。`?url=` で共有URL を初期入力。タグ欄は既存タグを弱いリンクで下に並べ、入力中の語で絞り込む。URL に `from=`（アレンジ元）があれば元マクロを表示。送信は `submitMacro`（useActionState）で、サーバー側のエラーを文で一覧表示する。未ログインなら `loginSlot` を出す 入力途中は sessionStorage に写し（`lib/share/submit-draft.ts`）、タブを移って戻っても消えない。優先順は `?url=`（エディタの「公開する」）→ 写し（違う共有 URL で来たら、前の写しは捨てる）。投稿に成功したらサーバーアクションが `slug` を返し、写しを消してから詳細ページへ移る。
 - [`components/AuthButton.tsx`](src/components/AuthButton.tsx)（＋ `.module.scss`）— Discord ログイン（公式ガイドラインの Blurple ボタン・白ロゴ＝`DiscordLogo`）／ログアウト（サーバーコンポーネント。`redirectTo` でログイン後の戻り先を指定）
 - [`components/OwnerMacroControls.tsx`](src/components/OwnerMacroControls.tsx) — 詳細ページの投稿者向け操作欄（編集リンク・二段階確認つきの削除）。見た目は `AdminMacroControls.module.scss` を共用
 - [`components/MacroMetaFields.tsx`](src/components/MacroMetaFields.tsx) — 投稿・編集フォーム共通の、タイトル・説明・タグ（既存タグの候補つき）の入力欄と案内、連続マクロの折りたたみ案内（`ContinuedMacroGuide`）。値は自前の state で持ち、エラーで入力が消えない
