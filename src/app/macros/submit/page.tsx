@@ -5,7 +5,7 @@ import { listPublishedMacros, listTags } from '@/lib/published-macros/repository
 import { getUserHandle } from '@/lib/published-macros/store'
 import styles from './page.module.scss'
 
-export const metadata = { title: '共有URLから投稿' }
+export const metadata = { title: '共有URLから投稿', robots: { index: false } }
 
 export default async function PublishMacroPage({ searchParams }: PageProps<'/macros/submit'>) {
   const { url } = await searchParams
