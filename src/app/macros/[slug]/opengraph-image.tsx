@@ -4,6 +4,7 @@ import { analyze } from '@/lib/macro/analyze'
 import { buildHighlight } from '@/lib/macro/highlight'
 import { halfWidthLength } from '@/lib/macro/text-width'
 import type { HighlightSegment, HighlightSegmentKind } from '@/lib/macro/types'
+import { BRAND_GLYPH_VIEWBOX, brandGlyphDataUrl } from '@/lib/og/brand-glyph'
 import { BRAND_ICON_DATA_URL } from '@/lib/og/brand-icon'
 import { loadFont } from '@/lib/og/font'
 import { findPublishedMacro } from '@/lib/published-macros/repository'
@@ -16,12 +17,13 @@ export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
 const BG = '#14161c'
-const PANEL = '#0d0f14'
+const PANEL = 'rgba(14, 16, 21, 0.78)' // 半透明。後ろの羽ペンが暗く透ける
 const LINE = '#2a2e38'
 const TEXT = '#f2f3f5'
 const MUTED = '#8a8f9a'
-const ACCENT = '#eb0949' // ブランドの赤（favicon）
-const AMBER = '#fbbf24' // ダークテーマの差し色（タグ）
+const ACCENT = '#cf3050' // ブランドの赤（favicon）を少し落ち着かせた色
+const AMBER = '#f0b72b' // ダークテーマの差し色（タグ）
+const GLYPH = '#f4dd4b' // 羽ペンの黄色（favicon）
 
 // エディタのハイライト（styles/_mixins.scss の $highlight-tones）の、暗い背景用の色。
 const TOKEN_COLORS: Partial<Record<HighlightSegmentKind, string>> = {
@@ -35,8 +37,8 @@ const TOKEN_COLORS: Partial<Record<HighlightSegmentKind, string>> = {
   'arg-number': '#2dd4bf',
 }
 
-const CODE_LINES = 4 // カードに出す行数
-const CODE_WIDTH = 46 // 1 行に収める幅（半角換算。全角は 2）
+const CODE_LINES = 5 // カードに出す行数
+const CODE_WIDTH = 40 // 1 行に収める幅（半角換算。全角は 2）
 
 const clip = (value: string, max: number) => (value.length > max ? `${value.slice(0, max - 1)}…` : value)
 
@@ -66,45 +68,52 @@ export default async function Image({ params }: { params: Promise<{ slug: string
 
   const title = macro ? clip(macro.title, 44) : BRAND_NAME
   const tags = macro ? macro.tags.slice(0, 4).map((tag) => `#${tag}`) : []
-  const author = macro ? `投稿者 ${macro.authorHandle}` : ''
   const allLines = macro ? buildHighlight(analyze(macro.body, getDictionary(), { complete: true }).lines, getDictionary()) : []
   const codeLines = allLines.slice(0, CODE_LINES).map((line) => clipSegments(line.segments, CODE_WIDTH))
   const more = allLines.length > CODE_LINES ? `… 全 ${allLines.length} 行` : ''
 
-  const drawn = `${BRAND_NAME}${title}${tags.join('')}${author}${more}${codeLines.map((line) => line.map((segment) => segment.text).join('')).join('')}`
+  const drawn = `${BRAND_NAME}${title}${tags.join('')}${more}${codeLines.map((line) => line.map((segment) => segment.text).join('')).join('')}`
   const font = await loadFont(drawn)
   // フォントが取れなかったときは、文字化けする日本語を描かない。
   const showText = font !== null || /^[\x20-\x7e]*$/.test(drawn)
 
+  // 羽ペンは大きく右に置き、コードのパネルを半透明で重ねる（パネルの外は明るく、重なる所は暗く透ける）。
+  const glyphHeight = 440
+  const glyphWidth = Math.round((glyphHeight * BRAND_GLYPH_VIEWBOX.width) / BRAND_GLYPH_VIEWBOX.height)
+
   return new ImageResponse(
     (
-      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: BG, color: TEXT, padding: '52px 64px', fontFamily: font ? 'Noto Sans JP' : 'sans-serif' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={BRAND_ICON_DATA_URL} width={64} height={64} alt="" style={{ borderRadius: 14 }} />
-          {/* マクロが無いカードでは、名前が大きなタイトルとして出るので、ここでは繰り返さない。 */}
-          {macro && <div style={{ display: 'flex', fontSize: 30, fontWeight: 700, color: '#c9ccd3' }}>{showText ? BRAND_NAME : 'macro'}</div>}
-        </div>
+      <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: BG, color: TEXT, padding: '48px 84px 44px', fontFamily: font ? 'Noto Sans JP' : 'sans-serif' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={brandGlyphDataUrl(GLYPH)} width={glyphWidth} height={glyphHeight} alt="" style={{ position: 'absolute', right: 30, top: 96, opacity: 0.92 }} />
 
-        {showText && (
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', fontSize: title.length > 24 ? 50 : 64, fontWeight: 700, lineHeight: 1.25 }}>{title}</div>
-            {codeLines.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', marginTop: 32, padding: '24px 32px', background: PANEL, border: `2px solid ${LINE}`, borderLeft: `8px solid ${ACCENT}`, borderRadius: 16, fontSize: 28, lineHeight: 1.5 }}>
-                {codeLines.map((segments, index) => (
-                  <div key={index} style={{ display: 'flex', whiteSpace: 'pre', minHeight: 42 }}>
-                    {segments.map((segment, i) => <span key={i} style={{ color: TOKEN_COLORS[segment.kind] ?? '#e4e4e7' }}>{segment.text}</span>)}
-                  </div>
-                ))}
-                {more && <div style={{ display: 'flex', color: MUTED }}>{more}</div>}
-              </div>
-            )}
+        {/* マクロが無いカード（停止中・存在しない）は、名前を大きく中央寄りに出し、右下の名前は繰り返さない。 */}
+        {showText && <div style={{ display: 'flex', fontSize: macro ? (title.length > 24 ? 46 : 56) : 76, fontWeight: 700, lineHeight: 1.25, marginLeft: 12, marginTop: macro ? 0 : 190 }}>{title}</div>}
+
+        {showText && codeLines.length > 0 && (
+          // 左の赤い帯は、枠の角丸で切り抜く（border-left だと角に斜めの継ぎ目が出る）。
+          <div style={{ display: 'flex', marginTop: 28, background: PANEL, border: `2px solid ${LINE}`, borderRadius: 20, overflow: 'hidden', boxShadow: '0 18px 40px rgba(0, 0, 0, 0.45)' }}>
+            <div style={{ display: 'flex', width: 34, background: ACCENT }} />
+            <div style={{ display: 'flex', flexDirection: 'column', padding: '26px 36px', fontSize: 28, lineHeight: 1.5 }}>
+              {codeLines.map((segments, index) => (
+                <div key={index} style={{ display: 'flex', whiteSpace: 'pre', minHeight: 42 }}>
+                  {segments.map((segment, i) => <span key={i} style={{ color: TOKEN_COLORS[segment.kind] ?? '#e4e4e7' }}>{segment.text}</span>)}
+                </div>
+              ))}
+              {more && <div style={{ display: 'flex', color: MUTED }}>{more}</div>}
+            </div>
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 26 }}>
-          <div style={{ display: 'flex', gap: 20, color: AMBER }}>{showText && tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
-          <div style={{ display: 'flex', color: MUTED }}>{showText ? author : ''}</div>
+        <div style={{ display: 'flex', flex: 1, alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', gap: 24, marginLeft: 46, fontSize: 28, fontWeight: 700, color: AMBER }}>{showText && tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
+          {macro && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 28, fontWeight: 700, color: '#c9ccd3' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={BRAND_ICON_DATA_URL} width={48} height={48} alt="" style={{ borderRadius: 11 }} />
+              {showText ? BRAND_NAME : ''}
+            </div>
+          )}
         </div>
       </div>
     ),
