@@ -12,7 +12,7 @@ export function ArticleCta() {
       </p>
       <div className={styles.actions}>
         <ActionButton icon={<EditIcon />} variant="primary" href="/">マクロエディタを開く</ActionButton>
-        <ActionButton icon={<PreviewIcon />} variant="secondary" href="/macros">公開マクロを探す</ActionButton>
+        <ActionButton icon={<PreviewIcon />} variant="secondary" href="/macros" className={styles.secondary}>公開マクロを探す</ActionButton>
       </div>
     </aside>
   )

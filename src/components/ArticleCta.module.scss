@@ -11,3 +11,7 @@
 
 .text { @include type(sm); line-height: 1.8; color: var(--text-secondary); }
 .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+
+// 副のボタンは、案内の面（灰色がかった背景）の上で、枠だけだと沈むので、カードの面（ライトは白）を敷く。
+// ActionButton の secondary（背景なし）に、読み込み順で負けないよう、.cta を付けて詳細度を上げる。
+.cta .secondary { background: var(--surface-card); }
