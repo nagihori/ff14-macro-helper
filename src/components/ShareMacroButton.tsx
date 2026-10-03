@@ -3,14 +3,14 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { UI_TEXT } from '@/lib/ui-text'
 import { ActionButton } from './ActionButton'
-import { ChevronDownIcon, CopyIcon, ShareIcon } from './icons'
+import { ChevronDownIcon, CopyIcon, ShareIcon, XIcon } from './icons'
 import { useCopyFeedback } from './useCopyFeedback'
 import { useShareUrl } from './useShareUrl'
 import styles from './ShareMacroButton.module.scss'
 
 // 詳細ページの共有ボタン。本体は「URLをコピー」（共有シートが使える端末では「URLを共有」。useShareUrl 参照）で、
-// 右端の ▼ を押すとほかの共有方法（Lodestone 用の BB コード・ブログ用の埋め込みコード）が開く。共有方法が増えても本体のボタンは増やさない。
-// BB コード・埋め込みコードはサーバー側で作って渡す（lib/share/lodestone.ts・embed.ts）。
+// 右端の ▼ を押すとほかの共有方法（X で共有・Lodestone 用の BB コード・ブログ用の埋め込みコード）が開く。共有方法が増えても本体のボタンは増やさない。
+// X の共有 URL・BB コード・埋め込みコードはサーバー側で作って渡す（lib/share/x.ts・lodestone.ts・embed.ts）。
 // ▼ のパネルの 1 項目。コピーするだけの項目なので、それぞれがコピー結果の表示を持つ。
 function CopyMenuItem({ text, children }: { text: string; children: React.ReactNode }) {
   const { state, run } = useCopyFeedback()
@@ -21,7 +21,7 @@ function CopyMenuItem({ text, children }: { text: string; children: React.ReactN
   )
 }
 
-export function ShareMacroButton({ title, path, lodestoneBBCode, embedCode }: { title: string; path: string; lodestoneBBCode?: string; embedCode?: string }) {
+export function ShareMacroButton({ title, path, xShareUrl, lodestoneBBCode, embedCode }: { title: string; path: string; xShareUrl?: string; lodestoneBBCode?: string; embedCode?: string }) {
   const { state, share, usesShareSheet } = useShareUrl(title, path)
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -47,12 +47,13 @@ export function ShareMacroButton({ title, path, lodestoneBBCode, embedCode }: { 
     }
   }, [open])
 
+  const hasMenu = Boolean(xShareUrl || lodestoneBBCode || embedCode)
   const main = (
-    <ActionButton icon={<ShareIcon />} variant="secondary" feedback={state} onClick={share} className={lodestoneBBCode || embedCode ? styles.main : undefined}>
+    <ActionButton icon={<ShareIcon />} variant="secondary" feedback={state} onClick={share} className={hasMenu ? styles.main : undefined}>
       {usesShareSheet ? UI_TEXT.share : UI_TEXT.copyPageUrl}
     </ActionButton>
   )
-  if (!lodestoneBBCode && !embedCode) return main
+  if (!hasMenu) return main
 
   return (
     <div ref={rootRef} className={styles.split}>
@@ -70,6 +71,7 @@ export function ShareMacroButton({ title, path, lodestoneBBCode, embedCode }: { 
       </button>
       {open && (
         <div id={panelId} className={styles.panel}>
+          {xShareUrl && <ActionButton icon={<XIcon />} variant="ghost" href={xShareUrl} external>{UI_TEXT.shareOnX}</ActionButton>}
           {lodestoneBBCode && <CopyMenuItem text={lodestoneBBCode}>{UI_TEXT.copyLodestone}</CopyMenuItem>}
           {embedCode && <CopyMenuItem text={embedCode}>{UI_TEXT.copyEmbed}</CopyMenuItem>}
         </div>
