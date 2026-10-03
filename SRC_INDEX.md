@@ -12,7 +12,7 @@
 
 ## ページ
 
-- [`app/page.tsx`](src/app/page.tsx)（＋ `page.module.scss`）— トップ。コンパクトな `PageHero`（マクロエディタ）、`MacroWorkbench` の順に表示
+- [`app/page.tsx`](src/app/page.tsx)（＋ `page.module.scss`）— トップ。コンパクトな `PageHero`（マクロエディタ）、`MacroWorkbench` の順に表示 共有 URL（`/?m=…`）には `generateMetadata` で共有カード用の title・description・画像（`/og/share`）を `m` から作る（検索には載せない）。
 - [`app/macros/page.tsx`](src/app/macros/page.tsx) — 公開マクロ一覧。`?q=` を受け取り `PublishedMacroLibrary` へ初期検索語として渡す。「自作マクロを投稿」（新規投稿の入口）は `PublishedMacroLibrary` の件数の横。ページ最下部に Discord ログイン／ログアウト。ログイン中なら「公開停止中」のマクロへの入口も出す（管理者は全件、投稿者は自分の分）
 - [`app/macros/tag/[tag]/feed.xml/route.ts`](src/app/macros/tag/%5Btag%5D/feed.xml/route.ts) — タグ別の新着 Atom フィード（`/macros/tag/タグ名/feed.xml`）。タグ別一覧の `<link rel="alternate">` から見つけられる。該当 0 件は 404
 - [`lib/feed/macro-feed.ts`](src/lib/feed/macro-feed.ts) — 新着フィードの Response を作る（全体用とタグ別で共通。DB 読み取りと説明内 URL の展開を含む）
@@ -20,6 +20,8 @@
 - [`lib/feed/atom.ts`](src/lib/feed/atom.ts) — Atom 1.0 の組み立て（純粋な関数。XML のエスケープ・制御文字の除去・単体テスト `atom.test.ts`）
 - [`app/macros/tag/[tag]/page.tsx`](src/app/macros/tag/%5Btag%5D/page.tsx)（＋ `.module.scss`）— タグ別一覧（`/macros/tag/タグ名`）。そのタグの公開マクロを新しい順に、一覧と同じカード（`PublishedMacroCardList`）で出し。「公開マクロ一覧へ」はセカンダリボタン、一緒に付いているタグへ内部リンクを張る。戻るボタンの横に「このタグのフィード」の小さなリンク。0 件は 404。`MIN_INDEXABLE_TAG_MACROS` 件未満は noindex（`lib/published-macros/tags.ts`）
 - [`app/macros/[slug]/page.tsx`](src/app/macros/%5Bslug%5D/page.tsx) — 公開マクロの詳細。本文・タグ・リアクション・投稿者・派生マクロ（このマクロをアレンジ元にした公開中のもの、`findDerivedMacros`）・似たマクロ（共通タグ順、`findRelatedMacros`）を表示し、コードブロック上部に操作帯（`MacroCodeBar`：copy / edit / share）、本文は `MacroCodeView` で色分け、直下に `MacroPreviewAccordion`（動作プレビュー）、その下にアクションボタン群の「マクロテキストをコピー」（主）・「エディタで編集」・共有（副）で本文を（アレンジ元の slug を `&from=` で持たせて） `?m=` に載せてトップへ送る。停止中のマクロは管理者と投稿者本人にだけ表示し（`findMacroForViewer`）、停止の知らせを出す。管理者にはさらに `AdminMacroControls`
+- [`app/og/share/route.tsx`](src/app/og/share/route.tsx) — 共有 URL の共有カード画像（`/og/share?m=…`）。`m` のマクロをその場で描く（DB は読まない）。壊れた・長すぎる `m` は名前と羽ペンだけのカード。同じ `m` は同じ画像なので CDN に長く持たせる
+- [`lib/og/macro-card.tsx`](src/lib/og/macro-card.tsx) — マクロの共有カードの描画（詳細ページの `opengraph-image` と共有 URL のカードで共通）
 - [`lib/og/font.ts`](src/lib/og/font.ts) — OGP 画像用の日本語フォント（描く文字だけの部分集合を Google Fonts から取得。失敗したら null）
 - [`lib/og/brand-glyph.ts`](src/lib/og/brand-glyph.ts) — ブランドの羽ペン（`docs/favicon.svg` のグリフ）の path と、色を指定できる SVG の data URL。OGP 画像の大きな飾り
 - [`lib/og/brand-icon.ts`](src/lib/og/brand-icon.ts) — ブランドアイコン（favicon を 192px に縮小）の data URL。OGP 画像に埋め込む
