@@ -118,7 +118,7 @@ unset DATABASE_URL
 
 プライバシーポリシー 6 節のとおり、アカウント（ログイン情報）の削除と、停止中の投稿の取り下げは、依頼を受けて運営者が手で行う。接続のしかたは上の「本番 DB へのマイグレーション」と同じ（`DATABASE_URL` を `read -rs` でその場に渡す）。ここでは `psql` を使う例を書くが、Neon の SQL Editor でも同じ。
 
-**1. 依頼者を特定する。** 依頼は GitHub Issues に公開で来るので、本人確認の材料は公開名と投稿の slug。Discord の ID は聞かない。投稿の `slug` から `author_id` を引く。
+**1. 依頼者を特定する。** 依頼は X（利用規約・ポリシーに載せた連絡先のポストへのリプライ）に公開で来るので、本人確認の材料は公開名と投稿の slug。Discord の ID は聞かない。投稿の `slug` から `author_id` を引く。
 
 ```sql
 select m.slug, m.title, m.status, m.author_handle, u.id as user_id
@@ -154,14 +154,14 @@ commit;
 
 ## 本番公開チェックリスト
 
-- [ ] **Vercel プロジェクト**：リポジトリに `.vercel/project.json` がない（未リンク）。プロジェクトを作成して GitHub と接続する。
-- [ ] **環境変数**（Vercel の Environment Variables）：`DATABASE_URL` / `AUTH_SECRET` / `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` / `ADMIN_DISCORD_IDS`。ローカルと同じ値を流用せず、`AUTH_SECRET` は本番用に生成し直す。
-- [ ] **SITE_URL**：共有カード（og:image など）の絶対 URL の基準。独自ドメインを使うなら `https://<本番ドメイン>`（末尾スラッシュなし）を設定する。未設定でも Vercel 上では自動で補われる。
-- [ ] **DB を分ける**：ローカルと本番で同じ Neon DB を共有しない（Neon のブランチ機能で開発用を分けると楽）。本番 DB へのマイグレーションは、上の「本番 DB へのマイグレーション」の手順で行う。
-- [ ] **サンプルの扱い**：`seed-samples.mjs` のサンプル 3 件を本番に入れるか決める（入れない、または公開後に管理者から停止する）。
-- [ ] **Discord アプリ**：OAuth2 の Redirects に `https://<本番ドメイン>/api/auth/callback/discord` を追加。General Information の利用規約 URL に `/terms`、プライバシーポリシー URL に `/privacy` を設定。
+- [x] **Vercel プロジェクト**：GitHub と接続済み（`.vercel/repo.json` でリンク。`project.json` はない形式で、`.vercel` は git 管理外）。デプロイ確認済み。
+- [x] **環境変数**（Vercel の Environment Variables）：`DATABASE_URL` / `AUTH_SECRET` / `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` / `ADMIN_DISCORD_IDS`。ローカルと同じ値を流用せず、`AUTH_SECRET` は本番用に生成し直す。
+- [x] **SITE_URL**：共有カード（og:image など）の絶対 URL の基準。独自ドメインを使うなら `https://<本番ドメイン>`（末尾スラッシュなし）を設定する。未設定でも Vercel 上では自動で補われる。
+- [x] **DB を分ける**：ローカルと本番で同じ Neon DB を共有しない（Neon のブランチ機能で開発用を分けると楽）。本番 DB へのマイグレーションは、上の「本番 DB へのマイグレーション」の手順で行う。
+- [x] **サンプルの扱い**：`seed-samples.mjs` のサンプル 3 件を本番に入れるか決める（入れない、または公開後に管理者から停止する）。→ 入れない。
+- [x] **Discord アプリ**：OAuth2 の Redirects に `https://<本番ドメイン>/api/auth/callback/discord` を追加。General Information の利用規約 URL に `/terms`、プライバシーポリシー URL に `/privacy` を設定。
 - [ ] **ホストの信頼**：Vercel では通常 `AUTH_URL` は不要。ログインに失敗する場合は `AUTH_TRUST_HOST=true` を確認する。
-- [ ] **規約・ポリシーの確認**：一般的な雛形なので、公開前に内容を通読する。連絡先は現在 GitHub Issues（メールや SNS にするなら `terms` / `privacy` の `ISSUES_URL` を差し替える）。
+- [x] **規約・ポリシーの確認**：一般的な雛形なので、公開前に内容を通読する。連絡先は X のポストのリプライ欄（`terms` / `privacy` の `X_POST_URL`）。通読済み。
 - [ ] **管理者の動作確認**：本番で自分の Discord ID が管理者になり、公開停止／再公開ができる。
 - [ ] **通しの確認**：ログイン → 投稿 → 一覧・詳細に出る → 投票 → 停止 → 本人に停止の知らせが出る。
 
@@ -172,7 +172,7 @@ commit;
 **濫用対策・運用**
 - NG ワード確認（タイトル・説明・タグ・本文）
 - レート制限、連投・重複投稿の歯止め
-- 通報の受付窓口（現状は GitHub Issues）
+- 通報の受付窓口（現状は X のポストのリプライ欄）
 - 停止の理由・実行者・日時の記録（現状は `suspended_at` のみ）と、本人への理由の通知
 - リアクションの不正対策（Cookie は利用者が書き換えられる。IP やアカウントとの併用など）
 - X OAuth の追加（`.env.example` に枠だけある）
