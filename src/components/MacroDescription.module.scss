@@ -1,10 +1,13 @@
 @use '../styles/mixins' as *;
 
-// 説明文の `コード`（等幅）。詳細ページ・一覧のカードで共通。コピーしやすいよう、折り返しても 1 つの塊に見える背景を付ける。
+// 説明文の `コード`。マクロ本文のコマンドと同じ青（$highlight-tones の command-known）の等幅で、うすい青の背景を付ける。
+// 文字色まで変えるのは、等幅と灰色の背景だけだと、表示がおかしいだけに見えるため。
+// 詳細ページ・一覧のカードで共通。折り返しても 1 つの塊に見える（box-decoration-break）。
 .code {
   padding: 0.0625em 0.375em;
   border-radius: var(--radius-sm);
-  background: var(--surface-hover);
+  color: tone(blue-600, blue-400);
+  background: light-dark(color-mix(in oklab, var(--blue-600) 10%, transparent), color-mix(in oklab, var(--blue-400) 16%, transparent));
   font-family: var(--font-mono);
   font-size: 0.9em;
   overflow-wrap: anywhere;
