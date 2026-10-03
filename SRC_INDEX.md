@@ -45,6 +45,7 @@
 - [`app/opengraph-image.tsx`](src/app/opengraph-image.tsx) — サイト共通の共有カード（名前と羽ペンだけ）。トップ・公開マクロ一覧・規約類など、専用のカードを持たないページに効く。詳細・タグ別一覧・共有 URL は、それぞれが上書きする（`/?m=` は `generateMetadata` の画像が優先される）
 - [`app/macros/tag/[tag]/opengraph-image.tsx`](src/app/macros/tag/%5Btag%5D/opengraph-image.tsx) — タグ別一覧の共有カード。タグ名を大きく、パネルにそのタグの新しいマクロ名（5 件・「… 全 N 件」）、足元に一緒に付いているタグ。0 件は共通のカード
 - [`lib/og/macro-card.tsx`](src/lib/og/macro-card.tsx) — 共有カードの描画（詳細ページ・共有 URL・タグ別一覧・サイト共通で共通）。マクロの冒頭のハイライト、または `listLines`（マクロ名の一覧など）をパネルに出す
+- [`lib/og/fit-tags.ts`](src/lib/og/fit-tags.ts) — 共有カードの足元のタグを、右下のアイコンと名前にぶつからない幅に収まる分だけにする（文字幅の見積もり・先頭から順・入りきらない最初のタグで止める。単体テストあり）
 - [`lib/og/font.ts`](src/lib/og/font.ts) — OGP 画像用の日本語フォント（描く文字だけの部分集合を Google Fonts から取得。失敗したら null）
 - [`lib/og/brand-glyph.ts`](src/lib/og/brand-glyph.ts) — ブランドの羽ペン（`docs/favicon.svg` のグリフ）の path と、色を指定できる SVG の data URL。OGP 画像の大きな飾り
 - [`lib/og/brand-icon.ts`](src/lib/og/brand-icon.ts) — ブランドアイコン（favicon を 192px に縮小）の data URL。OGP 画像に埋め込む
