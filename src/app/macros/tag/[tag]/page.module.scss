@@ -6,10 +6,12 @@
 .container {
   width: 100%;
   max-width: 72rem;
-  margin: 0 auto;
+  margin-inline: auto;
+  // 余白は /macros（PublishedMacroLibrary）と同じ。タブを移っても、ヒーローの位置がずれないように。
   padding: 1.5rem 1.5rem 3rem;
 
   @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+  @include mobile { padding-block-start: 1rem; padding-inline: 1rem; }
 }
 
 .relatedTags {
@@ -30,6 +32,7 @@
 
 // 戻るボタンと、そのタグのフィードへの小さなリンクを 1 行に置く。
 .topRow {
+  margin-top: 1.5rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

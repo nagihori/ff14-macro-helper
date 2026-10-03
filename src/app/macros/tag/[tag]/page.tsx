@@ -51,8 +51,8 @@ export default async function MacroTagPage({ params }: PageProps<'/macros/tag/[t
 
   return (
     <main className={styles.page}>
-      <PageHero compact eyebrow="TAG" title={`#${tag}`} lead={`「#${tag}」のついた公開マクロ ${macros.length} 件です。`} />
       <div className={styles.container}>
+        <PageHero compact eyebrow="TAG" title={`#${tag}`} lead={`「#${tag}」のついた公開マクロ ${macros.length} 件です。`} />
         <div className={styles.topRow}>
           <ActionButton icon={<ArrowLeftIcon />} variant="secondary" href="/macros">{UI_TEXT.backToLibrary}</ActionButton>
           <a href={`${tagPath(tag)}/feed.xml`} className={styles.feed}><FeedIcon />{UI_TEXT.tagFeed}</a>
