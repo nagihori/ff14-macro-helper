@@ -1,13 +1,16 @@
 @use '../styles/mixins' as *;
 
 // 公開マクロのカード一覧（/macros と、タグ別一覧 /macros/tag/[tag] で共通）。
+// 3 列にする幅。Surface Pro など 960px 前後の画面でも 3 列で見られるよう、サイト共通の $bp-xl（1280px）とは別に持つ。
+$cards-three-columns: 960px;
+
 .grid {
   display: grid;
   gap: 1rem;
   margin-top: 0.75rem;
 
   @media (min-width: $bp-md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  @media (min-width: $bp-xl) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (min-width: $cards-three-columns) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 .card {
