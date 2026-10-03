@@ -283,6 +283,8 @@ $severity-wave: (
 .resultHeading { padding-inline: 0.25rem; margin-bottom: 0.25rem; @include type(xs); font-weight: 700; color: var(--text-muted); }
 .halfList { max-height: 9.5rem; }
 
+.undoButton { margin-left: 0.25rem; text-decoration: underline; text-underline-offset: 3px; &:hover { color: var(--text-strong); } }
+
 .placeholderList {
   overflow: hidden;
   border-radius: var(--radius-sm);

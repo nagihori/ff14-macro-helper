@@ -15,6 +15,8 @@ export const UI_TEXT = {
   feed: '新着フィード',
   tagFeed: 'このタグのフィード',
   backToLibrary: '公開マクロ一覧へ',
+  // エディタの本文を空にする（元に戻せる）。
+  clearEditor: 'エディタを空にする',
   editInEditor: 'エディタで編集',
   preview: '動作プレビュー',
   // サイト全体のタブ（全ページ共通ヘッダー）。
@@ -32,5 +34,6 @@ export const BAR_TEXT = {
   copy: 'copy',
   share: 'share',
   preview: 'preview',
+  clear: 'clear',
   edit: 'edit',
 } as const
