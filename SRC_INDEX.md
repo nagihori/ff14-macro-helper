@@ -14,6 +14,8 @@
 
 - [`app/page.tsx`](src/app/page.tsx)（＋ `page.module.scss`）— トップ。コンパクトな `PageHero`（マクロエディタ）、`MacroWorkbench` の順に表示
 - [`app/macros/page.tsx`](src/app/macros/page.tsx) — 公開マクロ一覧。`?q=` を受け取り `PublishedMacroLibrary` へ初期検索語として渡す。「自作マクロを投稿」（新規投稿の入口）は `PublishedMacroLibrary` の件数の横。ページ最下部に Discord ログイン／ログアウト。ログイン中なら「公開停止中」のマクロへの入口も出す（管理者は全件、投稿者は自分の分）
+- [`app/macros/feed.xml/route.ts`](src/app/macros/feed.xml/route.ts) — 新着公開マクロの Atom フィード（`/macros/feed.xml`、最新 30 件、1 時間ごとに再生成）。本文は載せない。`/macros` の `<link rel="alternate">` から見つけられる。DB に届かなければ 503
+- [`lib/feed/atom.ts`](src/lib/feed/atom.ts) — Atom 1.0 の組み立て（純粋な関数。XML のエスケープ・制御文字の除去・単体テスト `atom.test.ts`）
 - [`app/macros/tag/[tag]/page.tsx`](src/app/macros/tag/%5Btag%5D/page.tsx)（＋ `.module.scss`）— タグ別一覧（`/macros/tag/タグ名`）。そのタグの公開マクロを新しい順に、一覧と同じカード（`PublishedMacroCardList`）で出し。「公開マクロ一覧へ」はセカンダリボタン、一緒に付いているタグへ内部リンクを張る。0 件は 404。`MIN_INDEXABLE_TAG_MACROS` 件未満は noindex（`lib/published-macros/tags.ts`）
 - [`app/macros/[slug]/page.tsx`](src/app/macros/%5Bslug%5D/page.tsx) — 公開マクロの詳細。本文・タグ・リアクション・投稿者・派生マクロ（このマクロをアレンジ元にした公開中のもの、`findDerivedMacros`）・似たマクロ（共通タグ順、`findRelatedMacros`）を表示し、コードブロック上部に操作帯（`MacroCodeBar`：copy / edit / share）、本文は `MacroCodeView` で色分け、直下に `MacroPreviewAccordion`（動作プレビュー）、その下にアクションボタン群の「マクロテキストをコピー」（主）・「エディタで編集」・共有（副）で本文を（アレンジ元の slug を `&from=` で持たせて） `?m=` に載せてトップへ送る。停止中のマクロは管理者と投稿者本人にだけ表示し（`findMacroForViewer`）、停止の知らせを出す。管理者にはさらに `AdminMacroControls`
 - [`app/macros/[slug]/opengraph-image.tsx`](src/app/macros/%5Bslug%5D/opengraph-image.tsx) — 詳細ページの共有カード（1200×630）。公開中のマクロのタイトル・説明・タグ・投稿者名を描く。日本語フォントは描く文字だけを Google Fonts から取得。title / description / `og:*` は同階層の `page.tsx` の `generateMetadata`
