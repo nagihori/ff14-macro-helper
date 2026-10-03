@@ -1,64 +1,11 @@
 @use '../../../styles/mixins' as *;
 
-// 埋め込み表示。高さは lib/share/embed.ts の embedHeight と対応する（ヘッダー 48・フッター 40・コードの 1 行 22・余白）。
-// 色はトークンのまま（light-dark）。?theme= の固定は、この枠の color-scheme で効く。
+// 埋め込み表示の外枠。中身（バー・コード・プレビュー）は components/EmbedViewer.module.scss。
+// 色はトークンのまま（light-dark）。?theme= の固定は、page.tsx が <html> の data-theme を書き換えて行う。
 .embed {
-  min-height: 100vh;
+  height: 100vh;
   background: var(--surface-page);
   color: var(--text-strong);
 }
-
-.frame { display: flex; flex-direction: column; min-height: 100vh; }
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  height: 48px;
-  padding: 0 0.75rem 0 1rem;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.title {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  @include type(sm);
-  font-weight: 700;
-}
-
-// ヘッダーに収まる小さめのボタン。
-.embed .copy { flex: none; padding: 0.25rem 0.75rem; @include type(xs); }
-
-// コードは常に暗い面。1 行 22px 固定（高さの計算に使う）。長い行は折り返さず横にスクロール。
-.embed .code {
-  flex: 1;
-  margin: 0;
-  padding: 16px 1rem;
-  background: var(--surface-dark);
-  font-size: 14px;
-  line-height: 22px;
-}
-
-.footer {
-  display: flex;
-  align-items: center;
-  height: 40px;
-  padding: 0 1rem;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.open {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  @include type(xs);
-  color: var(--text-muted);
-  &:hover { color: var(--text-strong); text-decoration: underline; }
-}
-
-.logo { border-radius: 4px; }
 
 .missing { padding: 1rem; @include type(sm); color: var(--text-muted); a { text-decoration: underline; } }

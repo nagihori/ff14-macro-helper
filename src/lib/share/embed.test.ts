@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { buildEmbedCode, embedHeight } from './embed'
 
 describe('埋め込みコード', () => {
-  it('高さは行数に比例し、0 行でも 1 行ぶんは確保する', () => {
-    expect(embedHeight(5) - embedHeight(4)).toBe(22)
-    expect(embedHeight(0)).toBe(embedHeight(1))
+  it('高さは行数に比例し、少ない行数は 5 行ぶん、多い行数は 12 行ぶんで止まる', () => {
+    expect(embedHeight(7) - embedHeight(6)).toBe(21)
+    expect(embedHeight(1)).toBe(embedHeight(5))
+    expect(embedHeight(15)).toBe(embedHeight(12))
   })
   it('src・高さ・allow・title を含み、title の特殊文字をエスケープする', () => {
     const code = buildEmbedCode({ siteUrl: 'https://example.com', slug: 'abc12345', title: 'A "B" <c> & d', lineCount: 15 })

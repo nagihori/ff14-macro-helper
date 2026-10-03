@@ -1,10 +1,12 @@
-// 埋め込み（iframe）のコードと高さ。表示側（app/embed/[slug]）の CSS と、この高さの計算をそろえておく。
-// 高さ＝ヘッダー 48 + コード（上下の余白 32 + 1 行 22 × 行数）+ 閉じた「動作プレビュー」59（本体 47 + 上の余白 12）+ フッター 40
-// + iframe の枠線 2 + 余裕 8（実測：15 行のマクロで 509。ブラウザで /embed/{slug} の各要素の高さを測って決めた）。
-const EMBED_CHROME_HEIGHT = 48 + 32 + 59 + 40 + 2 + 8
-const EMBED_LINE_HEIGHT = 22
+// 埋め込み（iframe）のコードと高さ。表示側（components/EmbedViewer の CSS）と、この高さの計算をそろえておく。
+// 高さ＝上のバー 44 + コード（上下の余白 24 + 1 行 21 × 見せる行数）+ 下のバー 40 + iframe の枠線 2 + 余裕 6。
+// 見せる行数は 5〜12 行に収める（高さを抑えるため。12 行を超えるマクロは、コードの中でスクロールする）。
+const EMBED_CHROME_HEIGHT = 44 + 24 + 40 + 2 + 6
+const EMBED_LINE_HEIGHT = 21
+const EMBED_MIN_LINES = 5
+const EMBED_MAX_LINES = 12
 
-export const embedHeight = (lineCount: number) => EMBED_CHROME_HEIGHT + EMBED_LINE_HEIGHT * Math.max(1, lineCount)
+export const embedHeight = (lineCount: number) => EMBED_CHROME_HEIGHT + EMBED_LINE_HEIGHT * Math.min(EMBED_MAX_LINES, Math.max(EMBED_MIN_LINES, lineCount))
 
 const escapeAttr = (text: string) => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
