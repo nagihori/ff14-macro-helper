@@ -19,11 +19,19 @@ const BB_COLORS: Partial<Record<HighlightSegmentKind, string>> = {
   'arg-number': '#0f766e',
 }
 
-// 投稿者が決めるタイトルは、他人の BB コードに紛れ込まないよう角括弧を全角にする。
-const sanitizeTitle = (title: string) => title.replace(/\[/g, '［').replace(/\]/g, '］')
+// 投稿者が決めるタイトル・説明は、他人の BB コードに紛れ込まないよう角括弧を全角にする。
+const sanitizeText = (text: string) => text.replace(/\[/g, '［').replace(/\]/g, '］')
 
+// 説明文は本文と区別できる落ち着いた色にする（[hb] の明るい背景で読める濃さ）。
+const DESCRIPTION_COLOR = '#505063'
+
+// 形（渚さんが Lodestone のプレビューで整えたもの。docs/for_marketing.md の sample）：
+//   [size=14][b][url=マクロのURL]タイトル[/url][/b][/size]　[size=10]ブランド名で開きます[/size]
+//   [hb]（説明文）
+//   （色付きの本文）
+//   [/hb][right][url=サイトのURL]« ブランド名で作成[/url][/right]
 export function toLodestoneBBCode(
-  { title, body, url, brand }: { title: string; body: string; url: string; brand: string },
+  { title, description, body, url, siteUrl, brand }: { title: string; description: string; body: string; url: string; siteUrl: string; brand: string },
   dictionary: CommandDefinition[],
 ): string {
   const { lines } = analyze(body, dictionary, { complete: true })
@@ -38,6 +46,10 @@ export function toLodestoneBBCode(
     }
     return runs.map((run) => (run.color ? `[color=${run.color}]${run.text}[/color]` : run.text)).join('')
   })
-  // [hb] の直後・[/hb] の直前に改行を入れると、折り畳みの中に空行ができる（実機確認済み）ので、本文に直接つなぐ。
-  return [`[b]${sanitizeTitle(title)}[/b]`, `[hb]${colored.join('\n')}[/hb]`, `[url=${url}]${brand}で作成[/url]`].join('\n')
+  const note = description.trim() ? `[color=${DESCRIPTION_COLOR}]${sanitizeText(description.trim())}[/color]\n` : ''
+  return [
+    `[size=14][b][url=${url}]${sanitizeText(title)}[/url][/b][/size]　[size=10]${brand}で開きます[/size]`,
+    `[hb]${note}${colored.join('\n')}`,
+    `[/hb][right][url=${siteUrl}/]« ${brand}で作成[/url][/right]`,
+  ].join('\n')
 }

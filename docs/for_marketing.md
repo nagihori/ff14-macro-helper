@@ -8,7 +8,7 @@
 ※ ボタンが増えてUIがくちゃくちゃにならないように配慮
 - [ ] ⭐︎ ブログパーツ化。
     - CodePenのようなミニマルな仕組みをプレビュー機能込みでiframe？で作って攻略サイトなどでの利用を促進する
-- [x] ⭐︎ LoadStoneに貼り付けやすいHTMLコードのコピー機能。→ 詳細ページ（公開中のみ）に「Lodestone用にコピー」。`[hb]` で畳み、構文ハイライトを `[color]` で付け、末尾に `[url]` で作成元リンク（`src/lib/share/lodestone.ts`）
+- [x] ⭐︎ LoadStoneに貼り付けやすいHTMLコードのコピー機能。→ 詳細ページ（公開中のみ）に「Lodestone用にコピー」。タイトルのリンク行＋`[hb]` で畳んだ説明文と構文ハイライト付き本文＋末尾にサイトへのリンク（形は下の sample）（`src/lib/share/lodestone.ts`）
     - [x] 使えるタグの調査
     - 実機で確認済み：`[` `<` `>` `&lt;` はそのまま表示される。`[hb]` の中はダークテーマでも背景が明るいため、色は明るい背景用に固定している。文字数は 10000 まで（改行は 1 文字）。未確認：`[hb]` のタイトル指定
 - [ ] X(Twitter)で共有したくなる仕組み（共有ボタンで十分かもしれないので優先度低）
@@ -52,3 +52,33 @@ LoadStoneで使えるタグ :
 [right]right[/right]
 [url=https://macro.eocl.me/]link[/url]
 [hb]accordion[/hb]
+
+### sample
+```
+[size=14][b][url=http://localhost:3000/macros/tmvecmtx]Lv91~95耐久40(CP489)[/url][/b][/size]　[size=10]FF14マクロヘルパーで開きます[/size]
+[hb][color=#505063]15行マクロです。ピーコック装備マテリアなしでも〇
+確信始まりですが最終確認入れてるので一発でできることなないです。[/color]
+[color=#1d4ed8]/ac[/color] 確信 [color=#be185d]<wait.3>[/color]
+[color=#1d4ed8]/ac[/color] マニピュレーション [color=#be185d]<wait.2>[/color]
+[color=#1d4ed8]/ac[/color] ヴェネレーション [color=#be185d]<wait.2>[/color]
+[color=#1d4ed8]/ac[/color] 最終確認 [color=#be185d]<wait.2>[/color]
+[color=#1d4ed8]/ac[/color] 長期倹約 [color=#be185d]<wait.2>[/color]
+[color=#1d4ed8]/ac[/color] 下地作業 [color=#be185d]<wait.3>[/color]
+[color=#1d4ed8]/ac[/color] イノベーション [color=#be185d]<wait.2>[/color]
+[color=#1d4ed8]/ac[/color] 下地加工 [color=#be185d]<wait.3>[/color]
+[color=#1d4ed8]/ac[/color] 下地加工 [color=#be185d]<wait.3>[/color]
+[color=#1d4ed8]/ac[/color] 下地加工 [color=#be185d]<wait.3>[/color]
+[color=#1d4ed8]/ac[/color] 下地加工 [color=#be185d]<wait.3>[/color]
+[color=#1d4ed8]/ac[/color] イノベーション [color=#be185d]<wait.2>[/color]
+[color=#1d4ed8]/ac[/color] グレートストライド [color=#be185d]<wait.2>[/color]
+[color=#1d4ed8]/ac[/color] ビエルゴの祝福 [color=#be185d]<wait.3>[/color]
+[color=#1d4ed8]/ac[/color] 作業 [color=#be185d]<wait.3>[/color]
+[/hb][right][url=http://localhost:3000/]« FF14マクロヘルパーで作成[/url][/right]
+```
+### sample code (変数名は適当です)
+```
+[size=14][b][url={SITE_URL}/macros/tmvecmtx]{macro_title}[/url][/b][/size]　[size=10]{BRAND_NAME}で開きます[/size]
+[hb]{description}
+{macrobody}
+[/hb][right][url=http://localhost:3000/]« {BRAND_NAME}で作成[/url][/right]
+```

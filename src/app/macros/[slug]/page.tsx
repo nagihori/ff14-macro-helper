@@ -55,10 +55,12 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
   if (!macro) notFound()
   const origin = macro.arrangedFrom
   const editHref = buildEditorPath({ version: 1, body: macro.body }, macro.slug)
-  const lodestoneBBCode = macro.status === 'published' ? toLodestoneBBCode({ title: macro.title, body: macro.body, url: `${getSiteUrl()}/macros/${macro.slug}`, brand: BRAND_NAME }, getDictionary()) : null
+
   const [relatedRaw, derivedRaw, mine] = await Promise.all([findRelatedMacros(slug), findDerivedMacros(slug), user ? isMacroAuthor(slug, user.id) : false])
   // 説明内の他マクロの URL をタイトルへ展開する（URL が無ければ DB には触らない）。似た・派生マクロのカードは全体がリンクなので、タイトルだけの文字にする。
   const [[described], related, derived] = await Promise.all([withDescriptionParts([macro]), withDescriptionParts(relatedRaw), withDescriptionParts(derivedRaw)])
+  const siteUrl = getSiteUrl()
+  const lodestoneBBCode = macro.status === 'published' ? toLodestoneBBCode({ title: macro.title, description: descriptionToPlainText(described.descriptionParts ?? []), body: macro.body, url: `${siteUrl}/macros/${macro.slug}`, siteUrl, brand: BRAND_NAME }, getDictionary()) : null
 
   return (
     <main className={styles.page}>

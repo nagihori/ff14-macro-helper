@@ -41,7 +41,7 @@
 - [`app/sitemap.ts`](src/app/sitemap.ts) — sitemap.xml。固定ページ＋公開中のマクロ詳細（`listSitemapEntries`）。1 時間ごとに再生成
 - [`lib/site-url.ts`](src/lib/site-url.ts) — サイトの絶対 URL の基準（`SITE_URL`）。共有カードの基準と、説明内のマクロ URL の判別で共用
 - [`lib/site-config.ts`](src/lib/site-config.ts) — サイト名・既定の title / description（`BRAND_NAME` `DEFAULT_TITLE` `DEFAULT_DESCRIPTION`）。layout・各ページ・OGP 画像が参照
-- [`lib/share/lodestone.ts`](src/lib/share/lodestone.ts) — マクロを Lodestone 掲示板の BB コード（`[hb]` で畳み、`[color]` で構文ハイライト、末尾に `[url]`）へ書き出す純粋な関数。色は `[hb]` の明るい背景用に固定（単体テスト `lodestone.test.ts`）
+- [`lib/share/lodestone.ts`](src/lib/share/lodestone.ts) — マクロを Lodestone 掲示板の BB コード（タイトルのリンク行、`[hb]` で畳んだ説明文と色付き本文、末尾にサイトへのリンク。形は `docs/for_marketing.md` の sample）へ書き出す純粋な関数。色は `[hb]` の明るい背景用に固定（単体テスト `lodestone.test.ts`）
 - [`lib/macro/double-slash.ts`](src/lib/macro/double-slash.ts) — 行頭「/」の直後の「/」（手癖の「//」）を「/」に戻す純粋な関数
 - [`components/ActionButton.tsx`](src/components/ActionButton.tsx)（＋ `.module.scss`）— 非エンジニア向けのアイコン付き丸ボタン（ボタン／リンク兼用）。`publish` は公開／投稿系の差し色（`pill-action-publish`。ライブラリの「自作マクロを投稿」・投稿フォームの送信も同じ）。`feedback` でコピー結果（チェック／バツ＋文言）に切り替わる
 - [`components/ActionGroup.tsx`](src/components/ActionGroup.tsx)（＋ `.module.scss`）— アクションボタン群の共通枠（エリア中央揃え・折り返し。スマホ幅では縦積み・幅いっぱい）
