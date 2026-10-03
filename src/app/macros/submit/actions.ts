@@ -1,14 +1,15 @@
 'use server'
 
 import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { validatePublish, type PublishInput } from '@/lib/published-macros/publish'
 import { getUserHandle, HandleTakenError, publishMacro } from '@/lib/published-macros/store'
+import { openShortLink } from '@/lib/share/short-link-store'
 import { expandShortShareUrl, parseShortShareUrl } from '@/lib/share/short-link-expand'
 import { getSiteUrl } from '@/lib/site-url'
 
-export type PublishState = { errors: string[] }
+// 成功したときは slug を返す（フォームが、入力途中の写しを消してから詳細ページへ移る）。
+export type PublishState = { errors: string[]; slug?: string }
 
 const text = (formData: FormData, key: string) => (typeof formData.get(key) === 'string' ? (formData.get(key) as string) : '')
 
@@ -40,5 +41,19 @@ export async function submitMacro(_previous: PublishState, formData: FormData): 
     console.error('[publish] 保存に失敗', error)
     return { errors: ['保存に失敗しました。時間をおいてもう一度お試しください。'] }
   }
-  redirect(`/macros/${slug}`)
+  return { errors: [], slug }
+}
+
+// 公開フォームの「投稿されるマクロ」の表示用。貼られた短縮共有 URL（/s/{id}）の本文を返す（長い共有 URL はクライアントで読める）。
+// このサイトの /s/{id} 以外、期限切れ、DB に届かないときは null。ログインは要らない（/s/{id} を開けば誰でも見られる内容）。
+export async function previewSharedMacro(shareUrl: string): Promise<string | null> {
+  if (typeof shareUrl !== 'string' || shareUrl.length > 300) return null
+  const site = new URL(getSiteUrl())
+  const id = parseShortShareUrl(shareUrl, [(await headers()).get('host'), site.host])
+  if (!id) return null
+  try {
+    return (await openShortLink(id))?.body ?? null
+  } catch {
+    return null
+  }
 }
