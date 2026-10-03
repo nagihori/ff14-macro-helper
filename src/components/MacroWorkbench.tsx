@@ -18,6 +18,8 @@ import { MAX_LINE_LENGTH, MAX_LINES } from '@/lib/macro/lint'
 import { getDictionary } from '@/lib/commands/dictionary'
 import { searchCommands } from '@/lib/commands/search'
 import { getCheckedBody, getEditorOrigin, loadStoredDraft, loadStoredOrigin, saveStoredDraft, saveStoredOrigin, setEditorDraft, setEditorOrigin, subscribeCheckedBody } from '@/lib/share/editor-draft'
+import { createShareId } from '@/app/share-actions'
+import { copyTextAsync } from '@/lib/clipboard'
 import { buildShareUrl, decodeDocument, readOriginFromShareUrl, readShareParam } from '@/lib/share/url'
 import type {
   CommandCategory,
@@ -539,14 +541,19 @@ export function MacroWorkbench() {
     return bodyCopy.run(() => navigator.clipboard.writeText(body))
   }
 
+  // 共有 URL は、短縮（/s/{id}）を試し、作れなければ従来の長い URL（?m=…）にする。
+  // 短縮はサーバーに本文を保存する。DB の障害・上限・通信失敗でも共有は止めない。
   function copyShareUrl() {
-    const url = buildShareUrl(analysis.document, window.location.href, getEditorOrigin())
+    const longUrl = buildShareUrl(analysis.document, window.location.href, getEditorOrigin())
+    const shareUrl = createShareId(analysis.document.body, getEditorOrigin())
+      .then((id) => (id ? `${window.location.origin}/s/${id}` : longUrl))
+      .catch(() => longUrl)
     return urlCopy.run(async () => {
       try {
-        await navigator.clipboard.writeText(url)
+        await copyTextAsync(shareUrl)
         setManualShareUrl(null)
       } catch (error) {
-        setManualShareUrl(url)
+        setManualShareUrl(await shareUrl)
         throw error
       }
     })
