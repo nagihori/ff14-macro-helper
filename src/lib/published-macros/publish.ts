@@ -33,6 +33,9 @@ export function validateMeta(input: MetaInput): ValidMeta {
   const title = input.title.trim()
   if (!title) errors.push('タイトルを入力してください。')
   else if (title.length > LIMITS.title) errors.push(`タイトルは ${LIMITS.title} 文字以内にしてください。`)
+  // タイトルは検索結果の見出し・OGP・Lodestone 用のコードにも使われる。審査なしの即時公開なので、スパムの置き場にならないよう URL は説明にだけ書けるようにする。
+  // 全角の「ｈｔｔｐ：／／」なども見逃さないよう NFKC にそろえてから見る。
+  else if (/https?:\/\/|www\./i.test(title.normalize('NFKC'))) errors.push('タイトルに URL は使えません。説明に書いてください。')
 
   // 説明は改行できる（最大 LIMITS.descriptionLines 行・空行は不可）。改行コードは \n にそろえる。
   const description = input.description.replace(/\r\n?/g, '\n').trim()
