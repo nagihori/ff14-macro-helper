@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { validatePublish, type PublishInput } from '@/lib/published-macros/publish'
-import { getUserHandle, publishMacro } from '@/lib/published-macros/store'
+import { getUserHandle, HandleTakenError, publishMacro } from '@/lib/published-macros/store'
 
 export type PublishState = { errors: string[] }
 
@@ -23,6 +23,7 @@ export async function submitMacro(_previous: PublishState, formData: FormData): 
   try {
     slug = await publishMacro(session.user.id, result.value)
   } catch (error) {
+    if (error instanceof HandleTakenError) return { errors: ['その公開名はすでに使われています。別の名前にしてください。'] }
     console.error('[publish] 保存に失敗', error)
     return { errors: ['保存に失敗しました。時間をおいてもう一度お試しください。'] }
   }

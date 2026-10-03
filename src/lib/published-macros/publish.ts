@@ -4,6 +4,14 @@ import { decodeDocument, readOriginFromShareUrl, readShareParam } from '@/lib/sh
 
 // 公開投稿の入力検証。UI や DB には依存しない（サーバーアクションと単体テストから使う）。
 // クライアント側のチェックは信用せず、共有URLの復号と lint をここでもう一度行う。
+// 運営を名乗る・なりすます公開名を断る語。照合は normalizeHandle のあとの「含む」で行う（「【公式】Moco」なども対象）。
+export const RESERVED_HANDLE_WORDS = ['運営', '管理人', '管理者', '公式', '事務局', 'admin', 'moderator', 'staff', 'official', 'system'] as const
+
+// 全角半角・大文字小文字・空白の違いを無視した形。DB の users.public_handle_key（生成列）と同じ規則。
+export function normalizeHandle(handle: string): string {
+  return handle.normalize('NFKC').replace(/\s/g, '').toLowerCase()
+}
+
 export const LIMITS = { title: 60, description: 200, descriptionLines: 5, handle: 20, tagLength: 20, tagCount: 5 } as const
 
 export type PublishInput = { shareUrl: string; title: string; description: string; tags: string; handle: string }
@@ -77,6 +85,7 @@ export function validatePublish(input: PublishInput, { needsHandle }: { needsHan
   const handle = input.handle.trim()
   if (needsHandle && !handle) errors.push('公開名を入力してください（初回のみ）。')
   else if (handle.length > LIMITS.handle) errors.push(`公開名は ${LIMITS.handle} 文字以内にしてください。`)
+  else if (handle && RESERVED_HANDLE_WORDS.some((word) => normalizeHandle(handle).includes(word))) errors.push('その公開名は運営と紛らわしいため使えません。別の名前にしてください。')
 
   if (errors.length > 0) return { ok: false, errors }
   return { ok: true, value: { body, originSlug, title: meta.title, description: meta.description, tags: meta.tags, handle } }
