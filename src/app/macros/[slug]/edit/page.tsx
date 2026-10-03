@@ -5,7 +5,7 @@ import { EditMacroForm } from '@/components/EditMacroForm'
 import { findPublishedMacro, isMacroAuthor, listTags } from '@/lib/published-macros/repository'
 import styles from '../../submit/page.module.scss'
 
-export const metadata = { title: 'マクロを編集' }
+export const metadata = { title: 'マクロを編集', robots: { index: false } }
 
 // 本人の公開中のマクロだけ編集できる。本人以外には存在を明かさない（404）。保存時にもサーバーアクションが再判定する。
 export default async function EditMacroPage({ params }: PageProps<'/macros/[slug]/edit'>) {

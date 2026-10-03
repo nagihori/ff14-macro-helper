@@ -43,6 +43,12 @@ export async function listPublishedMacros(): Promise<PublishedMacro[]> {
   return (rows as Row[]).map(toMacro)
 }
 
+// sitemap 用。公開中のマクロの slug と公開日時（ISO 8601）だけを新しい順に返す（本文などは読まない）。
+export async function listSitemapEntries(): Promise<{ slug: string; publishedAt: string }[]> {
+  const rows = await getSql().query(`select slug, to_char(published_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as published_at from macros where status = 'published' order by published_at desc`)
+  return rows.map((row) => ({ slug: row.slug as string, publishedAt: row.published_at as string }))
+}
+
 export async function findPublishedMacro(slug: string): Promise<PublishedMacro | undefined> {
   const rows = await getSql().query(`select ${columns} ${from} where m.status = 'published' and m.slug = $1`, [slug])
   return rows[0] ? toMacro(rows[0] as Row) : undefined

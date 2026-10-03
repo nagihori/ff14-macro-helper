@@ -34,6 +34,8 @@
 - [`components/MacroDescription.tsx`](src/components/MacroDescription.tsx) — 説明文の表示。展開済みの `descriptionParts`（他マクロ URL → タイトルリンク／削除済み表記）で描く。設計は `docs/publish.md`
 - [`components/LogLegend.tsx`](src/components/LogLegend.tsx)（＋ `.module.scss`）— ログプレビューの下の凡例。いま出ている行の送信先の色、代名詞の表示（`**値**`／`<>` のまま）、再現できない行の警告。色は `styles/_mixins.scss` の `$log-tones` を `LogList` と共有
 - [`components/DiscordLogo.tsx`](src/components/DiscordLogo.tsx) — Discord 公式シンボル（白）。変形・色変更はしない
+- [`app/robots.ts`](src/app/robots.ts) — robots.txt。公開ページ以外（API・投稿／編集画面・共有URL・検索結果）を巡回させない。sitemap の場所も示す
+- [`app/sitemap.ts`](src/app/sitemap.ts) — sitemap.xml。固定ページ＋公開中のマクロ詳細（`listSitemapEntries`）。1 時間ごとに再生成
 - [`lib/site-url.ts`](src/lib/site-url.ts) — サイトの絶対 URL の基準（`SITE_URL`）。共有カードの基準と、説明内のマクロ URL の判別で共用
 - [`lib/site-config.ts`](src/lib/site-config.ts) — サイト名・既定の title / description（`BRAND_NAME` `DEFAULT_TITLE` `DEFAULT_DESCRIPTION`）。layout・各ページ・OGP 画像が参照
 - [`lib/macro/double-slash.ts`](src/lib/macro/double-slash.ts) — 行頭「/」の直後の「/」（手癖の「//」）を「/」に戻す純粋な関数
@@ -45,6 +47,7 @@
 - [`components/MacroWorkbench.tsx`](src/components/MacroWorkbench.tsx) — マクロエディタ本体。解析・診断・ハイライト・コマンド補完・プレースホルダ補完・ログプレビュー・コマンド辞書検索・共有URL の生成と復元。上部に操作帯、下部にアクションボタン群、検索欄の下に種類名の色の凡例（ログの凡例はプレビュー中だけ `LogLegend` が出す）、初期本文は「/」。本文は sessionStorage にも写し、タブ移動で戻ったときに復元する（優先順は `?m=` → 保存済み → 「/」。復元が済む前に初期値で上書きしない）。「公開する」（`handlePublish`）もここ：現在の本文から共有URL を作り `/macros/submit?url=` へ遷移する。Tab は常にエディタが奪い、候補が無い状態で Esc を押した直後の Tab だけフォーカス移動に譲る。行番号は折り返した行の高さに追従（ハイライト層の各行の高さを測る）。幅は全ページ共通の 72rem で、エディタ側は従来のコンパクトさのまま、広げた分は右の検索・候補（列比 1:1.25）に回す。ロジックは `lib/` 側に置き、ここは表示と入力処理
 - [`components/LegalDocument.tsx`](src/components/LegalDocument.tsx)（＋ `.module.scss`）— 利用規約・プライバシーポリシー共通の文書枠。見出し・段落・箇条書きの余白と、もう一方の文書へのリンク
 - [`components/SiteHeader.tsx`](src/components/SiteHeader.tsx)（＋ `.module.scss`）— 全ページ共通のヘッダー。ブランド名（左にアイコン `public/favicon.png` を `next/image` で小さく表示。差し色の文字。環境変数で変わるため layout から props）と「エディタ」「ライブラリ」のタブ。タブはルート遷移で、現在地は `aria-current`（選択中は差し色の下線。ライブラリは `/macros` 配下すべて、規約などではどちらも選ばない）。PC 幅は「ブランド名｜タブ×2｜正方形の `ThemeToggle`」で帯の幅いっぱいにタブを等分、スマホ幅はブランド名の下にタブを等分し、`ThemeToggle` はブランド名の行の右端
+- [`components/GoogleAnalytics.tsx`](src/components/GoogleAnalytics.tsx) — Google アナリティクス 4。`GA_MEASUREMENT_ID` があるとき本番だけ layout が描画。ページビューはクエリを落とした URL で自前送信。設計は `docs/publish.md`
 - [`components/SiteFooter.tsx`](src/components/SiteFooter.tsx)（＋ `.module.scss`）— 全ページ共通のフッター（利用規約・プライバシーポリシー）。ログインはセッションを読むので、共通側には置かない（`/` を静的なままにするため）
 - [`components/ThemeToggle.tsx`](src/components/ThemeToggle.tsx) — ヘッダー内（`SiteHeader`）に置いた線画アイコン（太陽・月）ひとつのライト/ダーク切り替え。`<html data-theme>` を切り替え、選択は localStorage（`lib/theme.ts`）に保存。未設定なら OS 設定に従う
 - [`components/PublishedMacroLibrary.tsx`](src/components/PublishedMacroLibrary.tsx) — 公開マクロ一覧の UI。タイトル・説明・`#タグ` を同じ検索欄で絞り込む（空白区切りの AND 検索。タグ例のクリックは検索語へ追加、カード内タグは置き換え。データは親ページが DB から取得して `allMacros` で渡す）

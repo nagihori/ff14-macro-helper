@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { BRAND_NAME, DEFAULT_DESCRIPTION, DEFAULT_TITLE } from "@/lib/site-config";
+import { BRAND_NAME, DEFAULT_DESCRIPTION, DEFAULT_TITLE, GA_MEASUREMENT_ID } from "@/lib/site-config";
 import { getSiteUrl } from "@/lib/site-url";
 import { themeInitScript } from "@/lib/theme";
 
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteHeader brandName={BRAND_NAME} />
         {children}
         <SiteFooter />
+        {GA_MEASUREMENT_ID && process.env.NODE_ENV === "production" && <GoogleAnalytics measurementId={GA_MEASUREMENT_ID} />}
       </body>
     </html>
   );
