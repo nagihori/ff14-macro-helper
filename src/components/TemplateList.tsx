@@ -9,12 +9,23 @@ export type TemplateUse = 'replace' | 'top' | 'after-cursor'
 // 雛形の一覧（エディタ右の検索結果と、空のエディタでのおすすめで共通）。
 // 「使う」は、エディタが空ならそのまま読み込み、すでに書いてあるなら「先頭に挿入／カーソルの下に挿入／置き換える」を選ばせる
 // （冒頭に置く /merror off のような断片と、まるごとの雛形の、両方の使い方に合わせる）。
+// ダブルクリックは、コマンド候補と同じ操作感で、選ばずにすぐ入れる（空なら読み込み、書いてあるならカーソルの下に挿入）。
 export function TemplateList({ items, editorEmpty, onUse, compact }: { items: TemplateMacro[]; editorEmpty: boolean; onUse: (template: TemplateMacro, how: TemplateUse) => void; compact?: boolean }) {
   const [choosing, setChoosing] = useState<string | null>(null)
   return (
     <ul className={compact ? `${styles.list} ${styles.compact}` : styles.list}>
       {items.map((template) => (
-        <li key={template.slug} className={styles.item}>
+        <li
+          key={template.slug}
+          className={styles.item}
+          title="ダブルクリックで挿入"
+          onDoubleClick={(event) => {
+            // ボタン（使う・選択肢）やリンク（詳細）の上でのダブルクリックは、それぞれの操作に任せる。
+            if ((event.target as HTMLElement).closest('button, a')) return
+            setChoosing(null)
+            onUse(template, editorEmpty ? 'replace' : 'after-cursor')
+          }}
+        >
           <p className={styles.head}>
             <span className={styles.title}>{template.title}</span>
             <a href={`/macros/${template.slug}`} target="_blank" rel="noopener" className={styles.detail} aria-label={`${template.title}の詳細ページを新しいタブで開く`}>詳細 ↗</a>
