@@ -12,6 +12,8 @@
 .compact { max-height: 9.5rem; }
 
 .item {
+  // ダブルクリックで入れるので、文字が選択されないようにする（コマンド候補はボタンなので、もともと選択されない）。
+  user-select: none;
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid var(--border-subtle);
   &:last-child { border-bottom: 0; }
