@@ -43,6 +43,12 @@ export async function listPublishedMacros(): Promise<PublishedMacro[]> {
   return (rows as Row[]).map(toMacro)
 }
 
+// 雛形（指定のタグが付いた公開マクロ）。「役に立った」が多い順、同数なら新しい順。
+export async function listPublishedMacrosWithTag(tag: string, limit: number): Promise<PublishedMacro[]> {
+  const rows = await getSql().query(`select ${columns} ${from} where m.status = 'published' and $1 = any(m.tags) order by m.helpful_count desc, m.published_at desc limit $2`, [tag, limit])
+  return (rows as Row[]).map(toMacro)
+}
+
 // フィード用。新しい順の公開マクロと、公開日時（ISO 8601・UTC）。tag を渡すと、そのタグが付いたものだけ。
 export async function listFeedMacros(limit: number, tag?: string): Promise<{ macro: PublishedMacro; publishedIso: string }[]> {
   const rows = await getSql().query(
