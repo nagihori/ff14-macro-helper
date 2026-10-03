@@ -34,7 +34,9 @@
 - [`components/MacroDescription.tsx`](src/components/MacroDescription.tsx) — 説明文の表示。展開済みの `descriptionParts`（他マクロ URL → タイトルリンク／削除済み表記）で描く。設計は `docs/publish.md`
 - [`components/LogLegend.tsx`](src/components/LogLegend.tsx)（＋ `.module.scss`）— ログプレビューの下の凡例。いま出ている行の送信先の色、代名詞の表示（`**値**`／`<>` のまま）、再現できない行の警告。色は `styles/_mixins.scss` の `$log-tones` を `LogList` と共有
 - [`components/DiscordLogo.tsx`](src/components/DiscordLogo.tsx) — Discord 公式シンボル（白）。変形・色変更はしない
-- [`app/not-found.tsx`](src/app/not-found.tsx)（＋ `.module.scss`）— 404 の共通表示（未知の URL・削除済み・公開停止中）。公開マクロから「役に立った」順のおすすめを添える（`listRecommendedMacros`）。リクエストごとに作る（`connection()`）。DB に届かないときはおすすめだけ省く
+- [`app/not-found.tsx`](src/app/not-found.tsx) —  404 の共通表示（未知の URL・削除済み・公開停止中）。公開マクロから「役に立った」順のおすすめを添える（`listRecommendedMacros`）。リクエストごとに作る（`connection()`）。DB に届かないときはおすすめだけ省く
+- [`app/error.tsx`](src/app/error.tsx) — 想定外のエラー（DB に届かないなど）の共通表示。「もう一度読み込む」（このバージョンの Next では `retry`）とエディタへの導線、運営のログと突き合わせる digest（エラー ID）を出す。Client Component で、エラーの中身は本番では伏せられる
+- [`app/status-page.module.scss`](src/app/status-page.module.scss) — 404・エラー表示の共通レイアウト
 - [`app/robots.ts`](src/app/robots.ts) — robots.txt。公開ページ以外（API・投稿／編集画面・共有URL・検索結果）を巡回させない。sitemap の場所も示す
 - [`app/sitemap.ts`](src/app/sitemap.ts) — sitemap.xml。固定ページ＋公開中のマクロ詳細（`listSitemapEntries`）。1 時間ごとに再生成
 - [`lib/site-url.ts`](src/lib/site-url.ts) — サイトの絶対 URL の基準（`SITE_URL`）。共有カードの基準と、説明内のマクロ URL の判別で共用
