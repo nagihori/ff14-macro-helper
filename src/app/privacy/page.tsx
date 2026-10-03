@@ -6,7 +6,7 @@ const X_POST_URL = 'https://x.com/variekirk/status/2105880487671792044'
 
 export default function PrivacyPage() {
   return (
-    <LegalDocument title="プライバシーポリシー" updated="2026年10月1日" other={{ href: '/terms', label: '利用規約' }}>
+    <LegalDocument title="プライバシーポリシー" updated="2026年10月3日" other={{ href: '/terms', label: '利用規約' }}>
       <p>ff14-macro-helper（以下「本サービス」）が、どんな情報をどう扱うかをまとめます。取り扱う情報は、必要最小限にとどめています。</p>
 
       <h2>1. 取得する情報</h2>
@@ -18,6 +18,7 @@ export default function PrivacyPage() {
       <p>メールアドレス、アイコン画像、フレンドやサーバーの情報は取得しません。</p>
       <p><strong>投稿された内容。</strong>タイトル、説明、タグ、マクロ本文、公開名、公開日時、アレンジ元の情報を保存し、公開します。</p>
       <p><strong>リアクション。</strong>「役に立った」「不具合あり」は件数だけを保存します。誰が押したかは保存していません。</p>
+      <p><strong>アクセス解析。</strong>利用状況を知るため、Google アナリティクスで、閲覧したページ、閲覧の時刻、利用環境（ブラウザ・端末の種類、おおまかな地域、参照元）を集計します。共有URL（<code>?m=</code>）に含まれるマクロの本文や、検索語などの URL のクエリ部分は、送りません。</p>
       <p><strong>アクセスログ。</strong>ホスティング先で、IP アドレスやブラウザの種類などが、運用と不正対策の目的で一定期間記録されることがあります。</p>
 
       <h2>2. 利用目的</h2>
@@ -25,6 +26,7 @@ export default function PrivacyPage() {
         <li>投稿者の確認と、不正な投稿を抑止するため</li>
         <li>不適切な投稿を、運営者が公開停止するため</li>
         <li>公開マクロの表示・検索・集計のため</li>
+        <li>利用状況を把握し、機能や表示を改善するため</li>
         <li>本サービスの安定した運用のため</li>
       </ul>
 
@@ -36,14 +38,16 @@ export default function PrivacyPage() {
         <li>ログインの状態を保つためのセッション Cookie（ログイン時のみ）</li>
         <li>リアクションの重複を防ぐための Cookie（<code>ff14-macro-reaction-</code> で始まる名前。有効期間は 1 年）</li>
         <li>ライト／ダーク表示の設定（ブラウザの localStorage。サーバーには送りません）</li>
+        <li>Google アナリティクスが利用状況の集計のために置く Cookie（<code>_ga</code> で始まる名前。有効期間は最長 2 年）</li>
         <li>エディタで編集中のマクロ本文とアレンジ元の公開マクロ（ブラウザの sessionStorage。ページを移動しても消えないための写しで、ブラウザのタブを閉じると消えます。サーバーには送りません）</li>
       </ul>
-      <p>広告や、行動を追跡するための分析ツールは使っていません。</p>
+      <p>広告には使いません。Google アナリティクスの広告向けの機能（Google シグナル・広告のパーソナライズ）も無効にしています。集計を望まない場合は、ブラウザの設定で Cookie を止めるか、<a href="https://tools.google.com/dlpage/gaoptout?hl=ja">Google アナリティクス オプトアウト アドオン</a>をお使いください。</p>
 
       <h2>5. 外部サービスの利用</h2>
       <p>本サービスは、次の外部サービスを利用しています。それぞれの取り扱いは、各社のポリシーに従います。</p>
       <ul>
         <li>Discord：ログイン（OAuth 認証）</li>
+        <li>Google（Google アナリティクス）：利用状況の集計。収集した情報は、<a href="https://policies.google.com/technologies/partner-sites?hl=ja">Google のポリシー</a>に従って扱われます</li>
         <li>Vercel：サイトの提供（ホスティング）</li>
         <li>Neon：投稿データなどの保存（データベース。米国リージョン）</li>
       </ul>
