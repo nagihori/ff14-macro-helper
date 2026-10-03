@@ -6,6 +6,7 @@ import type { PublishedMacro } from '@/lib/published-macros/types'
 import { PublishedMacroReactions } from './PublishedMacroReactions'
 import { MacroDescription } from './MacroDescription'
 import { PageHero } from './PageHero'
+import { tagPath } from '@/lib/published-macros/tags'
 import { UI_TEXT } from '@/lib/ui-text'
 import styles from './PublishedMacroLibrary.module.scss'
 
@@ -57,7 +58,7 @@ export function PublishedMacroLibrary({ allMacros, initialQuery = '' }: { allMac
       </div>
       <section className={styles.grid}>
         {macros.map((macro) => <article key={macro.slug} className={styles.card}>
-          <div className={styles.cardTags}>{macro.tags.map((tag) => <button key={tag} type="button" onClick={() => setQuery(`#${tag}`)} className={styles.cardTag}>#{tag}</button>)}</div>
+          <div className={styles.cardTags}>{macro.tags.map((tag) => <Link key={tag} href={tagPath(tag)} className={styles.cardTag}>#{tag}</Link>)}</div>
           <h2 className={styles.cardTitle}><Link href={`/macros/${macro.slug}`} className={styles.cardTitleLink}>{macro.title}</Link></h2>
           <p className={styles.cardDescription}><MacroDescription description={macro.description} parts={macro.descriptionParts} linkClassName={styles.cardDescriptionLink} /></p>
           <p className={styles.cardMeta}>投稿者 {macro.authorHandle} · {macro.publishedAt}</p>
