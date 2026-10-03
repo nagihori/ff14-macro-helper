@@ -28,6 +28,7 @@
 - [`app/s/[id]/page.tsx`](src/app/s/%5Bid%5D/page.tsx)（＋ `not-found.tsx`）— 短縮共有 URL（`/s/{id}`）。保存した本文を `/?m=…` へ 307 で転送する。期限切れ・存在しない ID は `not-found.tsx`（404）。設計は `docs/publish.md` の「短縮共有 URL」
 - [`app/share-actions.ts`](src/app/share-actions.ts) — サーバーアクション `createShareId`。エディタの共有 URL を短縮するため本文を保存し ID を返す。失敗・上限・DB 障害のときは null（呼び出し側が長い URL にする）。作成者は Cookie `ff14-macro-creator` で区別
 - [`lib/share/short-links.ts`](src/lib/share/short-links.ts) / [`short-link-store.ts`](src/lib/share/short-link-store.ts) — 短縮共有 URL の取り決め（180 日・100 件・1 時間 300 件）と ID・ハッシュ（純粋・単体テストあり）／保存と参照（`shared_macros`）
+- [`lib/share/short-link-expand.ts`](src/lib/share/short-link-expand.ts) — 公開フォームに貼られた短縮 URL（このサイトの `/s/{id}` だけ）の判別と、サーバーでの展開（長い共有 URL に直す）。単体テストは判別のみ
 - [`lib/clipboard.ts`](src/lib/clipboard.ts) — 非同期に決まる文字列のコピー（Safari 対策で ClipboardItem に Promise を渡す）
 - [`app/og/share/route.tsx`](src/app/og/share/route.tsx) — 共有 URL の共有カード画像（`/og/share?m=…`）。`m` のマクロをその場で描く（DB は読まない）。壊れた・長すぎる `m` は名前と羽ペンだけのカード。同じ `m` は同じ画像なので CDN に長く持たせる
 - [`app/opengraph-image.tsx`](src/app/opengraph-image.tsx) — サイト共通の共有カード（名前と羽ペンだけ）。トップ・公開マクロ一覧・規約類など、専用のカードを持たないページに効く。詳細・タグ別一覧・共有 URL は、それぞれが上書きする（`/?m=` は `generateMetadata` の画像が優先される）
