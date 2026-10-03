@@ -25,7 +25,9 @@
 - [`lib/share/short-links.ts`](src/lib/share/short-links.ts) / [`short-link-store.ts`](src/lib/share/short-link-store.ts) — 短縮共有 URL の取り決め（180 日・100 件・1 時間 300 件）と ID・ハッシュ（純粋・単体テストあり）／保存と参照（`shared_macros`）
 - [`lib/clipboard.ts`](src/lib/clipboard.ts) — 非同期に決まる文字列のコピー（Safari 対策で ClipboardItem に Promise を渡す）
 - [`app/og/share/route.tsx`](src/app/og/share/route.tsx) — 共有 URL の共有カード画像（`/og/share?m=…`）。`m` のマクロをその場で描く（DB は読まない）。壊れた・長すぎる `m` は名前と羽ペンだけのカード。同じ `m` は同じ画像なので CDN に長く持たせる
-- [`lib/og/macro-card.tsx`](src/lib/og/macro-card.tsx) — マクロの共有カードの描画（詳細ページの `opengraph-image` と共有 URL のカードで共通）
+- [`app/opengraph-image.tsx`](src/app/opengraph-image.tsx) — サイト共通の共有カード（名前と羽ペンだけ）。トップ・公開マクロ一覧・規約類など、専用のカードを持たないページに効く。詳細・タグ別一覧・共有 URL は、それぞれが上書きする（`/?m=` は `generateMetadata` の画像が優先される）
+- [`app/macros/tag/[tag]/opengraph-image.tsx`](src/app/macros/tag/%5Btag%5D/opengraph-image.tsx) — タグ別一覧の共有カード。タグ名を大きく、パネルにそのタグの新しいマクロ名（5 件・「… 全 N 件」）、足元に一緒に付いているタグ。0 件は共通のカード
+- [`lib/og/macro-card.tsx`](src/lib/og/macro-card.tsx) — 共有カードの描画（詳細ページ・共有 URL・タグ別一覧・サイト共通で共通）。マクロの冒頭のハイライト、または `listLines`（マクロ名の一覧など）をパネルに出す
 - [`lib/og/font.ts`](src/lib/og/font.ts) — OGP 画像用の日本語フォント（描く文字だけの部分集合を Google Fonts から取得。失敗したら null）
 - [`lib/og/brand-glyph.ts`](src/lib/og/brand-glyph.ts) — ブランドの羽ペン（`docs/favicon.svg` のグリフ）の path と、色を指定できる SVG の data URL。OGP 画像の大きな飾り
 - [`lib/og/brand-icon.ts`](src/lib/og/brand-icon.ts) — ブランドアイコン（favicon を 192px に縮小）の data URL。OGP 画像に埋め込む
