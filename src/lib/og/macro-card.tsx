@@ -60,13 +60,19 @@ function clipSegments(segments: HighlightSegment[], maxWidth: number): Highlight
   return result
 }
 
-export async function macroCardImage({ title: rawTitle, body, tags: rawTags = [], headers }: { title?: string; body: string | null; tags?: string[]; headers?: HeadersInit }) {
-  const macro = body !== null
+// listLines を渡すと、パネルにマクロの冒頭ではなく、その文字列（マクロ名の一覧など）をそのまま並べる。
+// listMore は、パネルの末尾に薄く添える一行（「… 全 N 件」など）。
+export async function macroCardImage({ title: rawTitle, body, tags: rawTags = [], listLines, listMore, headers }: { title?: string; body: string | null; tags?: string[]; listLines?: string[]; listMore?: string; headers?: HeadersInit }) {
+  const macro = body !== null || listLines !== undefined
   const title = macro ? clip(rawTitle ?? '', 44) : BRAND_NAME
   const tags = rawTags.slice(0, 4).map((tag) => `#${tag}`)
-  const allLines = macro ? buildHighlight(analyze(body, getDictionary(), { complete: true }).lines, getDictionary()) : []
+  const allLines = listLines
+    ? listLines.map((text) => ({ segments: [{ text, kind: 'text' as const }] }))
+    : body !== null
+      ? buildHighlight(analyze(body, getDictionary(), { complete: true }).lines, getDictionary())
+      : []
   const codeLines = allLines.slice(0, CODE_LINES).map((line) => clipSegments(line.segments, CODE_WIDTH))
-  const more = allLines.length > CODE_LINES ? `… 全 ${allLines.length} 行` : ''
+  const more = listLines ? (listMore ?? '') : allLines.length > CODE_LINES ? `… 全 ${allLines.length} 行` : ''
 
   const drawn = `${BRAND_NAME}${title}${tags.join('')}${more}${codeLines.map((line) => line.map((segment) => segment.text).join('')).join('')}`
   const font = await loadFont(drawn)
