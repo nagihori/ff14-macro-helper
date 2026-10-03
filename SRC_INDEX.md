@@ -18,6 +18,10 @@
 - [`lib/feed/macro-feed.ts`](src/lib/feed/macro-feed.ts) — 新着フィードの Response を作る（全体用とタグ別で共通。DB 読み取りと説明内 URL の展開を含む）
 - [`app/macros/feed.xml/route.ts`](src/app/macros/feed.xml/route.ts) — 新着公開マクロの Atom フィード（`/macros/feed.xml`、最新 30 件、1 時間ごとに再生成）。本文は載せない。`/macros` の `<link rel="alternate">` から見つけられる。DB に届かなければ 503
 - [`lib/feed/atom.ts`](src/lib/feed/atom.ts) — Atom 1.0 の組み立て（純粋な関数。XML のエスケープ・制御文字の除去・単体テスト `atom.test.ts`）
+- [`app/embed/[slug]/page.tsx`](src/app/embed/%5Bslug%5D/page.tsx)（＋ `.module.scss`・`not-found.tsx`）— ほかのサイトに iframe で貼る、コンパクトなマクロ表示（`/embed/{slug}`）。ヘッダー（タイトル・コピー）、コード、閉じた動作プレビュー、「{サイト名}で開く」。公開中のみ・noindex。`?theme=light|dark` で明暗を固定。このルートだけ `frame-ancestors *`（`next.config.ts`）。高さは `lib/share/embed.ts` の計算と対応
+- [`components/HideInEmbed.tsx`](src/components/HideInEmbed.tsx) — `/embed/` ではヘッダー・フッター・アクセス解析を出さないための包み（`layout.tsx` が使う）
+- [`components/EmbedCopyButton.tsx`](src/components/EmbedCopyButton.tsx) — 埋め込み表示の「マクロテキストをコピー」。別オリジンの iframe で navigator.clipboard が拒まれたら execCommand に切り替える
+- [`lib/share/embed.ts`](src/lib/share/embed.ts) — 埋め込みの iframe コードと高さの計算（純粋・単体テストあり）
 - [`app/macros/tag/[tag]/page.tsx`](src/app/macros/tag/%5Btag%5D/page.tsx)（＋ `.module.scss`）— タグ別一覧（`/macros/tag/タグ名`）。そのタグの公開マクロを新しい順に、一覧と同じカード（`PublishedMacroCardList`）で出し。「公開マクロ一覧へ」はセカンダリボタン、一緒に付いているタグへ内部リンクを張る。戻るボタンの横に「このタグのフィード」の小さなリンク。0 件は 404。`MIN_INDEXABLE_TAG_MACROS` 件未満は noindex（`lib/published-macros/tags.ts`）
 - [`app/macros/[slug]/page.tsx`](src/app/macros/%5Bslug%5D/page.tsx) — 公開マクロの詳細。本文・タグ・リアクション・投稿者・派生マクロ（このマクロをアレンジ元にした公開中のもの、`findDerivedMacros`）・似たマクロ（共通タグ順、`findRelatedMacros`）を表示し、コードブロック上部に操作帯（`MacroCodeBar`：copy / edit / share）、本文は `MacroCodeView` で色分け、直下に `MacroPreviewAccordion`（動作プレビュー）、その下にアクションボタン群の「マクロテキストをコピー」（主）・「エディタで編集」・共有（副）で本文を（アレンジ元の slug を `&from=` で持たせて） `?m=` に載せてトップへ送る。停止中のマクロは管理者と投稿者本人にだけ表示し（`findMacroForViewer`）、停止の知らせを出す。管理者にはさらに `AdminMacroControls`
 - [`app/s/[id]/page.tsx`](src/app/s/%5Bid%5D/page.tsx)（＋ `not-found.tsx`）— 短縮共有 URL（`/s/{id}`）。保存した本文を `/?m=…` へ 307 で転送する。期限切れ・存在しない ID は `not-found.tsx`（404）。設計は `docs/publish.md` の「短縮共有 URL」
@@ -75,7 +79,7 @@
 - [`components/PublishedMacroLibrary.tsx`](src/components/PublishedMacroLibrary.tsx) — 公開マクロ一覧の UI。タイトル・説明・`#タグ` を同じ検索欄で絞り込む（空白区切りの AND 検索。上のタグ一覧のクリックは検索語へ追加、カード内タグはタグ別一覧ページ `/macros/tag/…` へのリンク。データは親ページが DB から取得して `allMacros` で渡す）
 - [`components/PublishedMacroReactions.tsx`](src/components/PublishedMacroReactions.tsx) — 「役に立った」「不具合あり」ボタン。件数はサーバー集計で、押した直後は先に表示を動かしてサーバーの返答で確定する。同一ブラウザの重複は Cookie で防ぎ、アイコン付き（役に立った＝親指／不具合あり＝警告）。投票後も両件数を緑／赤で表示し、自分の側は太字＋取り消し ×
 - [`app/macros/reactions.ts`](src/app/macros/reactions.ts) — 投票のサーバーアクション `setReaction`。Cookie の現在値との差分だけを `helpful_count` / `problem_count` に反映する（公開中のマクロのみ・件数は負にならない）。Cookie は書き換え可能なので厳密な不正対策ではない
-- [`components/ShareMacroButton.tsx`](src/components/ShareMacroButton.tsx)（＋ `.module.scss`）— 詳細ページの共有ボタン。本体はアイコン＋「URLをコピー」（共有シートが使える端末では「URLを共有」）で、右端の ▼ で「ほかの共有方法」（いまは「Lodestone用にコピー」）のパネルが開く。BB コードはサーバーで作って props で受ける。判定とコピー処理は `useShareUrl`。停止中のマクロには出さない
+- [`components/ShareMacroButton.tsx`](src/components/ShareMacroButton.tsx)（＋ `.module.scss`）— 詳細ページの共有ボタン。本体はアイコン＋「URLをコピー」（共有シートが使える端末では「URLを共有」）で、右端の ▼ で「ほかの共有方法」（「Lodestone用にコピー」「埋め込みコードをコピー」）のパネルが開く。BB コードはサーバーで作って props で受ける。判定とコピー処理は `useShareUrl`。停止中のマクロには出さない
 - [`components/useShareUrl.ts`](src/components/useShareUrl.ts) — 詳細ページの共有処理。タッチ端末で共有に対応していれば OS の共有シート、それ以外はページ URL をコピー（クエリは含めない）
 - [`components/MacroCodeBar.tsx`](src/components/MacroCodeBar.tsx) — 詳細ページのコードブロック上部の操作帯（copy / edit / share。暗い面向け配色）
 - [`components/MacroCodeView.tsx`](src/components/MacroCodeView.tsx)（＋ `.module.scss`）— 詳細ページのコード本文。エディタと同じ `buildHighlight` で色分けする読み取り専用の表示（サーバーコンポーネント。波線・背景の警告は付けない。常に暗い面なので色は `$highlight-tones` のダーク側）
