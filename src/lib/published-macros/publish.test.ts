@@ -61,4 +61,13 @@ describe('validatePublish', () => {
     expect(validatePublish(input({ handle: 'Nagi' }), { needsHandle: false }).ok).toBe(true)
     expect(validatePublish(input({ handle: 'あ'.repeat(21) }), { needsHandle: false }).ok).toBe(false)
   })
+
+  it('運営を名乗る公開名は、全角半角・大文字小文字・空白が違っても断り、ふつうの名前は通す', () => {
+    for (const handle of ['管理人', '【公式】Moco', 'ＡＤＭＩＮ', 'Staff 01', 'Offi cial']) {
+      const result = validatePublish(input({ handle }), { needsHandle: true })
+      expect(result.ok, handle).toBe(false)
+      if (!result.ok) expect(result.errors.join('\n')).toContain('紛らわしい')
+    }
+    for (const handle of ['Moco', 'なぎ', 'Nagi_01']) expect(validatePublish(input({ handle }), { needsHandle: true }).ok, handle).toBe(true)
+  })
 })

@@ -2,6 +2,9 @@ import { randomInt } from 'node:crypto'
 import { getSql } from '@/lib/db'
 import type { ValidPublish } from './publish'
 
+// 公開名がすでに使われている（users_public_handle_key_idx の重複）。
+export class HandleTakenError extends Error {}
+
 // 公開マクロの書き込み。検証は publish.ts で済んでいる前提で、保存だけを担う。
 
 export async function getUserHandle(userId: string): Promise<string | null> {
@@ -35,7 +38,8 @@ export async function publishMacro(userId: string, value: ValidPublish): Promise
       ])
       return slug
     } catch (error) {
-      const code = (error as { code?: string }).code
+      const { code, constraint } = error as { code?: string; constraint?: string }
+      if (code === '23505' && constraint === 'users_public_handle_key_idx') throw new HandleTakenError()
       if (code === '23505' && attempt < 2) continue // slug の重複
       throw error
     }
