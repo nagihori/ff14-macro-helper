@@ -13,17 +13,4 @@
   margin-inline: auto;
 }
 
-.links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.5rem;
-  margin-top: 1.5rem;
-}
-
-.link {
-  @include type(sm);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-
-  &:hover { color: var(--text-strong); }
-}
+.links { margin-top: 1.5rem; }

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { connection } from 'next/server'
+import { ActionButton } from '@/components/ActionButton'
+import { ActionGroup } from '@/components/ActionGroup'
+import { EditIcon, PreviewIcon } from '@/components/icons'
 import { MacroCardSection } from '@/components/MacroCardSection'
 import { PageHero } from '@/components/PageHero'
 import { listRecommendedMacros } from '@/lib/published-macros/repository'
@@ -22,9 +24,11 @@ export default async function NotFound() {
     <main className={styles.page}>
       <div className={styles.container}>
         <PageHero compact eyebrow="404 NOT FOUND" title="ページが見つかりません" lead="マクロが削除された、または公開が止まっている、URL が違っている、などが考えられます。" />
-        <nav className={styles.links} aria-label="移動先">
-          <Link href="/macros" className={styles.link}>公開マクロを探す</Link>
-          <Link href="/" className={styles.link}>マクロエディタへ</Link>
+        <nav aria-label="移動先" className={styles.links}>
+          <ActionGroup>
+            <ActionButton icon={<PreviewIcon />} variant="primary" href="/macros">公開マクロを探す</ActionButton>
+            <ActionButton icon={<EditIcon />} variant="secondary" href="/">マクロエディタへ</ActionButton>
+          </ActionGroup>
         </nav>
         <MacroCardSection id="recommended-heading" heading="こんなマクロはいかがですか" items={recommended} />
       </div>
