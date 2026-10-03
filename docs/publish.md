@@ -128,34 +128,62 @@ unset DATABASE_URL
 
 プライバシーポリシー 6 節のとおり、アカウント（ログイン情報）の削除と、停止中の投稿の取り下げは、依頼を受けて運営者が手で行う。接続のしかたは上の「本番 DB へのマイグレーション」と同じ（`DATABASE_URL` を `read -rs` でその場に渡す）。ここでは `psql` を使う例を書くが、Neon の SQL Editor でも同じ。
 
-**1. 依頼者を特定する。** 依頼は X（利用規約・ポリシーに載せた連絡先のポストへのリプライ）に公開で来るので、本人確認の材料は公開名と投稿の slug。Discord の ID は聞かない。投稿の `slug` から `author_id` を引く。
+**0. 依頼の受け方と本人確認。** 依頼は X（利用規約・ポリシーに載せた連絡先のポストへのリプライ）に公開で来る。誰でも書けるので、別人が他人のアカウントの削除を求める（騙り）ことがありうる。
+- 依頼には、**削除したい人自身の投稿の URL を 1 件**添えてもらう。公開名がかぶっていても、これで人が決まる。
+- アカウントごとの削除（取り消せない）は、本人確認をしてから行う。運営者が合言葉（ランダムな短い語）をリプライで伝え、依頼者がその投稿の説明に書き足す（ログインした本人だけが「タイトル・説明・タグを編集」でできる）。書かれたのを詳細ページで確認してから削除する。確認後、説明は戻してもらってよい。
+- 投稿が停止中だけのアカウントは説明を編集できない。被害の小さい操作（停止済みの投稿の取り下げ）なので、運営者の判断でよい。
+- 投稿 1 件の取り下げは、本人が画面からいつでもできる。運営者が代わりにやるのは、停止中の投稿と、アカウントごとの削除だけ。
+
+**1. 対象を特定する。** Discord の ID は聞かない。公開名と投稿の URL から、その人の `user_id` と投稿の一覧を引く。
 
 ```sql
-select m.slug, m.title, m.status, m.author_handle, u.id as user_id
-from macros m join users u on u.id = m.author_id
-where m.slug = '<依頼にあった slug>';
+SELECT u.id AS user_id, u.public_handle, m.slug, m.title, m.status
+FROM users u LEFT JOIN macros m ON m.author_id = u.id
+WHERE u.public_handle = '<公開名>'
+ORDER BY m.published_at DESC;
+```
+
+- 投稿が 0 件の人も、`user_id` は 1 行出る（`slug` などは空）。
+- 公開名は一意とは限らない（重複は未対応）。`user_id` が複数出たら、依頼にあった投稿の slug（URL の `/macros/` の後ろの英数字 8 文字）と突き合わせて、どちらかを決める。
+- 公開名が分からないときは、slug から引く。
+
+```sql
+SELECT m.slug, m.title, m.status, m.author_handle, u.id AS user_id
+FROM macros m JOIN users u ON u.id = m.author_id
+WHERE m.slug = '<依頼にあった slug>';
+```
+
+- 手順 3 を一度流したアカウントは、投稿の `author_id` が空になるので、slug の検索には出てこない。最近のアカウントを見たいときは、次のとおり。
+
+```sql
+SELECT id AS user_id, public_handle, display_name, created_at
+FROM users ORDER BY created_at DESC LIMIT 5;
 ```
 
 **2. 投稿だけ取り下げる**（アカウントは残す）。画面の削除と同じ状態にする。停止中のものは、管理者が詳細ページの「削除…」からも消せる。
 
 ```sql
-update macros set status = 'deleted', deleted_at = coalesce(deleted_at, now()),
+UPDATE macros SET status = 'deleted', deleted_at = COALESCE(deleted_at, now()),
   body = '', description = '', tags = '{}'
-where slug = '<slug>' and status <> 'deleted';
+WHERE slug = '<slug>' AND status <> 'deleted';
 ```
 
-**3. アカウントごと削除する。** `macros.author_id` が `users` を参照していて、そのままでは `users` の行を消せない。投稿を取り下げ、投稿者とのひもづけを外してから消す。1 つのトランザクションで行う。
+**3. アカウントごと削除する。** `macros.author_id` が `users` を参照していて、そのままでは `users` の行を消せない。投稿を取り下げ、投稿者とのひもづけを外してから消す。
 
 ```sql
-begin;
-update macros set status = 'deleted', deleted_at = coalesce(deleted_at, now()),
-  body = '', description = '', tags = '{}',
-  author_handle = '（削除済み）', author_id = null
-where author_id = '<user_id>';
-delete from users where id = '<user_id>';
-commit;
+WITH cleared AS (
+  UPDATE macros SET status = 'deleted', deleted_at = COALESCE(deleted_at, now()),
+    body = '', description = '', tags = '{}',
+    author_handle = '（削除済み）', author_id = NULL
+  WHERE author_id = '00000000-0000-0000-0000-000000000000'
+  RETURNING 1
+)
+DELETE FROM users WHERE id = '00000000-0000-0000-0000-000000000000';
 ```
 
+- `00000000-0000-0000-0000-000000000000` の **2 か所**（`WHERE` と `DELETE` の末尾）を、手順 1 の結果の `user_id`（同じ形の UUID）に置き換える。クォート `'` は残す。ダミーのままなら、どの行にも当たらず何も消えない。slug を入れると `invalid input syntax for type uuid` で失敗する。
+- Neon の「Fix with AI」は、置き換え前のダミーや `<…>` を「パラメータ」と解釈して `$1` に書き換えることがある（`there is no parameter $1` になる）。直さずに、`user_id` を入れて流す。
+- 1 文にまとめてあるので、`BEGIN` / `COMMIT` はいらない。SQL エディタが文ごとに別のセッションで流す場合でも、途中で止まって半端な状態にならない（全部入るか、全部入らないか）。
 - 投票は `macros` の件数だけで、ユーザーごとの記録は持っていない。消すものは上の 2 つのテーブルで全部。
 - タイトルとスラッグは、派生マクロの「アレンジ元：{タイトル}（削除済み）」のために残る。タイトルに個人が特定される語が入っていれば、依頼者に確認して `title` も書き換える。
 - 本人のブラウザに残るセッション（JWT）は期限まで有効。ただし `users` の行がないので、投稿は外部キー制約で失敗する。同じ Discord でログインし直すと、新しい `users` 行ができる（以前の投稿とはひもづかない）。
