@@ -36,7 +36,7 @@ import { LogLegend } from './LogLegend'
 import { LogList } from './LogList'
 import { ActionButton } from './ActionButton'
 import { ActionGroup } from './ActionGroup'
-import { CopyIcon, PreviewIcon, PublishIcon, ShareIcon, WarningIcon } from './icons'
+import { CopyIcon, PreviewIcon, PublishIcon, ShareIcon, TrashIcon, WarningIcon } from './icons'
 import { useCopyFeedback } from './useCopyFeedback'
 import { collapseDoubleSlash } from '@/lib/macro/double-slash'
 import { ariaShortcut, formatShortcut, matchShortcut } from '@/lib/shortcuts'
@@ -112,6 +112,8 @@ export function MacroWorkbench({ templates }: { templates: TemplateMacro[] }) {
   const { guard, dialog: checkDialog } = useMacroCheck()
   const router = useRouter()
   const [commandSearchQuery, setCommandSearchQuery] = useState('')
+  // 「エディタを空にする」の直前の本文。書き始めたら（本文が変わったら）消える。
+  const [undoClear, setUndoClear] = useState<{ body: string; origin: string | null } | null>(null)
   const [selection, setSelection] = useState<{ key: string | null; index: number }>({
     key: null,
     index: 0,
@@ -348,6 +350,10 @@ export function MacroWorkbench({ templates }: { templates: TemplateMacro[] }) {
     if (how === 'replace') {
       setEditorOrigin(template.slug)
       saveStoredOrigin(template.slug)
+      // まるごとセットしたあとは、続きをすぐ書き始められるよう、改行と「/」を足す（行数の上限に余裕があるときだけ）。
+      const trimmed = template.body.replace(/\n+$/, '')
+      if (trimmed.split('\n').length < MAX_LINES) newBody = `${trimmed}\n/`
+      nextCursor = newBody.length
     } else {
       const result = insertTemplate(body, cursor, template.body, how)
       if (!result.ok) {
@@ -364,6 +370,35 @@ export function MacroWorkbench({ templates }: { templates: TemplateMacro[] }) {
     requestAnimationFrame(() => {
       textareaRef.current?.focus()
       textareaRef.current?.setSelectionRange(nextCursor, nextCursor)
+    })
+  }
+
+  // 本文を空にする。アレンジ元も外す（新しいマクロを書き始めるため）。押し間違いに備えて、元に戻せる案内を出す。
+  function clearEditor() {
+    if (editorEmpty) return
+    setUndoClear({ body, origin: getEditorOrigin() })
+    stopLogPlayback()
+    setNotice(null)
+    setEditorOrigin(null)
+    saveStoredOrigin(null)
+    setBody('/')
+    setCursor(1)
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus()
+      textareaRef.current?.setSelectionRange(1, 1)
+    })
+  }
+
+  function undoClearEditor() {
+    if (!undoClear) return
+    setBody(undoClear.body)
+    setCursor(undoClear.body.length)
+    setEditorOrigin(undoClear.origin)
+    saveStoredOrigin(undoClear.origin)
+    setUndoClear(null)
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus()
+      textareaRef.current?.setSelectionRange(undoClear.body.length, undoClear.body.length)
     })
   }
 
@@ -524,6 +559,7 @@ export function MacroWorkbench({ templates }: { templates: TemplateMacro[] }) {
   // 行数・行長の上限を超える追加編集はブロックする（実機のマクロエディタに近い挙動）。
   // 削除・同サイズ以下の置換は常に許可し、入力に詰まらないようにする。
   function handleChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
+    setUndoClear(null)
     const el = event.target
     const newValue = el.value
     const newCursor = el.selectionStart
@@ -721,6 +757,13 @@ export function MacroWorkbench({ templates }: { templates: TemplateMacro[] }) {
                 feedback={urlCopy.state}
                 onClick={handleShare}
               />
+              <ActionBarItem
+                icon={<TrashIcon />}
+                caption={BAR_TEXT.clear}
+                title={UI_TEXT.clearEditor}
+                disabled={editorEmpty}
+                onClick={clearEditor}
+              />
             </ActionBar>
             <div className={styles.editorRow}>
             <div ref={gutterRef} aria-hidden className={styles.gutter}>
@@ -818,6 +861,11 @@ export function MacroWorkbench({ templates }: { templates: TemplateMacro[] }) {
             </ActionGroup>
           </div>
           {notice && <p className={styles.status} role="status">{notice}</p>}
+          {undoClear && (
+            <p className={styles.status} role="status">
+              本文を空にしました。 <button type="button" onClick={undoClearEditor} className={styles.undoButton}>元に戻す</button>
+            </p>
+          )}
           {manualShareUrl && (
             <p className={styles.status}>コピーできなかったので、共有URLをここに表示します：{manualShareUrl}</p>
           )}
