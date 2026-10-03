@@ -33,7 +33,7 @@ export function MacroMetaFields({ initial, tagSuggestions, controlled }: { initi
     <>
       <label className={styles.field}>タイトル<input required name="title" maxLength={LIMITS.title} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例：コンテンツ開始前の確認" className={styles.input} /></label>
       <label className={styles.field}>説明（任意）<textarea name="description" rows={2} maxLength={LIMITS.description} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="例：定型文マクロです。CWLSに呼びかけることができます。あいさつなどに使ってください。" className={`${styles.input} ${styles.textarea}`} />
-        <span className={styles.hint}>改行できます（{LIMITS.descriptionLines} 行まで・空行は不可）。他のマクロのURLを書くと、タイトルのリンクになります。</span></label>
+        <span className={styles.hint}>改行できます（{LIMITS.descriptionLines} 行まで・空行は不可）。他のマクロのURLを書くと、タイトルのリンクになります。`/micon 集中加工` のようにバッククォートで囲むと、マクロに近い見た目で表示されます。</span></label>
       <div>
         <label className={styles.field}>タグ（カンマ区切り）<input name="tags" value={tags} onChange={(event) => setTags(event.target.value)} placeholder="例：パーティ, チャット" className={styles.input} /></label>
         <div className={styles.suggestions} aria-label="既存のタグ">{visibleSuggestions.map((tag) => <button key={tag} type="button" onClick={() => addTag(tag)} className={styles.suggestion}>#{tag}</button>)}</div>

@@ -56,7 +56,7 @@
 - [`components/PageHero.tsx`](src/components/PageHero.tsx)（＋ `.module.scss`）— ページ冒頭の暗いタイトルボックス（/macros と / で共通。`compact` で少し小さく）
 - [`lib/shortcuts.ts`](src/lib/shortcuts.ts) — エディタのショートカット（Ctrl+Alt+C / P / S、Mac は ⌃⌥）の判定と表示用の表記。`event.code` で判定
 - [`components/EditorGuide.tsx`](src/components/EditorGuide.tsx)（＋ `.module.scss`）— エディタページ下部の「エディタの使い方」アコーディオン（初期は閉）。基本操作・サジェスト・代名詞補完・Tab/Esc・ショートカット・プレビュー・文字色の凡例。凡例の色は `styles/_mixins.scss` の `$highlight-tones` を `MacroWorkbench` と共有
-- [`components/MacroDescription.tsx`](src/components/MacroDescription.tsx) — 説明文の表示。展開済みの `descriptionParts`（他マクロ URL → タイトルリンク／削除済み表記）で描く。設計は `docs/publish.md`
+- [`components/MacroDescription.tsx`](src/components/MacroDescription.tsx) — 説明文の表示。展開済みの `descriptionParts`（他マクロ URL → タイトルリンク／削除済み表記）で描く。設計は `docs/publish.md` `` `コード` ``（バッククォート 1〜3 個）は等幅の `<code>`（`.module.scss`。マクロ本文のコマンドと同じ青の文字・うすい青の背景）で出す。コードの中の URL は展開しない（解析は `lib/published-macros/description-links.ts`）。
 - [`components/LogLegend.tsx`](src/components/LogLegend.tsx)（＋ `.module.scss`）— ログプレビューの下の凡例。いま出ている行の送信先の色、代名詞の表示（`**値**`／`<>` のまま）、再現できない行の警告、`<wait.N>` の「N秒待機」行の注記。色は `styles/_mixins.scss` の `$log-tones` を `LogList` と共有
 - [`components/DiscordLogo.tsx`](src/components/DiscordLogo.tsx) — Discord 公式シンボル（白）。変形・色変更はしない
 - [`app/not-found.tsx`](src/app/not-found.tsx) —  404 の共通表示（未知の URL・削除済み・公開停止中）。公開マクロから「役に立った」順のおすすめを添える（`listRecommendedMacros`）。リクエストごとに作る（`connection()`）。DB に届かないときはおすすめだけ省く
