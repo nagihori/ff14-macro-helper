@@ -36,6 +36,12 @@
 - Discord の ID・表示名・アバターを公開ページに出さない。Discord から取得するのは scope `identify` の範囲に限り、アバターとメールは保存しない。
 - `.env.example` にはプレースホルダだけを書く。実値（接続文字列・シークレット）は `.env.local` に置き、コミットしない。
 
+## 記事（簡易 CMS）
+
+- 記事（`/articles`）は `content/articles/*.md` から作る。書き方は [`content/README.md`](content/README.md)、設計は [`docs/articles.md`](docs/articles.md)。
+- `content/drafts/` は下書き・メモ置き場。公開せず、Git にも入れない（`content/drafts/.gitignore`）。
+- 記事の Markdown は、直接書いた HTML を文字として出し、危険な URL をリンクにしない（`src/lib/articles/markdown.ts`）。この方針を緩めない。
+
 ## 残件
 
 - 未着手・未確認の項目は [`docs/open-items.md`](docs/open-items.md) にまとめている。作業の区切りで更新し、片付いた行は消す。
