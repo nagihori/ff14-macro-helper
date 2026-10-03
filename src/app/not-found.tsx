@@ -6,7 +6,7 @@ import { EditIcon, PreviewIcon } from '@/components/icons'
 import { MacroCardSection } from '@/components/MacroCardSection'
 import { PageHero } from '@/components/PageHero'
 import { listRecommendedMacros } from '@/lib/published-macros/repository'
-import styles from './not-found.module.scss'
+import styles from './status-page.module.scss'
 
 export const metadata: Metadata = { title: 'ページが見つかりません', robots: { index: false } }
 
