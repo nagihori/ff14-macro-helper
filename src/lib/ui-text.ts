@@ -6,6 +6,8 @@ export const UI_TEXT = {
   copyPageUrl: 'URLをコピー',
   // 共有シートが使える端末（スマホなど）では、コピーではなく共有になるのでこちらを使う。
   share: 'URLを共有',
+  // Lodestone の掲示板に貼る BB コード（色付き）。公開中のマクロの詳細ページだけ。
+  copyLodestone: 'Lodestone用にコピー',
   editInEditor: 'エディタで編集',
   preview: '動作プレビュー',
   // サイト全体のタブ（全ページ共通ヘッダー）。

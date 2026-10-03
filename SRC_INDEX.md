@@ -41,6 +41,7 @@
 - [`app/sitemap.ts`](src/app/sitemap.ts) — sitemap.xml。固定ページ＋公開中のマクロ詳細（`listSitemapEntries`）。1 時間ごとに再生成
 - [`lib/site-url.ts`](src/lib/site-url.ts) — サイトの絶対 URL の基準（`SITE_URL`）。共有カードの基準と、説明内のマクロ URL の判別で共用
 - [`lib/site-config.ts`](src/lib/site-config.ts) — サイト名・既定の title / description（`BRAND_NAME` `DEFAULT_TITLE` `DEFAULT_DESCRIPTION`）。layout・各ページ・OGP 画像が参照
+- [`lib/share/lodestone.ts`](src/lib/share/lodestone.ts) — マクロを Lodestone 掲示板の BB コード（`[hb]` で畳み、`[color]` で構文ハイライト、末尾に `[url]`）へ書き出す純粋な関数。色は `[hb]` の明るい背景用に固定（単体テスト `lodestone.test.ts`）
 - [`lib/macro/double-slash.ts`](src/lib/macro/double-slash.ts) — 行頭「/」の直後の「/」（手癖の「//」）を「/」に戻す純粋な関数
 - [`components/ActionButton.tsx`](src/components/ActionButton.tsx)（＋ `.module.scss`）— 非エンジニア向けのアイコン付き丸ボタン（ボタン／リンク兼用）。`publish` は公開／投稿系の差し色（`pill-action-publish`。ライブラリの「自作マクロを投稿」・投稿フォームの送信も同じ）。`feedback` でコピー結果（チェック／バツ＋文言）に切り替わる
 - [`components/ActionGroup.tsx`](src/components/ActionGroup.tsx)（＋ `.module.scss`）— アクションボタン群の共通枠（エリア中央揃え・折り返し。スマホ幅では縦積み・幅いっぱい）
@@ -63,6 +64,7 @@
 - [`components/MacroCodeView.tsx`](src/components/MacroCodeView.tsx)（＋ `.module.scss`）— 詳細ページのコード本文。エディタと同じ `buildHighlight` で色分けする読み取り専用の表示（サーバーコンポーネント。波線・背景の警告は付けない。常に暗い面なので色は `$highlight-tones` のダーク側）
 - [`components/MacroPreviewAccordion.tsx`](src/components/MacroPreviewAccordion.tsx)（＋ `.module.scss`）— 詳細ページの「動作プレビュー」アコーディオン（初期は閉、サーバーコンポーネント）。`toLogPreview` の結果を全行一括で表示し、時刻は実時刻に展開せず `[HH:mm]` の文字列のまま。`LogList` と `LogLegend` を使う
 - [`components/LogList.tsx`](src/components/LogList.tsx)（＋ `.module.scss`）— ログプレビューの行の一覧。エディタの動作プレビューと詳細ページで共有。色は `$log-tones`。`kind: 'wait'`（行内 `<wait.N>` の注釈）は時刻なしで淡色
+- [`components/CopyLodestoneButton.tsx`](src/components/CopyLodestoneButton.tsx) — 詳細ページの「Lodestone用にコピー」（ghost）。BB コードはサーバーで作って props で受ける
 - [`components/CopyMacroButton.tsx`](src/components/CopyMacroButton.tsx) — 詳細ページの「マクロテキストをコピー」主ボタン（`ActionButton` ＋ `useCopyFeedback`）
 - [`components/useMacroCheck.tsx`](src/components/useMacroCheck.tsx) — コピー・共有URL・公開の直前に本文を解析し、エラー／警告があれば `MacroCheckDialog` を挟む `guard()` を返すフック（打ちかけの最終行も確定扱いで解析）
 - [`components/MacroCheckDialog.tsx`](src/components/MacroCheckDialog.tsx)（＋ `.module.scss`）— 問題の一覧（重大度・行番号・内容）を見せ、「エディタで修正する」か「このまま進む」を選ばせる確認ダイアログ

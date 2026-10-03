@@ -8,6 +8,7 @@
 | `copyShareUrl` | 共有URLをコピー | アクションボタン群（エディタ下部） |
 | `copyPageUrl` | URLをコピー | 詳細ページの共有ボタンのキャプション |
 | `share` | URLを共有 | 詳細ページの共有。共有シートが使える端末（スマホなど）のみ「URLをコピー」の代わりに使う |
+| `copyLodestone` | Lodestone用にコピー | 詳細ページ（公開中のみ・ghost）。色付きの BB コードをコピーする |
 | `editInEditor` | エディタで編集 | 詳細ページ |
 | `preview` | 動作プレビュー | アクションボタン群（エディタ下部） |
 | `tabEditor` / `tabLibrary` | エディタ / ライブラリ | 全ページ共通ヘッダーのタブ |
