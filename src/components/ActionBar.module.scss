@@ -1,6 +1,6 @@
 @use '../styles/mixins' as *;
 
-// コードブロックの上端に付く帯。色は surface-dark の上で読める文字色にする。
+// コードブロックの上端に付く帯。エディタと同じ面（ライトは薄い灰色・ダークは黒）の上で読める色にする。
 .bar {
   --bar-fg: var(--text-secondary);
   --bar-fg-strong: var(--text-strong);
@@ -31,9 +31,3 @@
   &:disabled { opacity: 0.5; cursor: default; }
 }
 
-.onDark {
-  --bar-fg: var(--zinc-400);
-  --bar-fg-strong: var(--zinc-50);
-  --bar-hover: var(--zinc-800);
-  --bar-border: var(--zinc-800);
-}

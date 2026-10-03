@@ -1,19 +1,19 @@
 @use 'sass:list';
 @use '../styles/mixins' as *;
 
-// 常に暗い面（--surface-dark）の上に出すので、色はテーマによらずダーク側（tone の2つ目）を使う。
-// 色の表は styles/_mixins.scss の $highlight-tones（エディタ・EditorGuide と共有）。
+// ライトでは薄い灰色、ダークでは黒の面（エディタと同じ --surface-page-editor。面は置く側が決める）の上に出す。
+// 色はエディタと同じく、ライト/ダークで tone の組を切り替える。表は styles/_mixins.scss の $highlight-tones（エディタ・EditorGuide と共有）。
 .code {
   overflow-x: auto;
   padding: 1.25rem;
   font-family: var(--font-mono);
   @include type(sm);
   line-height: 1.75rem;
-  color: var(--text-on-dark);
+  color: var(--text-strong);
 
   [data-kind] { white-space: pre; }
 
   @each $kind, $pair in $highlight-tones {
-    [data-kind='#{$kind}'] { color: var(--#{list.nth($pair, 2)}); }
+    [data-kind='#{$kind}'] { color: tone(list.nth($pair, 1), list.nth($pair, 2)); }
   }
 }

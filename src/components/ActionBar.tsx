@@ -5,10 +5,9 @@ import styles from './ActionBar.module.scss'
 
 // 操作帯（コードブロック上部）。GitHub や Qiita のコードブロックのような、小さなアイコン＋英小文字キャプションの帯。
 // エンジニア向けの近道で、非エンジニア向けの ActionButton と同じ操作を別の場所から呼ぶ。
-// onDark：ライトテーマでも暗いままの面（詳細ページのコードブロック）に載せるときの配色。
-export function ActionBar({ label, onDark, children }: { label: string; onDark?: boolean; children: React.ReactNode }) {
+export function ActionBar({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div role="toolbar" aria-label={label} className={onDark ? `${styles.bar} ${styles.onDark}` : styles.bar}>
+    <div role="toolbar" aria-label={label} className={styles.bar}>
       {children}
     </div>
   )
