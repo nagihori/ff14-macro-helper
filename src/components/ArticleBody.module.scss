@@ -1,0 +1,72 @@
+@use '../styles/mixins' as *;
+
+// 記事の本文。Markdown から作った HTML（.prose）と、埋め込んだマクロ（.macro）を縦に並べる。
+.body { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.prose {
+  font-size: 1rem;
+  line-height: 1.9;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+
+  h2 { margin: 2rem 0 0.75rem; @include type(xl); font-weight: 700; line-height: 1.5; color: var(--text-strong); }
+  h3 { margin: 1.5rem 0 0.5rem; @include type(lg); font-weight: 700; line-height: 1.5; color: var(--text-strong); }
+  h4 { margin: 1.25rem 0 0.5rem; font-weight: 700; color: var(--text-strong); }
+  p, ul, ol, blockquote, pre, table, hr { margin: 0 0 1rem; }
+  ul, ol { padding-left: 1.5rem; }
+  ul { list-style: disc; }
+  ol { list-style: decimal; }
+  li { margin-bottom: 0.25rem; }
+  strong { color: var(--text-strong); }
+  a { color: var(--link-tag); text-decoration: underline; text-decoration-color: var(--link-tag-underline); text-underline-offset: 4px; &:hover { color: var(--link-tag-hover); } }
+  blockquote { padding: 0.25rem 1rem; border-left: 3px solid var(--border-default); color: var(--text-muted); }
+  hr { border: 0; border-top: 1px solid var(--border-subtle); }
+  img { max-width: 100%; height: auto; border-radius: var(--radius-xl); }
+  table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; @include type(sm); }
+  th, td { padding: 0.375rem 0.75rem; border: 1px solid var(--border-subtle); text-align: left; }
+  th { background: var(--surface-hover); color: var(--text-strong); }
+
+  // インラインのコードは、説明文のコード（MacroDescription）と同じ見た目（マクロ本文のコマンドと同じ青）。
+  code {
+    padding: 0.0625em 0.375em;
+    border-radius: var(--radius-sm);
+    color: tone(blue-600, blue-400);
+    background: light-dark(color-mix(in oklab, var(--blue-600) 10%, transparent), color-mix(in oklab, var(--blue-400) 16%, transparent));
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+  // コードブロックは、詳細ページのマクロ本文と同じ面（エディタと同じ）。
+  pre {
+    overflow-x: auto;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    background: var(--surface-page-editor);
+    line-height: 1.75;
+    code { padding: 0; background: none; color: var(--text-strong); font-size: 0.875rem; }
+  }
+}
+
+// 埋め込んだマクロ。詳細ページのコードブロックと同じ面で、上にマクロ名（詳細へ）と「エディタで編集」。
+.macro {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--surface-page-editor);
+}
+
+.macroHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  @include type(sm);
+}
+
+.macroTitle { font-weight: 700; color: var(--text-strong); overflow-wrap: anywhere; &:hover { text-decoration: underline; text-underline-offset: 3px; } }
+.macroEdit { flex: none; @include type(xs); color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; &:hover { color: var(--text-strong); } }
+
+.missing { @include type(sm); color: var(--text-muted); }
