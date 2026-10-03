@@ -41,6 +41,9 @@
   border-radius: var(--radius-xl);
   background: var(--surface-card);
   box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+
+  // 項目は左揃え（ActionButton は中央揃えなので、この中だけ上書きする。:is で詳細度を上げて、読み込み順に左右されない）。
+  > :is(a, button) { justify-content: flex-start; }
 }
 
 // スマホ幅では ActionGroup が縦積み・幅いっぱいにするので、本体を伸ばして ▼ を右端に置く。
