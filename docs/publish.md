@@ -109,6 +109,17 @@ npm test                       # 検証ロジックの単体テスト
   - GA の管理画面側でやること：データストリームの「拡張計測機能」のうち **「ブラウザの履歴イベントに基づくページ変更」をオフ**にする（オンだと、クエリ付きの URL で重複したページビューが送られる）。ほかの拡張計測（スクロール・離脱クリックなど）はそのままでよい。
 - Search Console：本番ドメインを登録し、`/sitemap.xml` を送信する。
 
+## セキュリティヘッダ（CSP）
+
+`next.config.ts` の `headers()` で、全ページに Content-Security-Policy を付ける。XSS をすり抜けられたときの保険で、読み込みと送信の相手を「自分自身・Google アナリティクス・Discord（ログイン）」に絞る。
+
+- **既定は報告のみ**（`Content-Security-Policy-Report-Only`）。ページは壊れず、違反はブラウザのコンソールに `[Report Only] Refused to …` と出る。
+- **強制に切り替える**：Vercel の環境変数 `CSP_ENFORCE=true` を設定して再デプロイする（ヘッダーはビルド時に決まるので、再デプロイが要る）。戻すときは変数を消して再デプロイ。
+- **切り替える前に**：本番で、ログイン → 投稿 → 投票 → 管理者操作 → 404 まで一通り触り、コンソールに `[Report Only]` が出ないことを確かめる。出たら、その相手が必要なものかを見て、`next.config.ts` の許可を足す（足すのは必要なものだけ）。
+- **許可の理由**：`script-src` の `'unsafe-inline'` は、Next の内部スクリプトとテーマの初期化スクリプトのため。外す nonce 方式は全ページが動的描画になる（静的ページのキャッシュがなくなる）ので見送り。`font-src` の `data:` は、CSS に埋め込まれたフォントのため。`form-action` の `discord.com` は、ログインのリダイレクトのため。
+- **検証の手順（ローカル）**：`GA_MEASUREMENT_ID=G-TEST1234 npm run build` のあと `npx next start` で起動し、ブラウザで各ページを開いて、`ReportingObserver`（`types: ['csp-violation']`, `buffered: true`）で違反を集める。開発ツールのコンソール取得だけでは、CSP の違反が見えないことがある。
+- ログイン後の画面（投稿フォーム・自分の投稿の編集・管理者操作）と、本番の GA の送信先は、ローカルでは確かめていない。
+
 ## 本番 DB へのマイグレーション
 
 `npm run db:migrate` は `.env.local` の `DATABASE_URL`（開発 DB）に流す。本番には `.env.local` を使わず、接続文字列をその場のシェルにだけ渡す。
