@@ -7,6 +7,7 @@ import type { HighlightSegment, HighlightSegmentKind } from '@/lib/macro/types'
 import { BRAND_GLYPH_VIEWBOX, brandGlyphDataUrl } from './brand-glyph'
 import { BRAND_ICON_DATA_URL } from './brand-icon'
 import { loadFont } from './font'
+import { fitTags, textWidth } from './fit-tags'
 import { BRAND_NAME } from '@/lib/site-config'
 
 // マクロの共有カード（OGP 画像）。マクロの冒頭をシンタックスハイライトつきで見せる、ミニマルな道具の顔。
@@ -65,7 +66,9 @@ function clipSegments(segments: HighlightSegment[], maxWidth: number): Highlight
 export async function macroCardImage({ title: rawTitle, body, tags: rawTags = [], listLines, listMore, headers }: { title?: string; body: string | null; tags?: string[]; listLines?: string[]; listMore?: string; headers?: HeadersInit }) {
   const macro = body !== null || listLines !== undefined
   const title = macro ? clip(rawTitle ?? '', 44) : BRAND_NAME
-  const tags = rawTags.slice(0, 4).map((tag) => `#${tag}`)
+  // 足元のタグは、右下のアイコンと名前にぶつからない幅に収まる分だけ（内側の幅 1032 − タグの左の余白 46 − アイコンと名前 − 余裕）。
+  const brandWidth = 48 + 16 + textWidth(BRAND_NAME)
+  const tags = fitTags(rawTags.slice(0, 4).map((tag) => `#${tag}`), 1032 - 46 - brandWidth - 32)
   const allLines = listLines
     ? listLines.map((text) => ({ segments: [{ text, kind: 'text' as const }] }))
     : body !== null
