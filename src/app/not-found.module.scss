@@ -1,0 +1,29 @@
+@use '../styles/mixins' as *;
+
+// 404 ページ。
+.page {
+  @include page-shell;
+  padding: 1.5rem;
+
+  @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+}
+
+.container {
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.link {
+  @include type(sm);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+
+  &:hover { color: var(--text-strong); }
+}
