@@ -7,11 +7,11 @@ import styles from './LogList.module.scss'
 export function LogList({ entries }: { entries: LogEntry[] }) {
   return (
     <ul className={styles.log}>
-      {entries.map((entry) => (
-        <li key={entry.line} className={styles.logEntry} data-kind={entry.kind}>
+      {entries.map((entry, index) => (
+        <li key={index} className={styles.logEntry} data-kind={entry.kind}>
           {entry.unreproducible ? (
             <WarningIcon label="このプレビューでは再現できません" />
-          ) : (
+          ) : entry.kind === 'wait' ? null : (
             <>
               <span className={styles.logTime}>[{entry.timestamp}]</span>{' '}
             </>

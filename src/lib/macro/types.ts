@@ -61,6 +61,8 @@ export type LogEntryKind =
   | 'echo'
   | 'action'
   | 'system'
+  // 行内の <wait.秒数> を、その行の直後に別行として出す注釈（時刻なし）
+  | 'wait'
   | 'error'
   | 'unknown'
 

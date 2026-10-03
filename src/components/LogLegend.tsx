@@ -15,6 +15,7 @@ const LOG_KIND_LABEL: Record<LogEntryKind, string> = {
   echo: 'エコー',
   action: 'アクション',
   system: 'システム',
+  wait: '待機',
   error: 'エラー',
   unknown: '再現できない行',
 }
@@ -26,7 +27,7 @@ export function LogLegend({ entries }: { entries: LogEntry[] }) {
   const placeholders = entries.flatMap((entry) => entry.segments.filter((segment) => segment.kind === 'placeholder'))
   const hasValue = placeholders.some((segment) => segment.text.startsWith('**'))
   const hasLiteral = placeholders.some((segment) => !segment.text.startsWith('**'))
-  const shown = LOG_KINDS.filter((kind) => kinds.has(kind) && kind !== 'unknown')
+  const shown = LOG_KINDS.filter((kind) => kinds.has(kind) && kind !== 'unknown' && kind !== 'wait')
 
   return (
     <div className={styles.legend}>
@@ -49,6 +50,11 @@ export function LogLegend({ entries }: { entries: LogEntry[] }) {
       {hasLiteral && (
         <p>
           <span className={styles.placeholder}>&lt;2&gt;</span> のように <code>&lt;&gt;</code> のまま出るものは、対象などの代名詞です。ゲーム内で置き換わります。
+        </p>
+      )}
+      {kinds.has('wait') && (
+        <p>
+          時刻のない「N秒待機」の行は、<code>/wait</code> または行内の <code>&lt;wait.N&gt;</code> による待ちの目安です。
         </p>
       )}
       {entries.some((entry) => entry.unreproducible) && (
