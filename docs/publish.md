@@ -34,7 +34,7 @@
 
 ## データモデル
 
-- `users`：OAuth 側の ID と表示名（内部用・非公開）、公開名 `public_handle`（初回の投稿で登録）。
+- `users`：OAuth 側の ID と表示名（内部用・非公開）、公開名 `public_handle`（初回の投稿で登録）。重複は `public_handle_key`（全角半角・大文字小文字・空白を無視した生成列）のユニーク制約で禁止し、運営を名乗る語（`RESERVED_HANDLE_WORDS`）を含む名前は `publish.ts` で断る。既存の公開名は、変更するまでは予約語を含んでいても使い続けられる。
 - `macros`：slug・タイトル・説明・本文・タグ（`text[]`）・投稿者（`author_id`）・公開名の複写（`author_handle`）・アレンジ元（`arranged_from`）・`status`（`published` / `suspended` / `deleted`）・リアクション件数。
 - 公開名を変えると、本人の過去の投稿の `author_handle` も追従させる。
 
@@ -123,6 +123,22 @@ unset DATABASE_URL
 - 実行すると最初に `対象: <ホスト>/<DB 名>` が出る。開発 DB と本番 DB のホストが違うことを目で確かめてから流す。
 - `--dry-run` は何も書かない。適用済みは `_migrations` に記録されているので、再実行しても二重には流れない。
 - 各ファイルはトランザクションで流すので、途中で失敗したファイルは反映されない。
+
+## 公開名を一意にするマイグレーション（0004）
+
+`0004_unique_handle.sql` は `users.public_handle_key`（生成列）とそのユニークインデックスを足す。**本番に流す前に**、既存の公開名に重複がないか確かめる。重複があるとインデックスの作成で失敗する（ファイルごとロールバックされるので壊れはしない）。
+
+```sql
+-- 重複（0 行ならよい。出たら、どちらかに公開名を変えてもらう）
+SELECT lower(regexp_replace(normalize(public_handle, NFKC), '\s', '', 'g')) AS k, count(*), array_agg(public_handle)
+FROM users WHERE public_handle IS NOT NULL GROUP BY k HAVING count(*) > 1;
+
+-- 予約語を含む既存の公開名（流しても弾かれないが、変更時には使えなくなる。自分の名前が入っていないか見る）
+SELECT public_handle FROM users
+WHERE lower(regexp_replace(normalize(public_handle, NFKC), '\s', '', 'g')) ~ '(運営|管理人|管理者|公式|事務局|admin|moderator|staff|official|system)';
+```
+
+そのあと、上の「本番 DB へのマイグレーション」の手順（`--dry-run` で対象を確かめてから適用）で流す。
 
 ## 削除依頼への対応（運営者の手作業）
 
