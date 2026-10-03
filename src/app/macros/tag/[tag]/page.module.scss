@@ -1,0 +1,29 @@
+@use '../../../../styles/mixins' as *;
+
+// タグ別一覧ページの外枠。幅と余白は他の一覧ページ（/macros）にそろえる。
+.page { @include page-shell; }
+
+.container {
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 3rem;
+
+  @media (min-width: $bp-sm) { padding-inline: 2.5rem; }
+}
+
+.relatedTags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  @include type(sm);
+  color: var(--text-muted);
+}
+
+.tag {
+  @include type(xs);
+  font-weight: 600;
+  @include tag-link;
+}

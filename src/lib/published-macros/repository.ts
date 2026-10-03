@@ -90,6 +90,21 @@ export async function listTags(): Promise<string[]> {
   return rows.map((row) => row.tag as string)
 }
 
+// タグ別一覧。そのタグが付いた公開中のマクロを新しい順に返す。
+export async function listPublishedMacrosByTag(tag: string): Promise<PublishedMacro[]> {
+  const rows = await getSql().query(`select ${columns} ${from} where m.status = 'published' and $1 = any(m.tags) order by m.published_at desc`, [tag])
+  return (rows as Row[]).map(toMacro)
+}
+
+// sitemap 用。公開中のマクロが minCount 件以上あるタグだけを返す。
+export async function listIndexableTags(minCount: number): Promise<string[]> {
+  const rows = await getSql().query(
+    `select tag from macros m, unnest(m.tags) as tag where m.status = 'published' group by tag having count(*) >= $1 order by tag`,
+    [minCount],
+  )
+  return rows.map((row) => row.tag as string)
+}
+
 // ---- 停止中のマクロ（管理者と、その投稿者だけが見られる） ----
 
 export type Viewer = { id: string; isAdmin: boolean }

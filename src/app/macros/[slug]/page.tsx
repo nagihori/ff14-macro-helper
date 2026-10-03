@@ -20,6 +20,7 @@ import { MacroDescription } from '@/components/MacroDescription'
 import { findDerivedMacros, findMacroForViewer, findPublishedMacro, findRelatedMacros, isMacroAuthor } from '@/lib/published-macros/repository'
 import { getDictionary } from '@/lib/commands/dictionary'
 import { toLodestoneBBCode } from '@/lib/share/lodestone'
+import { tagPath } from '@/lib/published-macros/tags'
 import { buildEditorPath } from '@/lib/share/url'
 import { BRAND_NAME } from '@/lib/site-config'
 import { getSiteUrl } from '@/lib/site-url'
@@ -70,7 +71,7 @@ export default async function PublishedMacroPage({ params }: PageProps<'/macros/
         <article className={styles.article}>
           <div className={styles.tags}>
             {macro.tags.map((tag) => (
-              <Link key={tag} href={`/macros?q=${encodeURIComponent(`#${tag}`)}`} className={styles.tag}>#{tag}</Link>
+              <Link key={tag} href={tagPath(tag)} className={styles.tag}>#{tag}</Link>
             ))}
           </div>
           <h1 className={styles.title}>{macro.title}</h1>

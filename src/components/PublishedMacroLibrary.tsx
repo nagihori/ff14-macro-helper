@@ -3,8 +3,7 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import type { PublishedMacro } from '@/lib/published-macros/types'
-import { PublishedMacroReactions } from './PublishedMacroReactions'
-import { MacroDescription } from './MacroDescription'
+import { PublishedMacroCardList } from './PublishedMacroCardList'
 import { PageHero } from './PageHero'
 import { UI_TEXT } from '@/lib/ui-text'
 import styles from './PublishedMacroLibrary.module.scss'
@@ -55,15 +54,7 @@ export function PublishedMacroLibrary({ allMacros, initialQuery = '' }: { allMac
         <p className={styles.count}>{macros.length} 件の公開マクロ</p>
         <Link href="/macros/submit" className={styles.submitAction}>{UI_TEXT.submitMacro}</Link>
       </div>
-      <section className={styles.grid}>
-        {macros.map((macro) => <article key={macro.slug} className={styles.card}>
-          <div className={styles.cardTags}>{macro.tags.map((tag) => <button key={tag} type="button" onClick={() => setQuery(`#${tag}`)} className={styles.cardTag}>#{tag}</button>)}</div>
-          <h2 className={styles.cardTitle}><Link href={`/macros/${macro.slug}`} className={styles.cardTitleLink}>{macro.title}</Link></h2>
-          <p className={styles.cardDescription}><MacroDescription description={macro.description} parts={macro.descriptionParts} linkClassName={styles.cardDescriptionLink} /></p>
-          <p className={styles.cardMeta}>投稿者 {macro.authorHandle} · {macro.publishedAt}</p>
-          <div className={styles.cardReactions}><PublishedMacroReactions macroSlug={macro.slug} initialHelpful={macro.reactions.helpful} initialProblem={macro.reactions.problem} /></div>
-        </article>)}
-      </section>
+      <PublishedMacroCardList macros={macros} />
       {macros.length === 0 && <p className={styles.empty}>条件に一致するマクロはありません。検索語やタグを変えてください。</p>}
     </main>
   )
