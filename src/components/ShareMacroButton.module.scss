@@ -6,7 +6,8 @@
   display: inline-flex;
 }
 
-.main {
+.split .main {
+  // ActionButton の secondary（border と角丸の指定）に負けないよう、.split を付けて詳細度を上げる（CSS の読み込み順に左右されない）。
   border-start-end-radius: 0;
   border-end-end-radius: 0;
   border-inline-end-width: 0;

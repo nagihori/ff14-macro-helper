@@ -19,10 +19,12 @@ const TABS = [
 // brandName は環境変数で差し替わる値（サーバー側でしか読めない）ので、layout から props で受け取る。
 export function SiteHeader({ brandName }: { brandName: string }) {
   const pathname = usePathname()
+  // ブランド名は「いまいるモードの入口」へ戻る（ライブラリ配下では /macros、それ以外では /）。切り替えはタブが担う。
+  const brandHref = TABS[1].isCurrent(pathname) ? TABS[1].href : TABS[0].href
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
-        <Link href="/" className={styles.brand}>
+        <Link href={brandHref} className={styles.brand}>
           {/* アイコンは飾り（隣にブランド名があるので読み上げない）。public/favicon.png を next/image が小さく変換して配る */}
           <Image src="/favicon.png" alt="" width={24} height={24} className={styles.logo} />
           {brandName}
