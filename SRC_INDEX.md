@@ -14,6 +14,8 @@
 
 - [`app/page.tsx`](src/app/page.tsx)（＋ `page.module.scss`）— トップ。コンパクトな `PageHero`（マクロエディタ）、`MacroWorkbench` の順に表示
 - [`app/macros/page.tsx`](src/app/macros/page.tsx) — 公開マクロ一覧。`?q=` を受け取り `PublishedMacroLibrary` へ初期検索語として渡す。「自作マクロを投稿」（新規投稿の入口）は `PublishedMacroLibrary` の件数の横。ページ最下部に Discord ログイン／ログアウト。ログイン中なら「公開停止中」のマクロへの入口も出す（管理者は全件、投稿者は自分の分）
+- [`app/macros/tag/[tag]/feed.xml/route.ts`](src/app/macros/tag/%5Btag%5D/feed.xml/route.ts) — タグ別の新着 Atom フィード（`/macros/tag/タグ名/feed.xml`）。タグ別一覧の `<link rel="alternate">` から見つけられる。該当 0 件は 404
+- [`lib/feed/macro-feed.ts`](src/lib/feed/macro-feed.ts) — 新着フィードの Response を作る（全体用とタグ別で共通。DB 読み取りと説明内 URL の展開を含む）
 - [`app/macros/feed.xml/route.ts`](src/app/macros/feed.xml/route.ts) — 新着公開マクロの Atom フィード（`/macros/feed.xml`、最新 30 件、1 時間ごとに再生成）。本文は載せない。`/macros` の `<link rel="alternate">` から見つけられる。DB に届かなければ 503
 - [`lib/feed/atom.ts`](src/lib/feed/atom.ts) — Atom 1.0 の組み立て（純粋な関数。XML のエスケープ・制御文字の除去・単体テスト `atom.test.ts`）
 - [`app/macros/tag/[tag]/page.tsx`](src/app/macros/tag/%5Btag%5D/page.tsx)（＋ `.module.scss`）— タグ別一覧（`/macros/tag/タグ名`）。そのタグの公開マクロを新しい順に、一覧と同じカード（`PublishedMacroCardList`）で出し。「公開マクロ一覧へ」はセカンダリボタン、一緒に付いているタグへ内部リンクを張る。0 件は 404。`MIN_INDEXABLE_TAG_MACROS` 件未満は noindex（`lib/published-macros/tags.ts`）

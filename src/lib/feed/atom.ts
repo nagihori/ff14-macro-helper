@@ -16,7 +16,7 @@ const escapeXml = (text: string) =>
 const stripControl = (text: string) => text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
 const text = (value: string) => escapeXml(stripControl(value))
 
-export function buildAtomFeed({ title, subtitle, siteUrl, feedUrl, entries }: { title: string; subtitle: string; siteUrl: string; feedUrl: string; entries: FeedEntry[] }): string {
+export function buildAtomFeed({ title, subtitle, alternateUrl, feedUrl, entries }: { title: string; subtitle: string; alternateUrl: string; feedUrl: string; entries: FeedEntry[] }): string {
   // フィード全体の更新日時は、いちばん新しいエントリ（なければ UNIX エポック）。
   const updated = entries.reduce((latest, entry) => (entry.published > latest ? entry.published : latest), '1970-01-01T00:00:00Z')
   const items = entries.map((entry) => `  <entry>
@@ -33,7 +33,7 @@ ${entry.tags.map((tag) => `    <category term="${text(tag)}"/>`).join('\n')}${en
   <title>${text(title)}</title>
   <subtitle>${text(subtitle)}</subtitle>
   <link rel="self" type="application/atom+xml" href="${text(feedUrl)}"/>
-  <link rel="alternate" type="text/html" href="${text(siteUrl)}/macros"/>
+  <link rel="alternate" type="text/html" href="${text(alternateUrl)}"/>
   <id>${text(feedUrl)}</id>
   <updated>${updated}</updated>
 ${items.join('\n')}

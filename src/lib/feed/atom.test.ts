@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildAtomFeed } from './atom'
 
-const base = { title: 'サイト', subtitle: '新着', siteUrl: 'https://example.com', feedUrl: 'https://example.com/macros/feed.xml' }
+const base = { title: 'サイト', subtitle: '新着', alternateUrl: 'https://example.com/macros', feedUrl: 'https://example.com/macros/feed.xml' }
 const entry = { url: 'https://example.com/macros/abc', title: 'A & B <c>', summary: '説明', author: 'Moco', tags: ['製作', '耐久40'], published: '2026-10-03T01:00:00Z' }
 
 describe('Atom フィード', () => {

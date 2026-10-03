@@ -32,7 +32,8 @@ export async function generateMetadata({ params }: PageProps<'/macros/tag/[tag]'
   return {
     title,
     description,
-    alternates: { canonical: tagPath(tag) },
+    // canonical と、フィードリーダーが見つけるためのタグ別フィード（<link rel="alternate">）。
+    alternates: { canonical: tagPath(tag), types: { 'application/atom+xml': `${tagPath(tag)}/feed.xml` } },
     robots: { index: macros.length >= MIN_INDEXABLE_TAG_MACROS, follow: true },
     openGraph: { type: 'website', title, description, url: tagPath(tag) },
   }
