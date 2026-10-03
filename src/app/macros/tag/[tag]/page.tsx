@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ActionButton } from '@/components/ActionButton'
-import { ArrowLeftIcon } from '@/components/icons'
+import { ArrowLeftIcon, FeedIcon } from '@/components/icons'
 import { PageHero } from '@/components/PageHero'
 import { PublishedMacroCardList } from '@/components/PublishedMacroCardList'
 import { listPublishedMacrosByTag } from '@/lib/published-macros/repository'
@@ -53,7 +53,10 @@ export default async function MacroTagPage({ params }: PageProps<'/macros/tag/[t
     <main className={styles.page}>
       <PageHero compact eyebrow="TAG" title={`#${tag}`} lead={`「#${tag}」のついた公開マクロ ${macros.length} 件です。`} />
       <div className={styles.container}>
-        <ActionButton icon={<ArrowLeftIcon />} variant="secondary" href="/macros">{UI_TEXT.backToLibrary}</ActionButton>
+        <div className={styles.topRow}>
+          <ActionButton icon={<ArrowLeftIcon />} variant="secondary" href="/macros">{UI_TEXT.backToLibrary}</ActionButton>
+          <a href={`${tagPath(tag)}/feed.xml`} className={styles.feed}><FeedIcon />{UI_TEXT.tagFeed}</a>
+        </div>
         {relatedTags.length > 0 && (
           <p className={styles.relatedTags}>
             一緒に付いているタグ：
