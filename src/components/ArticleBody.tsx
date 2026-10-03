@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { MacroCodeView } from './MacroCodeView'
 import { findPublishedMacro } from '@/lib/published-macros/repository'
+import { stripHtmlComments } from '@/lib/articles/comments'
 import { renderMarkdown } from '@/lib/articles/markdown'
 import { splitArticleBody } from '@/lib/articles/split'
 import { buildEditorPath } from '@/lib/share/url'
@@ -10,7 +11,8 @@ import styles from './ArticleBody.module.scss'
 // マクロの埋め込み（本文に `::macro[slug]` だけの行を書く）を、順に並べる。
 // マクロは iframe ではなく、このサイトの中でそのまま描く（速く、見た目がそろい、検索エンジンにも本文として読まれる）。
 export async function ArticleBody({ body }: { body: string }) {
-  const segments = splitArticleBody(body)
+  // 下書きのメモ（<!-- … -->）は、記事に出さない。
+  const segments = splitArticleBody(stripHtmlComments(body))
   return (
     <div className={styles.body}>
       {segments.map((segment, index) =>

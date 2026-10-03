@@ -11,7 +11,8 @@ const isExternal = (href: string) => /^https?:\/\//i.test(href.trim())
 
 const marked = new Marked({
   gfm: true,
-  breaks: false,
+  // 日本語の文章は、1 文ごとに改行して書くことが多い。改行を、そのまま改行として出す（空白にすると、文のあいだに不自然な空きができる）。
+  breaks: true,
   renderer: {
     html({ text }: Tokens.HTML | Tokens.Tag) {
       return escapeHtml(text)

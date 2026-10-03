@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { stripHtmlComments } from './comments'
 import { parseFrontmatter } from './frontmatter'
 import { renderMarkdown } from './markdown'
 import { splitArticleBody } from './split'
@@ -48,6 +49,9 @@ describe('Markdown の描画', () => {
     expect(html).toContain('<strong>太字</strong>')
     expect(html).toContain('<code>code</code>')
   })
+  it('文章の途中の改行は、そのまま改行として出す（日本語は 1 文ごとに改行して書くことが多い）', () => {
+    expect(renderMarkdown('一文目。\n二文目。')).toContain('一文目。<br>二文目。')
+  })
   it('直接書いた HTML は、タグとして通さず文字にする', () => {
     const html = renderMarkdown('<script>alert(1)</script>\n\nテキスト <b onclick="x()">太</b>')
     expect(html).not.toContain('<script>')
@@ -65,5 +69,24 @@ describe('Markdown の描画', () => {
   it('画像は http(s) とサイト内のパスだけ', () => {
     expect(renderMarkdown('![a](javascript:x)')).not.toContain('<img')
     expect(renderMarkdown('![図](/images/a.png)')).toContain('<img src="/images/a.png" alt="図"')
+  })
+})
+
+describe('HTML コメントの除去', () => {
+  it('一行・複数行のコメントを消す', () => {
+    expect(stripHtmlComments('前\n<!-- メモ -->\n後')).toBe('前\n\n後')
+    expect(stripHtmlComments('前\n<!--\n  複数行の\n  メモ\n-->\n後').trim()).toBe('前\n\n後')
+    expect(stripHtmlComments('文章 <!-- 途中のメモ --> の続き')).toBe('文章  の続き')
+  })
+  it('コードブロックとインラインコードの中は、書き方の例なので消さない', () => {
+    const body = '```html\n<!-- コード例 -->\n```\n\n`<!-- 例 -->` と <!-- 消える -->\n'
+    expect(stripHtmlComments(body)).toBe('```html\n<!-- コード例 -->\n```\n\n`<!-- 例 -->` と \n')
+  })
+  it('閉じていないコメントは、間違いに気づけるよう残す', () => {
+    expect(stripHtmlComments('前 <!-- 閉じ忘れ')).toBe('前 <!-- 閉じ忘れ')
+  })
+  it('コメントの中の ::macro は、埋め込まれない（コメントを消してから分割する）', () => {
+    const segments = splitArticleBody(stripHtmlComments('<!--\n::macro[abc12345]\n-->\n\n::macro[def67890]'))
+    expect(segments).toEqual([{ type: 'macro', slug: 'def67890' }])
   })
 })
