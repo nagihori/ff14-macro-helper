@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import type { LogEntry } from '@/lib/macro/types'
-import { PreviewIcon } from './icons'
+import { ExternalLinkIcon, PreviewIcon } from './icons'
 import { LogList } from './LogList'
 import { EmbedCopyButton } from './EmbedCopyButton'
 import styles from './EmbedViewer.module.scss'
@@ -49,8 +49,11 @@ export function EmbedViewer({ title, detailHref, body, entries, code, editHref, 
       {/* 上のバーは、下のコード・プレビューの 2 列に合わせる（左：マクロ名、右：プレビューの切り替えと EDIT ON）。 */}
       <div className={styles.topBar}>
         <div className={styles.barLeft}>
-          {/* マクロ名は詳細ページへのリンク（貼り付け先のページを離れないよう別タブ）。 */}
-          <a href={detailHref} target="_blank" rel="noopener" className={`${styles.tab} ${styles.active}`} title={`${title}（${brandName}で詳細を開く）`}>{title}</a>
+          {/* マクロ名は詳細ページへのリンク。タブではなく、外部リンクの印つきの文字にする（別タブで開くので、タブのように見せると、押したときの期待を裏切る）。 */}
+          <a href={detailHref} target="_blank" rel="noopener" className={styles.titleLink} aria-label={`${title}（${brandName}の詳細ページを新しいタブで開く）`} title={`${brandName}で詳細を開く`}>
+            <span className={styles.titleText}>{title}</span>
+            <ExternalLinkIcon />
+          </a>
         </div>
         <div className={styles.barRight}>
           <button
