@@ -39,6 +39,7 @@ $cards-three-columns: 960px;
 }
 
 .cardTitle {
+  overflow-wrap: anywhere; // 展開されない長い URL などで、カードからはみ出さないように
   margin-top: 1rem;
   @include type(lg);
   font-weight: 600;
@@ -56,6 +57,7 @@ $cards-three-columns: 960px;
 }
 
 .cardDescription {
+  overflow-wrap: anywhere;
   margin-top: 0.5rem;
   @include type(sm);
   line-height: 1.5rem;

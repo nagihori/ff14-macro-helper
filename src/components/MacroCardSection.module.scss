@@ -33,11 +33,13 @@
 }
 
 .relatedTitle {
+  overflow-wrap: anywhere;
   @include type(sm);
   font-weight: 600;
 }
 
 .relatedDescription {
+  overflow-wrap: anywhere;
   @include type(xs);
   color: var(--text-secondary);
 }

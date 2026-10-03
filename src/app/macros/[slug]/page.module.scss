@@ -45,6 +45,7 @@
 
 .description {
   white-space: pre-line; // 説明の改行を表示に反映する
+  overflow-wrap: anywhere; // 展開されない長い URL でもはみ出さない
   margin-top: 0.75rem;
   line-height: 1.75rem;
   color: var(--text-secondary);
