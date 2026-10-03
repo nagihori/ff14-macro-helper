@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { readdirSync } from "node:fs";
 import path from "node:path";
 
 // Content-Security-Policy。XSS をすり抜けられたときに、外部のスクリプト読み込みや情報の持ち出しを
@@ -25,7 +26,24 @@ const buildCsp = (frameAncestors: string) => [
 ].join("; ");
 const cspHeader = process.env.CSP_ENFORCE === "true" ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only";
 
+// 記事（content/articles/*.md）が 1 本でもあるか。フッターの「記事」リンクを出すかどうかに使う（ビルド時に決まる）。
+const hasArticles = (() => {
+  try {
+    return readdirSync(path.join(__dirname, "content", "articles")).some((name) => /^[a-z0-9][a-z0-9-]*\.md$/.test(name));
+  } catch {
+    return false;
+  }
+})();
+
 const nextConfig: NextConfig = {
+  env: { NEXT_PUBLIC_HAS_ARTICLES: hasArticles ? "1" : "" },
+  // 記事のファイルは実行時に fs で読むので、記事・フィード・サイトマップの関数に、確実に含める。
+  outputFileTracingIncludes: {
+    "/articles": ["./content/articles/**/*"],
+    "/articles/*": ["./content/articles/**/*"],
+    "/articles/feed.xml": ["./content/articles/**/*"],
+    "/sitemap.xml": ["./content/articles/**/*"],
+  },
   // 親ディレクトリ（/usr/local/Projects）に別の package-lock.json があり、ルートを取り違えるため明示する。
   turbopack: { root: path.resolve(__dirname) },
   async headers() {
