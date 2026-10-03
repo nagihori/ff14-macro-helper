@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArticleBody } from '@/components/ArticleBody'
+import { ArticleCta } from '@/components/ArticleCta'
 import { getArticle, listArticles } from '@/lib/articles/load'
 import { BRAND_NAME } from '@/lib/site-config'
 import styles from './page.module.scss'
@@ -39,6 +40,7 @@ export default async function ArticlePage({ params }: PageProps<'/articles/[slug
         <h1 className={styles.title}>{article.meta.title}</h1>
         {article.meta.description && <p className={styles.lead}>{article.meta.description}</p>}
         <ArticleBody body={article.body} />
+        <ArticleCta />
       </article>
     </main>
   )

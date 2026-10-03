@@ -1,0 +1,13 @@
+@use '../styles/mixins' as *;
+
+// 記事の末尾の案内。本文と区切る線の下に、静かな面で置く。
+.cta {
+  margin-top: 3rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-2xl);
+  background: var(--surface-tint);
+}
+
+.text { @include type(sm); line-height: 1.8; color: var(--text-secondary); }
+.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }

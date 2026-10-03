@@ -47,26 +47,18 @@
   }
 }
 
-// 埋め込んだマクロ。詳細ページのコードブロックと同じ面で、上にマクロ名（詳細へ）と「エディタで編集」。
+// 埋め込んだマクロ。詳細ページのコードブロックと同じ面で、上にマクロ名（詳細へ）、その下に操作帯（copy / edit）、コード。
+.macroFigure { margin: 0; }
+.hint { margin-bottom: 0.5rem; @include type(sm); color: var(--text-muted); }
+
 .macro {
-  margin: 0;
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
   background: var(--surface-page-editor);
 }
 
-.macroHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--border-subtle);
-  @include type(sm);
-}
-
+.macroHead { padding: 0.625rem 1rem 0; @include type(sm); }
 .macroTitle { font-weight: 700; color: var(--text-strong); overflow-wrap: anywhere; &:hover { text-decoration: underline; text-underline-offset: 3px; } }
-.macroEdit { flex: none; @include type(xs); color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; &:hover { color: var(--text-strong); } }
 
 .missing { @include type(sm); color: var(--text-muted); }

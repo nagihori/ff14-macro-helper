@@ -26,7 +26,9 @@
 - [`app/articles/page.tsx`](src/app/articles/page.tsx)（＋ `.module.scss`）— 記事の一覧（`/articles`）。`content/articles/*.md` を新しい日付順に。1 本もないあいだは noindex。設計は [`docs/articles.md`](docs/articles.md)
 - [`app/articles/[slug]/page.tsx`](src/app/articles/%5Bslug%5D/page.tsx)（＋ `.module.scss`）— 記事（`/articles/{slug}`）。タイトル・日付・タグ・説明と本文（`ArticleBody`）。`generateStaticParams`・title / OGP / canonical
 - [`app/articles/feed.xml/route.ts`](src/app/articles/feed.xml/route.ts) — 記事の Atom フィード（最新 30 本・静的）
-- [`components/ArticleBody.tsx`](src/components/ArticleBody.tsx)（＋ `.module.scss`）— 記事の本文。Markdown の部分と、`::macro[slug]` で埋め込んだ公開マクロ（`MacroCodeView`・名前から詳細・「エディタで編集」）を並べる。見つからないマクロは小さな案内
+- [`components/ArticleBody.tsx`](src/components/ArticleBody.tsx)（＋ `.module.scss`）— 記事の本文。Markdown の部分と、`::macro[slug]` で埋め込んだ公開マクロ（名前から詳細・`ArticleMacroBar`・`MacroCodeView`）を並べる。最初の埋め込みの上に「コピーして、ゲームで試せます」の 1 行を自動で出す。見つからないマクロは小さな案内
+- [`components/ArticleMacroBar.tsx`](src/components/ArticleMacroBar.tsx) — 記事に埋め込んだマクロの操作帯（copy / edit）。詳細ページの `MacroCodeBar` と同じ見た目
+- [`components/ArticleCta.tsx`](src/components/ArticleCta.tsx)（＋ `.module.scss`）— 記事の末尾の小さな案内（「マクロエディタを開く」「公開マクロを探す」）。全記事に自動で付く
 - [`lib/articles/`](src/lib/articles/) — `frontmatter.ts`（フロントマターの読み取り）・`comments.ts`（本文の HTML コメントを除く）・`split.ts`（本文を Markdown とマクロの埋め込みに分ける）・`markdown.ts`（`marked` で安全な HTML に。生の HTML は文字、危険な URL はリンクにしない）・`load.ts`（`content/articles` を fs で読む）。単体テスト `articles.test.ts`
 - [`content/`](content/README.md) — `articles/`（公開する記事）と `drafts/`（下書き・メモ。公開されず、Git にも入れない設定）。書き方は `content/README.md`
 - [`app/macros/tag/[tag]/page.tsx`](src/app/macros/tag/%5Btag%5D/page.tsx)（＋ `.module.scss`）— タグ別一覧（`/macros/tag/タグ名`）。そのタグの公開マクロを新しい順に、一覧と同じカード（`PublishedMacroCardList`）で出し。「公開マクロ一覧へ」はセカンダリボタン、一緒に付いているタグへ内部リンクを張る。戻るボタンの横に「このタグのフィード」の小さなリンク。0 件は 404。`MIN_INDEXABLE_TAG_MACROS` 件未満は noindex（`lib/published-macros/tags.ts`）
