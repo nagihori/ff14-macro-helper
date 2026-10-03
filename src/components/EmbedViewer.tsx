@@ -12,7 +12,7 @@ import styles from './EmbedViewer.module.scss'
 // 中にコード（左）とログプレビュー（右）、下にコピーと再生。プレビューは初期は表示で、押すと隠れる。
 // 狭い幅（スマホなど）では 2 つを並べず、コードを見せ、「プレビュー」を押したあいだだけプレビューに切り替える。
 // コードは色付きの表示（サーバーで作って渡す）。プレビューの行（entries）もサーバーで作ってあり、時刻は [HH:mm] のまま。
-export function EmbedViewer({ title, body, entries, code, editHref, brandName }: { title: string; body: string; entries: LogEntry[]; code: React.ReactNode; editHref: string; brandName: string }) {
+export function EmbedViewer({ title, detailHref, body, entries, code, editHref, brandName }: { title: string; detailHref: string; body: string; entries: LogEntry[]; code: React.ReactNode; editHref: string; brandName: string }) {
   const [previewOn, setPreviewOn] = useState(true)
   const [touched, setTouched] = useState(false)
   // null は「全行を見せる」（初期）。再生を押すと 1 行から始めて、/wait の秒数に応じて 1 行ずつ増える。
@@ -46,9 +46,13 @@ export function EmbedViewer({ title, body, entries, code, editHref, brandName }:
 
   return (
     <div className={styles.viewer} data-preview={previewOn ? 'on' : 'off'} data-touched={touched ? 'yes' : 'no'}>
+      {/* 上のバーは、下のコード・プレビューの 2 列に合わせる（左：マクロ名、右：プレビューの切り替えと EDIT ON）。 */}
       <div className={styles.topBar}>
-        <div className={styles.tabs}>
-          <span className={`${styles.tab} ${styles.active}`} title={title}>{title}</span>
+        <div className={styles.barLeft}>
+          {/* マクロ名は詳細ページへのリンク（貼り付け先のページを離れないよう別タブ）。 */}
+          <a href={detailHref} target="_blank" rel="noopener" className={`${styles.tab} ${styles.active}`} title={`${title}（${brandName}で詳細を開く）`}>{title}</a>
+        </div>
+        <div className={styles.barRight}>
           <button
             type="button"
             className={styles.tab}
@@ -58,14 +62,14 @@ export function EmbedViewer({ title, body, entries, code, editHref, brandName }:
           >
             プレビュー
           </button>
+          <a href={editHref} target="_blank" rel="noopener" className={styles.edit} title={`${brandName}のエディタで開く`}>
+            <span className={styles.editOn}>EDIT ON</span>
+            <span className={styles.editBrand}>
+              <Image src="/favicon.png" alt="" width={18} height={18} className={styles.logo} />
+              {brandName}
+            </span>
+          </a>
         </div>
-        <a href={editHref} target="_blank" rel="noopener" className={styles.edit} title={`${brandName}のエディタで開く`}>
-          <span className={styles.editOn}>EDIT ON</span>
-          <span className={styles.editBrand}>
-            <Image src="/favicon.png" alt="" width={18} height={18} className={styles.logo} />
-            {brandName}
-          </span>
-        </a>
       </div>
 
       <div className={styles.panes}>

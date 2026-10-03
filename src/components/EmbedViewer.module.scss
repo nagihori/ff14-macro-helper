@@ -13,43 +13,47 @@ $wide: 560px;
   container-type: inline-size;
 }
 
+// 上下のバーは、ライトでは明るいグレー・ダークでは濃いグレー。タブ（手前に来ているもの）は、ライトでは白。
 .topBar, .bottomBar {
   display: flex;
   flex: none;
   align-items: center;
-  justify-content: space-between;
   gap: 0.75rem;
-  padding-inline: 0.5rem;
-  background: var(--surface-sunken);
+  background: var(--surface-hover);
 }
 
-.topBar { height: 44px; border-bottom: 1px solid var(--border-subtle); }
-.bottomBar { height: 40px; border-top: 1px solid var(--border-subtle); }
+.bottomBar { height: 40px; justify-content: space-between; padding-inline: 0.5rem; border-top: 1px solid var(--border-subtle); }
 
-.tabs { display: flex; min-width: 0; align-items: stretch; align-self: stretch; gap: 2px; padding-top: 6px; }
+// 上のバーは、コードとプレビューの 2 列と同じ幅で分ける（プレビューのタブが、プレビューの左上に来る）。
+.topBar { display: grid; grid-template-columns: 1fr 1fr; height: 44px; border-bottom: 1px solid var(--border-subtle); }
+.barLeft, .barRight { display: flex; min-width: 0; align-items: stretch; align-self: stretch; padding-top: 6px; }
+.barLeft { padding-left: 0.5rem; }
+.barRight { justify-content: space-between; gap: 0.75rem; padding-right: 0.5rem; }
+.barRight .edit { align-self: center; margin-top: -6px; }
 
 .tab {
   min-width: 0;
-  max-width: 16rem;
+  max-width: 100%;
   overflow: hidden;
   padding: 0 0.875rem;
   display: inline-flex;
   align-items: center;
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  background: var(--surface-hover);
-  color: var(--text-secondary);
+  background: transparent;
+  color: var(--text-muted);
   @include type(sm);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
-  cursor: default;
+  cursor: pointer;
+  &:hover { color: var(--text-strong); }
 }
 
-button.tab { cursor: pointer; &:hover { color: var(--text-strong); } }
-// 押されている間（プレビューが出ている間）は、タブが手前に来た見た目。
+// 手前に来ているタブ（マクロ名・出ているあいだの「プレビュー」）。ライトは白、ダークは濃いグレー。
 button.tab[aria-pressed='true'], .active {
-  background: var(--surface-dark);
-  color: var(--text-on-dark);
+  background: var(--surface-card);
+  color: var(--text-strong);
+  box-shadow: inset 0 2px 0 var(--accent-fill);
 }
 
 .edit {
@@ -106,5 +110,8 @@ button.tab[aria-pressed='true'], .active {
   .viewer[data-touched='no'] .previewPane,
   .viewer[data-touched='yes'][data-preview='on'] .codePane { display: none; }
   .editOn { display: none; }
-  .tab { max-width: 9rem; padding-inline: 0.625rem; }
+  .topBar { display: flex; padding-inline: 0.5rem; gap: 0.5rem; }
+  .barLeft { flex: 1; padding-left: 0; }
+  .barRight { flex: none; padding-right: 0; gap: 0.5rem; }
+  .tab { padding-inline: 0.625rem; }
 }

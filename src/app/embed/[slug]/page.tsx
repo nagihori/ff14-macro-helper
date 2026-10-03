@@ -31,6 +31,7 @@ export default async function EmbedPage({ params, searchParams }: PageProps<'/em
       {forced && <script dangerouslySetInnerHTML={{ __html: `document.documentElement.dataset.theme=${JSON.stringify(forced)}` }} />}
       <EmbedViewer
         title={macro.title}
+        detailHref={`/macros/${macro.slug}`}
         body={macro.body}
         entries={entries}
         code={<MacroCodeView body={macro.body} />}
