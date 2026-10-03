@@ -9,6 +9,7 @@ export const UI_TEXT = {
   // 共有ボタンの ▼ で開く、ほかの共有方法。Lodestone は掲示板に貼る BB コード（色付き）。
   moreShare: 'ほかの共有方法',
   copyLodestone: 'Lodestone用にコピー',
+  backToLibrary: '公開マクロ一覧へ',
   editInEditor: 'エディタで編集',
   preview: '動作プレビュー',
   // サイト全体のタブ（全ページ共通ヘッダー）。

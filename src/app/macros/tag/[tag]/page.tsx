@@ -1,11 +1,14 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { MacroCardSection } from '@/components/MacroCardSection'
+import { ActionButton } from '@/components/ActionButton'
+import { ArrowLeftIcon } from '@/components/icons'
 import { PageHero } from '@/components/PageHero'
+import { PublishedMacroCardList } from '@/components/PublishedMacroCardList'
 import { listPublishedMacrosByTag } from '@/lib/published-macros/repository'
 import { withDescriptionParts } from '@/lib/published-macros/resolve-descriptions'
 import { MIN_INDEXABLE_TAG_MACROS, tagPath } from '@/lib/published-macros/tags'
+import { UI_TEXT } from '@/lib/ui-text'
 import styles from './page.module.scss'
 
 // URL のタグを文字列へ戻す。Next が先にデコードしている場合もあるので、デコードできなければそのまま使う
@@ -49,14 +52,14 @@ export default async function MacroTagPage({ params }: PageProps<'/macros/tag/[t
     <main className={styles.page}>
       <PageHero compact eyebrow="TAG" title={`#${tag}`} lead={`「#${tag}」のついた公開マクロ ${macros.length} 件です。`} />
       <div className={styles.container}>
-        <Link href="/macros" className={styles.backLink}>← 公開マクロ一覧に戻る</Link>
+        <ActionButton icon={<ArrowLeftIcon />} variant="secondary" href="/macros">{UI_TEXT.backToLibrary}</ActionButton>
         {relatedTags.length > 0 && (
           <p className={styles.relatedTags}>
             一緒に付いているタグ：
             {relatedTags.map((name) => <Link key={name} href={tagPath(name)} className={styles.tag}>#{name}</Link>)}
           </p>
         )}
-        <MacroCardSection id="tag-macros" heading="新しい順" items={macros} />
+        <PublishedMacroCardList macros={macros} />
       </div>
     </main>
   )
