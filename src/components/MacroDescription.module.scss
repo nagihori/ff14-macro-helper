@@ -1,0 +1,13 @@
+@use '../styles/mixins' as *;
+
+// 説明文の `コード`（等幅）。詳細ページ・一覧のカードで共通。コピーしやすいよう、折り返しても 1 つの塊に見える背景を付ける。
+.code {
+  padding: 0.0625em 0.375em;
+  border-radius: var(--radius-sm);
+  background: var(--surface-hover);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
